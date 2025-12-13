@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { MapPin } from "lucide-react";
 import {
   Dialog,
@@ -25,6 +26,7 @@ interface LocationSelectorModalProps {
   onOpenChange: (open: boolean) => void;
   onLocationSelected?: (municipality: string, province: string) => void;
   allowClose?: boolean;
+  redirectOnClose?: string;
 }
 
 export function LocationSelectorModal({
@@ -32,7 +34,9 @@ export function LocationSelectorModal({
   onOpenChange,
   onLocationSelected,
   allowClose = false,
+  redirectOnClose,
 }: LocationSelectorModalProps) {
+  const navigate = useNavigate();
   const { setLocation } = useLocationStore();
   const [selectedProvince, setSelectedProvince] = useState<string>("");
   const [selectedMunicipality, setSelectedMunicipality] = useState<string>("");
@@ -45,6 +49,13 @@ export function LocationSelectorModal({
     setSelectedMunicipality("");
   }, [selectedProvince]);
 
+  const handleClose = () => {
+    onOpenChange(false);
+    if (redirectOnClose) {
+      navigate(redirectOnClose);
+    }
+  };
+
   const handleConfirm = () => {
     if (selectedMunicipality && selectedProvince) {
       setLocation(selectedMunicipality, selectedProvince);
@@ -56,7 +67,7 @@ export function LocationSelectorModal({
   const isValid = selectedProvince && selectedMunicipality;
 
   return (
-    <Dialog open={open} onOpenChange={allowClose ? onOpenChange : undefined}>
+    <Dialog open={open} onOpenChange={allowClose ? handleClose : undefined}>
       <DialogContent 
         className="sm:max-w-md"
         onPointerDownOutside={allowClose ? undefined : (e) => e.preventDefault()}
@@ -128,7 +139,7 @@ export function LocationSelectorModal({
 
         <DialogFooter>
           {allowClose && (
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button variant="outline" onClick={handleClose}>
               Cancelar
             </Button>
           )}

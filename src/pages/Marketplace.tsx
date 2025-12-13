@@ -405,6 +405,7 @@ const Marketplace = () => {
         open={showLocationModal}
         onOpenChange={setShowLocationModal}
         allowClose={userHasLocation}
+        redirectOnClose={userHasLocation ? undefined : "/"}
       />
 
       {/* Contact Selector for authenticated users */}
@@ -412,9 +413,9 @@ const Marketplace = () => {
         open={showContactSelector}
         onOpenChange={setShowContactSelector}
         onSelect={(contact) => {
-          // When a contact is selected, we can use its location
           setShowContactSelector(false);
         }}
+        redirectOnClose={userHasLocation ? undefined : "/"}
       />
     </div>
   );
