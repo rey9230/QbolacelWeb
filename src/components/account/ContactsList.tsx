@@ -9,12 +9,12 @@ import {
   Star,
   Loader2,
   Save,
-  X,
+  User,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -46,24 +46,23 @@ import {
   useUpdateContact,
   useDeleteContact,
   useSetDefaultContact,
-  type Contact,
+  type ContactDto,
   type CreateContactRequest,
 } from "@/hooks/useContacts";
 import { useProvinces, useMunicipalities } from "@/hooks/useLocations";
 import { cn } from "@/lib/utils";
 
 const emptyForm: CreateContactRequest = {
-  name: "",
+  fullName: "",
   phone: "",
-  province_id: "",
-  municipality_id: "",
-  address: "",
-  notes: "",
-  is_default: false,
+  street: "",
+  betweenStreets: "",
+  municipality: "",
+  isDefault: false,
 };
 
 export function ContactsList() {
-  const { data: contacts, isLoading } = useContacts();
+  const { data: contactsData, isLoading } = useContacts();
   const { data: provinces } = useProvinces();
   const createContact = useCreateContact();
   const updateContact = useUpdateContact();
@@ -71,44 +70,54 @@ export function ContactsList() {
   const setDefaultContact = useSetDefaultContact();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingContact, setEditingContact] = useState<Contact | null>(null);
+  const [editingContact, setEditingContact] = useState<ContactDto | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [formData, setFormData] = useState<CreateContactRequest>(emptyForm);
-  const [selectedProvinceId, setSelectedProvinceId] = useState<string>("");
+  const [selectedProvince, setSelectedProvince] = useState<string>("");
 
-  const { data: municipalities } = useMunicipalities(selectedProvinceId);
+  const { data: municipalities } = useMunicipalities(selectedProvince);
+
+  const contacts = contactsData?.contacts || [];
 
   const openCreateDialog = () => {
     setEditingContact(null);
     setFormData(emptyForm);
-    setSelectedProvinceId("");
+    setSelectedProvince("");
     setIsDialogOpen(true);
   };
 
-  const openEditDialog = (contact: Contact) => {
+  const openEditDialog = (contact: ContactDto) => {
     setEditingContact(contact);
     setFormData({
-      name: contact.name,
+      fullName: contact.fullName,
       phone: contact.phone,
-      province_id: contact.province_id,
-      municipality_id: contact.municipality_id,
-      address: contact.address,
-      notes: contact.notes || "",
-      is_default: contact.is_default || false,
+      street: contact.street,
+      betweenStreets: contact.betweenStreets || "",
+      municipality: contact.municipality,
+      isDefault: contact.isDefault,
     });
-    setSelectedProvinceId(contact.province_id);
+    setSelectedProvince(contact.province);
     setIsDialogOpen(true);
   };
 
   const handleProvinceChange = (value: string) => {
-    setSelectedProvinceId(value);
-    setFormData({ ...formData, province_id: value, municipality_id: "" });
+    setSelectedProvince(value);
+    setFormData({ ...formData, municipality: "" });
   };
 
   const handleSubmit = () => {
     if (editingContact) {
       updateContact.mutate(
-        { id: editingContact.id, data: formData },
+        { 
+          id: editingContact.id, 
+          data: {
+            fullName: formData.fullName,
+            phone: formData.phone,
+            street: formData.street,
+            betweenStreets: formData.betweenStreets || undefined,
+            municipality: formData.municipality,
+          }
+        },
         {
           onSuccess: () => {
             setIsDialogOpen(false);
@@ -141,11 +150,10 @@ export function ContactsList() {
 
   const isSubmitting = createContact.isPending || updateContact.isPending;
   const isFormValid =
-    formData.name &&
-    formData.phone &&
-    formData.province_id &&
-    formData.municipality_id &&
-    formData.address;
+    formData.fullName.trim() &&
+    formData.phone.trim() &&
+    formData.municipality &&
+    formData.street.trim();
 
   if (isLoading) {
     return (
@@ -177,7 +185,7 @@ export function ContactsList() {
         </div>
 
         {/* Contacts List */}
-        {!contacts?.length ? (
+        {contacts.length === 0 ? (
           <div className="bg-card border border-border rounded-xl p-8 text-center">
             <div className="inline-flex p-4 rounded-full bg-muted mb-4">
               <MapPin className="h-8 w-8 text-muted-foreground" />
@@ -203,12 +211,12 @@ export function ContactsList() {
                   exit={{ opacity: 0, scale: 0.95 }}
                   className={cn(
                     "bg-card border rounded-xl p-4 relative",
-                    contact.is_default
+                    contact.isDefault
                       ? "border-primary shadow-md"
                       : "border-border"
                   )}
                 >
-                  {contact.is_default && (
+                  {contact.isDefault && (
                     <Badge className="absolute -top-2 right-4 gap-1">
                       <Star className="h-3 w-3" />
                       Principal
@@ -216,7 +224,7 @@ export function ContactsList() {
                   )}
 
                   <div className="space-y-2">
-                    <h4 className="font-semibold">{contact.name}</h4>
+                    <h4 className="font-semibold">{contact.fullName}</h4>
                     <p className="text-sm text-muted-foreground flex items-center gap-2">
                       <Phone className="h-4 w-4" />
                       {contact.phone}
@@ -224,20 +232,16 @@ export function ContactsList() {
                     <p className="text-sm text-muted-foreground flex items-start gap-2">
                       <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
                       <span>
-                        {contact.address}
+                        {contact.street}
+                        {contact.betweenStreets && `, ${contact.betweenStreets}`}
                         <br />
-                        {contact.municipality_name}, {contact.province_name}
+                        {contact.municipality}, {contact.province}
                       </span>
                     </p>
-                    {contact.notes && (
-                      <p className="text-sm text-muted-foreground italic">
-                        "{contact.notes}"
-                      </p>
-                    )}
                   </div>
 
                   <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border">
-                    {!contact.is_default && (
+                    {!contact.isDefault && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -285,15 +289,19 @@ export function ContactsList() {
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="contact-name">Nombre completo</Label>
-              <Input
-                id="contact-name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                placeholder="Nombre del destinatario"
-              />
+              <Label htmlFor="contact-fullName">Nombre completo</Label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="contact-fullName"
+                  className="pl-10"
+                  value={formData.fullName}
+                  onChange={(e) =>
+                    setFormData({ ...formData, fullName: e.target.value })
+                  }
+                  placeholder="Juan Pérez García"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -307,7 +315,7 @@ export function ContactsList() {
                   onChange={(e) =>
                     setFormData({ ...formData, phone: e.target.value })
                   }
-                  placeholder="+53 5X XXX XXXX"
+                  placeholder="+53 5 1234567"
                 />
               </div>
             </div>
@@ -316,7 +324,7 @@ export function ContactsList() {
               <div className="space-y-2">
                 <Label>Provincia</Label>
                 <Select
-                  value={formData.province_id}
+                  value={selectedProvince}
                   onValueChange={handleProvinceChange}
                 >
                   <SelectTrigger>
@@ -324,8 +332,8 @@ export function ContactsList() {
                   </SelectTrigger>
                   <SelectContent>
                     {provinces?.map((province) => (
-                      <SelectItem key={province.id} value={province.id}>
-                        {province.name}
+                      <SelectItem key={province} value={province}>
+                        {province}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -334,19 +342,19 @@ export function ContactsList() {
               <div className="space-y-2">
                 <Label>Municipio</Label>
                 <Select
-                  value={formData.municipality_id}
+                  value={formData.municipality}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, municipality_id: value })
+                    setFormData({ ...formData, municipality: value })
                   }
-                  disabled={!selectedProvinceId}
+                  disabled={!selectedProvince}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Municipio" />
                   </SelectTrigger>
                   <SelectContent>
                     {municipalities?.map((municipality) => (
-                      <SelectItem key={municipality.id} value={municipality.id}>
-                        {municipality.name}
+                      <SelectItem key={municipality} value={municipality}>
+                        {municipality}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -355,29 +363,46 @@ export function ContactsList() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contact-address">Dirección</Label>
-              <Textarea
-                id="contact-address"
-                value={formData.address}
+              <Label htmlFor="contact-street">Calle y número</Label>
+              <Input
+                id="contact-street"
+                value={formData.street}
                 onChange={(e) =>
-                  setFormData({ ...formData, address: e.target.value })
+                  setFormData({ ...formData, street: e.target.value })
                 }
-                placeholder="Calle, número, entre calles, reparto..."
-                rows={2}
+                placeholder="Calle 23 #456"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="contact-notes">Notas (opcional)</Label>
+              <Label htmlFor="contact-betweenStreets">Entre calles (opcional)</Label>
               <Input
-                id="contact-notes"
-                value={formData.notes}
+                id="contact-betweenStreets"
+                value={formData.betweenStreets}
                 onChange={(e) =>
-                  setFormData({ ...formData, notes: e.target.value })
+                  setFormData({ ...formData, betweenStreets: e.target.value })
                 }
-                placeholder="Indicaciones especiales para la entrega"
+                placeholder="entre 4 y 6"
               />
             </div>
+
+            {!editingContact && (
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="contact-isDefault"
+                  checked={formData.isDefault}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, isDefault: checked === true })
+                  }
+                />
+                <Label
+                  htmlFor="contact-isDefault"
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  Establecer como dirección predeterminada
+                </Label>
+              </div>
+            )}
           </div>
 
           <DialogFooter className="mt-6">
