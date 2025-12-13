@@ -69,6 +69,27 @@ export interface AuthResponse {
   message?: string;
 }
 
+// ============ USER PROFILE ============
+export interface UserProfile {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  avatar?: string;
+  province_id?: string;
+  municipality_id?: string;
+  address?: string;
+  created_at?: string;
+}
+
+export interface UpdateProfileRequest {
+  name?: string;
+  phone?: string;
+  province_id?: string;
+  municipality_id?: string;
+  address?: string;
+}
+
 export const authApi = {
   login: (data: LoginRequest) =>
     apiFetch<AuthResponse>('/auth/login', {
@@ -88,7 +109,70 @@ export const authApi = {
     }, true),
 
   me: () =>
-    apiFetch<{ user: AuthResponse['user'] }>('/auth/me', {}, true),
+    apiFetch<{ data: UserProfile }>('/auth/me', {}, true),
+
+  updateProfile: (data: UpdateProfileRequest) =>
+    apiFetch<{ data: UserProfile }>('/auth/profile', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }, true),
+};
+
+// ============ CONTACTS API ============
+export interface Contact {
+  id: string;
+  name: string;
+  phone: string;
+  province_id: string;
+  province_name?: string;
+  municipality_id: string;
+  municipality_name?: string;
+  address: string;
+  notes?: string;
+  is_default?: boolean;
+  created_at?: string;
+}
+
+export interface CreateContactRequest {
+  name: string;
+  phone: string;
+  province_id: string;
+  municipality_id: string;
+  address: string;
+  notes?: string;
+  is_default?: boolean;
+}
+
+export interface UpdateContactRequest extends Partial<CreateContactRequest> {}
+
+export const contactsApi = {
+  getAll: () =>
+    apiFetch<{ data: Contact[] }>('/contacts', {}, true),
+
+  getById: (id: string) =>
+    apiFetch<{ data: Contact }>(`/contacts/${id}`, {}, true),
+
+  create: (data: CreateContactRequest) =>
+    apiFetch<{ data: Contact }>('/contacts', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }, true),
+
+  update: (id: string, data: UpdateContactRequest) =>
+    apiFetch<{ data: Contact }>(`/contacts/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }, true),
+
+  delete: (id: string) =>
+    apiFetch<{ message: string }>(`/contacts/${id}`, {
+      method: 'DELETE',
+    }, true),
+
+  setDefault: (id: string) =>
+    apiFetch<{ data: Contact }>(`/contacts/${id}/default`, {
+      method: 'POST',
+    }, true),
 };
 
 // ============ PRODUCTS API ============

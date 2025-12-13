@@ -12,6 +12,7 @@ import Marketplace from "./pages/Marketplace";
 import Recargas from "./pages/Recargas";
 import ProductDetail from "./pages/ProductDetail";
 import Checkout from "./pages/Checkout";
+import Account from "./pages/Account";
 import Contact from "./pages/Contact";
 import FAQ from "./pages/FAQ";
 import Terms from "./pages/Terms";
@@ -32,6 +33,8 @@ const App = () => (
           <Route path="/recargas" element={<Recargas />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/productos/:id" element={<ProductDetail />} />
+          <Route path="/checkout" element={<Checkout />} />
+          <Route path="/cuenta" element={<Account />} />
 
           {/* Info Pages */}
           <Route path="/contacto" element={<Contact />} />

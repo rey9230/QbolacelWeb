@@ -1,19 +1,27 @@
 import { useQuery } from "@tanstack/react-query";
-import { locationsApi } from "@/lib/api";
+import { locationsApi, type Province, type Municipality } from "@/lib/api";
 
 export function useProvinces() {
   return useQuery({
     queryKey: ["provinces"],
-    queryFn: () => locationsApi.getProvinces(),
-    staleTime: 1000 * 60 * 60 * 24, // 24 hours
+    queryFn: async () => {
+      const response = await locationsApi.getProvinces();
+      return response.data;
+    },
+    staleTime: 1000 * 60 * 60 * 24,
   });
 }
 
 export function useMunicipalities(provinceId: string) {
   return useQuery({
     queryKey: ["municipalities", provinceId],
-    queryFn: () => locationsApi.getMunicipalities(provinceId),
+    queryFn: async () => {
+      const response = await locationsApi.getMunicipalities(provinceId);
+      return response.data;
+    },
     enabled: !!provinceId,
-    staleTime: 1000 * 60 * 60 * 24, // 24 hours
+    staleTime: 1000 * 60 * 60 * 24,
   });
 }
+
+export type { Province, Municipality };
