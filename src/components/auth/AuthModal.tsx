@@ -45,7 +45,7 @@ export function AuthModal() {
     setIsLoading(true);
     
     try {
-      const { user, token } = await authApi.login({
+      const { user, token, refreshToken } = await authApi.login({
         email: loginForm.email,
         password: loginForm.password,
       });
@@ -57,7 +57,8 @@ export function AuthModal() {
           name: user.name,
           avatar: user.avatar 
         },
-        token
+        token,
+        refreshToken
       );
       
       toast({
@@ -111,7 +112,7 @@ export function AuthModal() {
     setIsLoading(true);
     
     try {
-      const { user, token } = await authApi.register({
+      const { user, token, refreshToken } = await authApi.register({
         name: registerForm.name,
         email: registerForm.email,
         password: registerForm.password,
@@ -125,7 +126,8 @@ export function AuthModal() {
           name: user.name,
           avatar: user.avatar 
         },
-        token
+        token,
+        refreshToken
       );
       
       toast({

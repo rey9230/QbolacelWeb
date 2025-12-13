@@ -1,20 +1,99 @@
 const API_BASE_URL = 'https://api.qbolacel.com/api/v1';
 
-// Helper to get auth token from localStorage
-const getAuthToken = (): string | null => {
+// Flag to prevent multiple simultaneous refresh attempts
+let isRefreshing = false;
+let refreshPromise: Promise<string | null> | null = null;
+
+// Helper to get auth tokens from localStorage
+const getAuthState = (): { token: string | null; refreshToken: string | null } => {
   try {
     const authState = localStorage.getItem('qbolacel-auth');
     if (authState) {
       const parsed = JSON.parse(authState);
-      return parsed.state?.token || null;
+      return {
+        token: parsed.state?.token || null,
+        refreshToken: parsed.state?.refreshToken || null,
+      };
     }
   } catch {
-    return null;
+    return { token: null, refreshToken: null };
   }
-  return null;
+  return { token: null, refreshToken: null };
 };
 
-// Base fetch wrapper with auth handling
+// Helper to update tokens in localStorage
+const updateAuthTokens = (token: string, refreshToken: string) => {
+  try {
+    const authState = localStorage.getItem('qbolacel-auth');
+    if (authState) {
+      const parsed = JSON.parse(authState);
+      parsed.state.token = token;
+      parsed.state.refreshToken = refreshToken;
+      localStorage.setItem('qbolacel-auth', JSON.stringify(parsed));
+    }
+  } catch (e) {
+    console.error('Failed to update auth tokens:', e);
+  }
+};
+
+// Helper to clear auth state (logout)
+const clearAuthState = () => {
+  try {
+    const authState = localStorage.getItem('qbolacel-auth');
+    if (authState) {
+      const parsed = JSON.parse(authState);
+      parsed.state.token = null;
+      parsed.state.refreshToken = null;
+      parsed.state.user = null;
+      parsed.state.isAuthenticated = false;
+      localStorage.setItem('qbolacel-auth', JSON.stringify(parsed));
+      // Dispatch event to notify app of logout
+      window.dispatchEvent(new CustomEvent('auth:logout'));
+    }
+  } catch (e) {
+    console.error('Failed to clear auth state:', e);
+  }
+};
+
+// Refresh the access token using the refresh token
+async function refreshAccessToken(): Promise<string | null> {
+  const { refreshToken } = getAuthState();
+  
+  if (!refreshToken) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!response.ok) {
+      // Refresh failed, clear auth state
+      clearAuthState();
+      return null;
+    }
+
+    const data: AuthTokenResponse = await response.json();
+    updateAuthTokens(data.accessToken, data.refreshToken);
+    return data.accessToken;
+  } catch {
+    clearAuthState();
+    return null;
+  }
+}
+
+// Get a valid token, refreshing if necessary
+async function getValidToken(): Promise<string | null> {
+  const { token } = getAuthState();
+  return token;
+}
+
+// Base fetch wrapper with auth handling and automatic token refresh
 async function apiFetch<T>(
   endpoint: string,
   options: RequestInit = {},
@@ -25,17 +104,41 @@ async function apiFetch<T>(
     ...options.headers,
   };
 
-  const token = getAuthToken();
+  let { token } = getAuthState();
   if (requiresAuth || token) {
     if (token) {
       (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
     }
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+  let response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
     headers,
   });
+
+  // If 401 Unauthorized, try to refresh the token and retry
+  if (response.status === 401 && !endpoint.includes('/auth/refresh') && !endpoint.includes('/auth/login')) {
+    // Prevent multiple simultaneous refresh attempts
+    if (!isRefreshing) {
+      isRefreshing = true;
+      refreshPromise = refreshAccessToken();
+    }
+
+    const newToken = await refreshPromise;
+    isRefreshing = false;
+    refreshPromise = null;
+
+    if (newToken) {
+      // Retry the original request with new token
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`;
+      response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+      });
+    } else {
+      throw new Error('Sesión expirada. Por favor, inicia sesión de nuevo.');
+    }
+  }
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({ message: 'Error de conexión' }));
@@ -85,9 +188,6 @@ export interface UpdateProfileRequest {
   address?: string;
 }
 
-// Helper to temporarily store token for immediate use after login
-let tempToken: string | null = null;
-
 async function apiFetchWithToken<T>(
   endpoint: string,
   token: string,
@@ -113,7 +213,7 @@ async function apiFetchWithToken<T>(
 }
 
 export const authApi = {
-  login: async (data: LoginRequest): Promise<{ user: UserProfile; token: string }> => {
+  login: async (data: LoginRequest): Promise<{ user: UserProfile; token: string; refreshToken: string }> => {
     const tokenResponse = await apiFetch<AuthTokenResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -125,10 +225,11 @@ export const authApi = {
     return {
       user: userResponse,
       token: tokenResponse.accessToken,
+      refreshToken: tokenResponse.refreshToken,
     };
   },
 
-  register: async (data: RegisterRequest): Promise<{ user: UserProfile; token: string }> => {
+  register: async (data: RegisterRequest): Promise<{ user: UserProfile; token: string; refreshToken: string }> => {
     const tokenResponse = await apiFetch<AuthTokenResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -140,6 +241,7 @@ export const authApi = {
     return {
       user: userResponse,
       token: tokenResponse.accessToken,
+      refreshToken: tokenResponse.refreshToken,
     };
   },
 
