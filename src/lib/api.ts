@@ -143,10 +143,13 @@ async function apiFetch<T>(
     ...options.headers,
   };
 
-  // Add municipality header if available
-  const { municipality } = getLocationState();
-  if (municipality) {
-    (headers as Record<string, string>)['X-Municipality'] = municipality;
+  // Add municipality header if available (skip for auth endpoints)
+  const isAuthEndpoint = endpoint.startsWith('/auth/');
+  if (!isAuthEndpoint) {
+    const { municipality } = getLocationState();
+    if (municipality) {
+      (headers as Record<string, string>)['X-Municipality'] = municipality;
+    }
   }
 
   let { token } = getAuthState();
