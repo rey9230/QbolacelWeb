@@ -190,38 +190,77 @@ const Marketplace = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - Desktop */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24 space-y-6">
-              {/* Recharge Promo */}
-              <div className="card-elevated p-5 gradient-card border border-primary/20">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="gradient-primary rounded-lg p-2">
-                    <Smartphone className="h-5 w-5 text-primary-foreground" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-sm">Recargas Móvil</h3>
-                    <p className="text-xs text-muted-foreground">Desde $5</p>
+            <div className="sticky top-24 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto pr-2">
+              {/* Price Range Filter - First for visibility */}
+              <div className="card-elevated p-4">
+                <h3 className="font-semibold mb-3 text-sm">Precio (USD)</h3>
+                <div className="space-y-3">
+                  <Slider
+                    value={priceRange}
+                    onValueChange={(value) => setPriceRange(value as [number, number])}
+                    min={0}
+                    max={500}
+                    step={5}
+                    className="w-full"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      value={priceRange[0]}
+                      onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                      className="h-7 text-xs"
+                      min={0}
+                    />
+                    <span className="text-muted-foreground text-xs">-</span>
+                    <Input
+                      type="number"
+                      value={priceRange[1]}
+                      onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                      className="h-7 text-xs"
+                    />
+                    <Button 
+                      size="sm" 
+                      onClick={handleApplyPriceFilter}
+                      className="h-7 px-2 text-xs"
+                    >
+                      OK
+                    </Button>
                   </div>
                 </div>
-                <p className="text-sm text-muted-foreground mb-3">
-                  Envía saldo a Cuba en segundos
-                </p>
-                <Button variant="gradient" size="sm" className="w-full" asChild>
-                  <Link to="/recargas">Descargar App</Link>
-                </Button>
               </div>
 
-              {/* Categories */}
-              <div className="card-elevated p-5">
-                <h3 className="font-semibold mb-4">Categorías</h3>
+              {/* Tags Filter */}
+              <div className="card-elevated p-4">
+                <h3 className="font-semibold mb-3 text-sm flex items-center gap-2">
+                  <Tag className="h-3.5 w-3.5" />
+                  Etiquetas
+                </h3>
+                <div className="flex flex-wrap gap-1.5">
+                  {availableTags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant={selectedTag === tag ? "default" : "outline"}
+                      className="cursor-pointer capitalize text-xs py-0.5"
+                      onClick={() => handleTagClick(tag)}
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Categories - Scrollable */}
+              <div className="card-elevated p-4">
+                <h3 className="font-semibold mb-3 text-sm">Categorías</h3>
                 {categoriesLoading ? (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  <div className="flex justify-center py-2">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-1 max-h-48 overflow-y-auto">
                     <button
                       onClick={() => handleCategoryClick('all')}
-                      className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                      className={`w-full text-left px-2.5 py-1.5 rounded-md text-sm transition-colors ${
                         selectedCategory === 'all'
                           ? "bg-primary text-primary-foreground"
                           : "text-muted-foreground hover:bg-muted"
@@ -233,7 +272,7 @@ const Marketplace = () => {
                       <button
                         key={category.id}
                         onClick={() => handleCategoryClick(category.id)}
-                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                        className={`w-full text-left px-2.5 py-1.5 rounded-md text-sm transition-colors ${
                           selectedCategory === category.id
                             ? "bg-primary text-primary-foreground"
                             : "text-muted-foreground hover:bg-muted"
@@ -246,85 +285,24 @@ const Marketplace = () => {
                 )}
               </div>
 
-              {/* Price Range Filter */}
-              <div className="card-elevated p-5">
-                <h3 className="font-semibold mb-4">Rango de Precio</h3>
-                <div className="space-y-4">
-                  <Slider
-                    value={priceRange}
-                    onValueChange={(value) => setPriceRange(value as [number, number])}
-                    min={0}
-                    max={500}
-                    step={5}
-                    className="w-full"
-                  />
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1">
-                      <label className="text-xs text-muted-foreground">Mín</label>
-                      <Input
-                        type="number"
-                        value={priceRange[0]}
-                        onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-                        className="h-8 text-sm"
-                        min={0}
-                        max={priceRange[1]}
-                      />
-                    </div>
-                    <span className="text-muted-foreground mt-4">-</span>
-                    <div className="flex-1">
-                      <label className="text-xs text-muted-foreground">Máx</label>
-                      <Input
-                        type="number"
-                        value={priceRange[1]}
-                        onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-                        className="h-8 text-sm"
-                        min={priceRange[0]}
-                        max={1000}
-                      />
-                    </div>
+              {/* Recharge Promo - At bottom */}
+              <div className="card-elevated p-4 gradient-card border border-primary/20">
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="gradient-primary rounded-md p-1.5">
+                    <Smartphone className="h-4 w-4 text-primary-foreground" />
                   </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      size="sm" 
-                      onClick={handleApplyPriceFilter}
-                      className="flex-1"
-                    >
-                      Aplicar
-                    </Button>
-                    {appliedPriceRange && (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={handleClearPriceFilter}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
+                  <div>
+                    <h3 className="font-semibold text-xs">Recargas Móvil</h3>
+                    <p className="text-[10px] text-muted-foreground">Desde $5</p>
                   </div>
                 </div>
-              </div>
-
-              {/* Tags Filter */}
-              <div className="card-elevated p-5">
-                <h3 className="font-semibold mb-4 flex items-center gap-2">
-                  <Tag className="h-4 w-4" />
-                  Etiquetas
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {availableTags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant={selectedTag === tag ? "default" : "outline"}
-                      className="cursor-pointer capitalize"
-                      onClick={() => handleTagClick(tag)}
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
+                <Button variant="gradient" size="sm" className="w-full h-7 text-xs" asChild>
+                  <Link to="/recargas">Descargar App</Link>
+                </Button>
               </div>
             </div>
           </aside>
+
 
           {/* Main Content */}
           <main className="flex-1">
