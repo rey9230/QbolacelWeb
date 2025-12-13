@@ -43,7 +43,7 @@ export default function Account() {
   const { data: provinces } = useProvinces();
 
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedProvinceId, setSelectedProvinceId] = useState<string>("");
+  const [selectedProvince, setSelectedProvince] = useState<string>("");
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -52,7 +52,7 @@ export default function Account() {
     address: "",
   });
 
-  const { data: municipalities } = useMunicipalities(selectedProvinceId);
+  const { data: municipalities } = useMunicipalities(selectedProvince);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -69,7 +69,7 @@ export default function Account() {
         municipality_id: profile.municipality_id || "",
         address: profile.address || "",
       });
-      setSelectedProvinceId(profile.province_id || "");
+      setSelectedProvince(profile.province_id || "");
     }
   }, [profile]);
 
@@ -93,7 +93,7 @@ export default function Account() {
   };
 
   const handleProvinceChange = (value: string) => {
-    setSelectedProvinceId(value);
+    setSelectedProvince(value);
     setFormData({ ...formData, province_id: value, municipality_id: "" });
   };
 
@@ -101,8 +101,9 @@ export default function Account() {
     return null;
   }
 
-  const provinceName = provinces?.find((p) => p.id === formData.province_id)?.name;
-  const municipalityName = municipalities?.find((m) => m.id === formData.municipality_id)?.name;
+  // Province and municipality are now strings directly
+  const provinceName = formData.province_id;
+  const municipalityName = formData.municipality_id;
 
   return (
     <div className="min-h-screen bg-background">
@@ -275,8 +276,8 @@ export default function Account() {
                               </SelectTrigger>
                               <SelectContent>
                                 {provinces?.map((province) => (
-                                  <SelectItem key={province.id} value={province.id}>
-                                    {province.name}
+                                  <SelectItem key={province} value={province}>
+                                    {province}
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -293,15 +294,15 @@ export default function Account() {
                               onValueChange={(value) =>
                                 setFormData({ ...formData, municipality_id: value })
                               }
-                              disabled={!selectedProvinceId}
+                              disabled={!selectedProvince}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="Seleccionar municipio" />
                               </SelectTrigger>
                               <SelectContent>
                                 {municipalities?.map((municipality) => (
-                                  <SelectItem key={municipality.id} value={municipality.id}>
-                                    {municipality.name}
+                                  <SelectItem key={municipality} value={municipality}>
+                                    {municipality}
                                   </SelectItem>
                                 ))}
                               </SelectContent>

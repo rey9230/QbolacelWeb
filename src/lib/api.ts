@@ -261,59 +261,69 @@ export const authApi = {
 };
 
 // ============ CONTACTS API ============
-export interface Contact {
+export interface ContactDto {
   id: string;
-  name: string;
+  fullName: string;
   phone: string;
-  province_id: string;
-  province_name?: string;
-  municipality_id: string;
-  municipality_name?: string;
-  address: string;
-  notes?: string;
-  is_default?: boolean;
-  created_at?: string;
+  street: string;
+  betweenStreets?: string;
+  municipality: string;
+  province: string;
+  isDefault: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateContactRequest {
-  name: string;
+  fullName: string;
   phone: string;
-  province_id: string;
-  municipality_id: string;
-  address: string;
-  notes?: string;
-  is_default?: boolean;
+  street: string;
+  betweenStreets?: string;
+  municipality: string;
+  isDefault?: boolean;
 }
 
-export interface UpdateContactRequest extends Partial<CreateContactRequest> {}
+export interface UpdateContactRequest {
+  fullName?: string;
+  phone?: string;
+  street?: string;
+  betweenStreets?: string;
+  municipality?: string;
+}
+
+export interface ContactListResponse {
+  contacts: ContactDto[];
+  total: number;
+  defaultContactId?: string;
+}
 
 export const contactsApi = {
   getAll: () =>
-    apiFetch<{ data: Contact[] }>('/contacts', {}, true),
+    apiFetch<ContactListResponse>('/contacts', {}, true),
 
   getById: (id: string) =>
-    apiFetch<{ data: Contact }>(`/contacts/${id}`, {}, true),
+    apiFetch<ContactDto>(`/contacts/${id}`, {}, true),
 
   create: (data: CreateContactRequest) =>
-    apiFetch<{ data: Contact }>('/contacts', {
+    apiFetch<ContactDto>('/contacts', {
       method: 'POST',
       body: JSON.stringify(data),
     }, true),
 
   update: (id: string, data: UpdateContactRequest) =>
-    apiFetch<{ data: Contact }>(`/contacts/${id}`, {
+    apiFetch<ContactDto>(`/contacts/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }, true),
 
   delete: (id: string) =>
-    apiFetch<{ message: string }>(`/contacts/${id}`, {
+    apiFetch<void>(`/contacts/${id}`, {
       method: 'DELETE',
     }, true),
 
   setDefault: (id: string) =>
-    apiFetch<{ data: Contact }>(`/contacts/${id}/default`, {
-      method: 'POST',
+    apiFetch<ContactDto>(`/contacts/${id}/set-default`, {
+      method: 'PUT',
     }, true),
 };
 
@@ -527,24 +537,31 @@ export const ordersApi = {
     apiFetch<{ data: Order }>(`/orders/${id}`, {}, true),
 };
 
-// ============ PROVINCES API ============
-export interface Province {
-  id: string;
-  name: string;
+// ============ GEOGRAPHY API ============
+export interface ProvinceListResponse {
+  provinces: string[];
+  total: number;
 }
 
-export interface Municipality {
-  id: string;
-  name: string;
-  province_id: string;
+export interface MunicipalityListResponse {
+  municipalities: string[];
+  province: string | null;
+  total: number;
 }
 
-export const locationsApi = {
+export const geoApi = {
   getProvinces: () =>
-    apiFetch<{ data: Province[] }>('/locations/provinces'),
+    apiFetch<ProvinceListResponse>('/geo/provinces'),
 
-  getMunicipalities: (province_id: string) =>
-    apiFetch<{ data: Municipality[] }>(`/locations/provinces/${province_id}/municipalities`),
+  getMunicipalities: (province?: string) => {
+    const params = province ? `?province=${encodeURIComponent(province)}` : '';
+    return apiFetch<MunicipalityListResponse>(`/geo/municipalities${params}`);
+  },
+
+  getProvinceOfMunicipality: (municipality: string) =>
+    apiFetch<{ municipality: string; province: string | null; found: boolean }>(
+      `/geo/municipalities/${encodeURIComponent(municipality)}/province`
+    ),
 };
 
 // ============ RECHARGES API ============

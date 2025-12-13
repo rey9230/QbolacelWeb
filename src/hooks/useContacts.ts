@@ -1,5 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { contactsApi, type Contact, type CreateContactRequest, type UpdateContactRequest } from "@/lib/api";
+import { 
+  contactsApi, 
+  type ContactDto, 
+  type CreateContactRequest, 
+  type UpdateContactRequest,
+  type ContactListResponse 
+} from "@/lib/api";
 import { useAuthStore } from "@/stores/auth.store";
 import { toast } from "sonner";
 
@@ -10,7 +16,7 @@ export function useContacts() {
     queryKey: ["contacts"],
     queryFn: async () => {
       const response = await contactsApi.getAll();
-      return response.data;
+      return response;
     },
     enabled: isAuthenticated,
     staleTime: 1000 * 60 * 2, // 2 minutes
@@ -24,7 +30,7 @@ export function useContact(id: string) {
     queryKey: ["contact", id],
     queryFn: async () => {
       const response = await contactsApi.getById(id);
-      return response.data;
+      return response;
     },
     enabled: isAuthenticated && !!id,
   });
@@ -99,4 +105,4 @@ export function useSetDefaultContact() {
   });
 }
 
-export type { Contact, CreateContactRequest, UpdateContactRequest };
+export type { ContactDto, CreateContactRequest, UpdateContactRequest, ContactListResponse };

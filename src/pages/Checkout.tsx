@@ -16,27 +16,23 @@ import {
   Shield,
   Minus,
   Plus,
-  Trash2
+  Trash2,
+  Edit2,
+  Star
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { LocationContactSelector } from "@/components/checkout/LocationContactSelector";
 import { useCartStore } from "@/stores/cart.store";
 import { useAuthStore } from "@/stores/auth.store";
+import { type ContactDto } from "@/hooks/useContacts";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-const provinces = [
-  "La Habana", "Pinar del Río", "Artemisa", "Mayabeque", "Matanzas",
-  "Cienfuegos", "Villa Clara", "Sancti Spíritus", "Ciego de Ávila",
-  "Camagüey", "Las Tunas", "Holguín", "Granma", "Santiago de Cuba",
-  "Guantánamo", "Isla de la Juventud"
-];
 
 const paymentMethods = [
   { 
@@ -75,6 +71,8 @@ export default function Checkout() {
   const { isAuthenticated, openAuthModal } = useAuthStore();
   const [currentStep, setCurrentStep] = useState<Step>("cart");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isContactSelectorOpen, setIsContactSelectorOpen] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<ContactDto | null>(null);
 
   const [shippingData, setShippingData] = useState({
     fullName: "",
@@ -83,6 +81,7 @@ export default function Checkout() {
     province: "",
     municipality: "",
     address: "",
+    betweenStreets: "",
     notes: "",
     shippingMethod: "standard",
   });
@@ -102,6 +101,19 @@ export default function Checkout() {
       return;
     }
     setCurrentStep(step);
+  };
+
+  const handleContactSelect = (contact: ContactDto) => {
+    setSelectedContact(contact);
+    setShippingData({
+      ...shippingData,
+      fullName: contact.fullName,
+      phone: contact.phone,
+      province: contact.province,
+      municipality: contact.municipality,
+      address: contact.street,
+      betweenStreets: contact.betweenStreets || "",
+    });
   };
 
   const handlePlaceOrder = async () => {
@@ -301,41 +313,71 @@ export default function Checkout() {
               <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
                   <div className="bg-card border border-border rounded-xl p-6">
-                    <h2 className="font-bold mb-4 flex items-center gap-2">
-                      <MapPin className="h-5 w-5 text-primary" />
-                      Dirección de entrega en Cuba
-                    </h2>
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="font-bold flex items-center gap-2">
+                        <MapPin className="h-5 w-5 text-primary" />
+                        Dirección de entrega en Cuba
+                      </h2>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => setIsContactSelectorOpen(true)}
+                      >
+                        {selectedContact ? (
+                          <>
+                            <Edit2 className="h-4 w-4" />
+                            Cambiar
+                          </>
+                        ) : (
+                          <>
+                            <MapPin className="h-4 w-4" />
+                            Seleccionar
+                          </>
+                        )}
+                      </Button>
+                    </div>
 
-                    <div className="grid gap-4">
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="fullName">Nombre completo del destinatario</Label>
-                          <div className="relative">
-                            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              id="fullName"
-                              className="pl-10"
-                              placeholder="Nombre y apellidos"
-                              value={shippingData.fullName}
-                              onChange={(e) => setShippingData({ ...shippingData, fullName: e.target.value })}
-                            />
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="phone">Teléfono de contacto</Label>
-                          <div className="relative">
-                            <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              id="phone"
-                              className="pl-10"
-                              placeholder="+53 5X XXX XXXX"
-                              value={shippingData.phone}
-                              onChange={(e) => setShippingData({ ...shippingData, phone: e.target.value })}
-                            />
+                    {selectedContact ? (
+                      <div className="p-4 bg-muted/50 rounded-xl border border-border mb-4">
+                        <div className="flex items-start gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-semibold">{selectedContact.fullName}</h4>
+                              {selectedContact.isDefault && (
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-primary">
+                                  <Star className="h-3 w-3 fill-current" />
+                                  Principal
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {selectedContact.street}
+                              {selectedContact.betweenStreets && `, ${selectedContact.betweenStreets}`}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {selectedContact.municipality}, {selectedContact.province}
+                            </p>
+                            <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
+                              <Phone className="h-3 w-3" />
+                              {selectedContact.phone}
+                            </p>
                           </div>
                         </div>
                       </div>
+                    ) : (
+                      <div 
+                        className="p-6 border-2 border-dashed border-border rounded-xl text-center cursor-pointer hover:border-primary/50 transition-colors mb-4"
+                        onClick={() => setIsContactSelectorOpen(true)}
+                      >
+                        <MapPin className="h-8 w-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-muted-foreground">
+                          Selecciona o crea una dirección de entrega
+                        </p>
+                      </div>
+                    )}
 
+                    <div className="space-y-4">
                       <div className="space-y-2">
                         <Label htmlFor="email">Correo electrónico</Label>
                         <div className="relative">
@@ -349,46 +391,9 @@ export default function Checkout() {
                             onChange={(e) => setShippingData({ ...shippingData, email: e.target.value })}
                           />
                         </div>
-                      </div>
-
-                      <div className="grid sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label>Provincia</Label>
-                          <Select
-                            value={shippingData.province}
-                            onValueChange={(value) => setShippingData({ ...shippingData, province: value })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Seleccionar provincia" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {provinces.map((province) => (
-                                <SelectItem key={province} value={province}>
-                                  {province}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="municipality">Municipio</Label>
-                          <Input
-                            id="municipality"
-                            placeholder="Municipio"
-                            value={shippingData.municipality}
-                            onChange={(e) => setShippingData({ ...shippingData, municipality: e.target.value })}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="address">Dirección completa</Label>
-                        <Textarea
-                          id="address"
-                          placeholder="Calle, número, entre calles, reparto..."
-                          value={shippingData.address}
-                          onChange={(e) => setShippingData({ ...shippingData, address: e.target.value })}
-                        />
+                        <p className="text-xs text-muted-foreground">
+                          Para enviarte confirmación y actualizaciones del pedido
+                        </p>
                       </div>
 
                       <div className="space-y-2">
@@ -694,6 +699,14 @@ export default function Checkout() {
       </div>
 
       {currentStep !== "confirmation" && <Footer />}
+
+      {/* Location Contact Selector Dialog */}
+      <LocationContactSelector
+        open={isContactSelectorOpen}
+        onOpenChange={setIsContactSelectorOpen}
+        onSelect={handleContactSelect}
+        selectedContactId={selectedContact?.id}
+      />
     </div>
   );
 }
