@@ -1,63 +1,10 @@
 import { motion } from "framer-motion";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ProductCard, Product } from "@/components/products/ProductCard";
-
-const featuredProducts: Product[] = [
-  {
-    id: "1",
-    name: "Combo Familiar Premium",
-    description: "Arroz, aceite, pasta y más productos esenciales",
-    price: 89.99,
-    currency: "USD",
-    image: "https://images.unsplash.com/photo-1543168256-418811576931?w=400&h=400&fit=crop",
-    stock: 15,
-    vendor_id: "v1",
-    vendor_name: "Tienda Cuba",
-    category: "Alimentos",
-    isPopular: true,
-  },
-  {
-    id: "2",
-    name: "Kit de Aseo Personal",
-    description: "Jabón, champú, pasta dental y más",
-    price: 45.50,
-    currency: "USD",
-    image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop",
-    stock: 23,
-    vendor_id: "v2",
-    vendor_name: "Productos Cubanos",
-    category: "Higiene",
-    isNew: true,
-  },
-  {
-    id: "3",
-    name: "Electrodoméstico Multifunción",
-    description: "Licuadora, procesador y batidora en uno",
-    price: 159.00,
-    currency: "USD",
-    image: "https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=400&h=400&fit=crop",
-    stock: 8,
-    vendor_id: "v3",
-    vendor_name: "ElectroCuba",
-    category: "Electrodomésticos",
-  },
-  {
-    id: "4",
-    name: "Pack Medicamentos Básicos",
-    description: "Analgésicos, vitaminas y suplementos",
-    price: 65.00,
-    currency: "USD",
-    image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop",
-    stock: 50,
-    vendor_id: "v4",
-    vendor_name: "FarmaCuba",
-    category: "Salud",
-    isPopular: true,
-  },
-];
+import { ProductCard } from "@/components/products/ProductCard";
+import { useProducts } from "@/hooks/useProducts";
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -73,6 +20,14 @@ const itemVariants = {
 };
 
 export function MarketplacePreview() {
+  // Fetch featured/popular products
+  const { data, isLoading } = useProducts({ 
+    pageSize: 4, 
+    sort: 'salesCount:desc' 
+  });
+
+  const featuredProducts = data?.data || [];
+
   return (
     <section className="py-16">
       <div className="container mx-auto px-4">
@@ -104,19 +59,29 @@ export function MarketplacePreview() {
         </motion.div>
 
         {/* Products Grid */}
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-        >
-          {featuredProducts.map((product) => (
-            <motion.div key={product.id} variants={itemVariants}>
-              <ProductCard product={product} />
-            </motion.div>
-          ))}
-        </motion.div>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : featuredProducts.length > 0 ? (
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+          >
+            {featuredProducts.map((product) => (
+              <motion.div key={product.id} variants={itemVariants}>
+                <ProductCard product={product} />
+              </motion.div>
+            ))}
+          </motion.div>
+        ) : (
+          <div className="text-center py-12 text-muted-foreground">
+            No hay productos destacados disponibles
+          </div>
+        )}
       </div>
     </section>
   );

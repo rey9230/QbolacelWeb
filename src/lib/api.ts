@@ -377,74 +377,109 @@ export const contactsApi = {
 };
 
 // ============ PRODUCTS API ============
-export interface Product {
-  id: string;
-  name: string;
-  slug: string;
-  description: string;
-  price: number;
+export interface Money {
+  amount: number;
   currency: string;
-  stock: number;
-  images: string[];
-  category_id: string;
-  category_name: string;
-  vendor_id: string;
-  vendor_name: string;
-  rating: number;
-  reviews_count: number;
-  created_at: string;
 }
 
-export interface ProductsResponse {
-  data: Product[];
-  meta: {
-    current_page: number;
-    last_page: number;
-    per_page: number;
-    total: number;
-  };
+export interface Promotion {
+  type: string;
+  amount: number;
+  startsAt?: string;
+  endsAt?: string;
+}
+
+export interface Product {
+  id: string;
+  sku: string;
+  name: string;
+  slug: string;
+  description?: string;
+  price: Money;
+  stock: number;
+  stockStatus: 'IN_STOCK' | 'OUT_OF_STOCK' | 'BACKORDER';
+  categoryIds: string[];
+  pictures: string[];
+  primaryImage?: string;
+  attributes: Record<string, string>;
+  isPublished: boolean;
+  isFeatured: boolean;
+  metaTitle?: string;
+  metaDescription?: string;
+  tags: string[];
+  promotions: Promotion[];
+  relatedProductIds: string[];
+  upsellProductIds: string[];
+  agencyId?: string;
+  salesCount: number;
+  rating: number;
+  reviewsCount: number;
+}
+
+export interface ProductDetailResponse {
+  product: Product;
+  similar: Product[];
+}
+
+export interface PageResponse<T> {
+  success: boolean;
+  page: number;
+  pageSize: number;
+  totalCount: number;
+  totalPages: number;
+  data: T[];
 }
 
 export interface ProductFilters {
   page?: number;
-  per_page?: number;
-  search?: string;
-  category_id?: string;
-  min_price?: number;
-  max_price?: number;
-  sort_by?: 'price_asc' | 'price_desc' | 'newest' | 'popular';
+  pageSize?: number;
+  q?: string;
+  category?: string;
+  priceMin?: number;
+  priceMax?: number;
+  tag?: string;
+  stock?: string;
+  sort?: string;
 }
 
 export const productsApi = {
   getAll: (filters: ProductFilters = {}) => {
     const params = new URLSearchParams();
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value !== undefined && value !== '') {
-        params.append(key, String(value));
-      }
-    });
-    return apiFetch<ProductsResponse>(`/products?${params.toString()}`);
+    if (filters.page) params.append('page', String(filters.page));
+    if (filters.pageSize) params.append('pageSize', String(filters.pageSize));
+    if (filters.q) params.append('q', filters.q);
+    if (filters.category) params.append('category', filters.category);
+    if (filters.priceMin !== undefined) params.append('priceMin', String(filters.priceMin));
+    if (filters.priceMax !== undefined) params.append('priceMax', String(filters.priceMax));
+    if (filters.tag) params.append('tag', filters.tag);
+    if (filters.stock) params.append('stock', filters.stock);
+    if (filters.sort) params.append('sort', filters.sort);
+    
+    return apiFetch<PageResponse<Product>>(`/products/offset?${params.toString()}`);
   },
 
-  getById: (id: string) =>
-    apiFetch<{ data: Product }>(`/products/${id}`),
-
-  getBySlug: (slug: string) =>
-    apiFetch<{ data: Product }>(`/products/slug/${slug}`),
+  getById: (id: string, similarLimit = 4) =>
+    apiFetch<ProductDetailResponse>(`/products/${id}?similarLimit=${similarLimit}`),
 };
 
 // ============ CATEGORIES API ============
 export interface Category {
   id: string;
+  code?: string;
   name: string;
   slug: string;
-  image?: string;
-  products_count: number;
+  description?: string;
+  hasChild: boolean;
+  iconUrl?: string;
+  pictures: string[];
+  parentId?: string;
+  order: number;
+  isActive: boolean;
 }
 
 export const categoriesApi = {
   getAll: () =>
-    apiFetch<{ data: Category[] }>('/categories'),
+    apiFetch<Category[]>('/categories'),
 };
 
 // ============ CART API ============

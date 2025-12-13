@@ -1,26 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ShoppingCart, Eye, Loader2 } from "lucide-react";
+import { ShoppingCart, Eye, Loader2, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useCartStore } from "@/stores/cart.store";
 import { useToast } from "@/hooks/use-toast";
-
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  currency: string;
-  image: string;
-  stock: number;
-  vendor_id: string;
-  vendor_name: string;
-  category?: string;
-  isNew?: boolean;
-  isPopular?: boolean;
-}
+import { Product } from "@/lib/api";
 
 interface ProductCardProps {
   product: Product;
@@ -31,6 +17,23 @@ export function ProductCard({ product }: ProductCardProps) {
   const { toast } = useToast();
   const [isAdding, setIsAdding] = useState(false);
 
+  const imageUrl = product.primaryImage || product.pictures[0] || '/placeholder.svg';
+  const isOutOfStock = product.stockStatus === 'OUT_OF_STOCK';
+  const isLowStock = product.stock <= 5 && product.stock > 0;
+
+  // Calculate discount from promotions
+  const activePromotion = product.promotions.find(p => {
+    if (!p.startsAt && !p.endsAt) return true;
+    const now = new Date();
+    const starts = p.startsAt ? new Date(p.startsAt) : null;
+    const ends = p.endsAt ? new Date(p.endsAt) : null;
+    if (starts && now < starts) return false;
+    if (ends && now > ends) return false;
+    return true;
+  });
+
+  const discountPercent = activePromotion?.type === 'percentage' ? activePromotion.amount : null;
+
   const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
@@ -40,12 +43,12 @@ export function ProductCard({ product }: ProductCardProps) {
       await addItem({
         productId: product.id,
         name: product.name,
-        image: product.image,
-        price: product.price,
-        currency: product.currency,
+        image: imageUrl,
+        price: product.price.amount,
+        currency: product.price.currency,
         stock: product.stock,
-        vendorId: product.vendor_id,
-        vendorName: product.vendor_name,
+        vendorId: product.agencyId || '',
+        vendorName: '', // Agency name not available in Product, will be enriched by cart
       });
 
       toast({
@@ -74,16 +77,26 @@ export function ProductCard({ product }: ProductCardProps) {
           {/* Image Container */}
           <div className="relative aspect-square overflow-hidden bg-muted">
             <img
-              src={product.image}
+              src={imageUrl}
               alt={product.name}
               className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
             />
             
             {/* Badges */}
             <div className="absolute top-3 left-3 flex flex-col gap-2">
-              {product.isNew && <Badge variant="new">Nuevo</Badge>}
-              {product.isPopular && <Badge variant="popular">Popular</Badge>}
+              {product.isFeatured && <Badge variant="popular">Destacado</Badge>}
+              {discountPercent && (
+                <Badge variant="destructive">-{discountPercent}%</Badge>
+              )}
             </div>
+
+            {/* Rating badge */}
+            {product.rating > 0 && (
+              <div className="absolute top-3 right-3 flex items-center gap-1 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-full text-xs">
+                <Star className="h-3 w-3 text-warning fill-warning" />
+                <span className="font-medium">{product.rating.toFixed(1)}</span>
+              </div>
+            )}
 
             {/* Quick Actions Overlay */}
             <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
@@ -102,10 +115,10 @@ export function ProductCard({ product }: ProductCardProps) {
 
           {/* Content */}
           <div className="p-4">
-            {/* Category */}
-            {product.category && (
+            {/* Tags as category */}
+            {product.tags.length > 0 && (
               <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                {product.category}
+                {product.tags[0]}
               </span>
             )}
 
@@ -114,19 +127,21 @@ export function ProductCard({ product }: ProductCardProps) {
               {product.name}
             </h3>
 
-            {/* Vendor */}
-            <p className="text-sm text-muted-foreground mt-1">
-              {product.vendor_name}
-            </p>
+            {/* Sales count */}
+            {product.salesCount > 0 && (
+              <p className="text-sm text-muted-foreground mt-1">
+                {product.salesCount} vendidos
+              </p>
+            )}
 
             {/* Price and Cart */}
             <div className="flex items-center justify-between mt-3">
               <div>
                 <span className="text-lg font-bold text-primary">
-                  ${product.price.toFixed(2)}
+                  ${product.price.amount.toFixed(2)}
                 </span>
                 <span className="text-sm text-muted-foreground ml-1">
-                  {product.currency}
+                  {product.price.currency}
                 </span>
               </div>
 
@@ -134,7 +149,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 variant="gradient"
                 size="icon-sm"
                 onClick={handleAddToCart}
-                disabled={product.stock === 0 || isAdding}
+                disabled={isOutOfStock || isAdding}
               >
                 {isAdding ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -145,12 +160,12 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
 
             {/* Stock Status */}
-            {product.stock <= 5 && product.stock > 0 && (
+            {isLowStock && (
               <p className="text-xs text-warning mt-2">
                 ¡Solo quedan {product.stock}!
               </p>
             )}
-            {product.stock === 0 && (
+            {isOutOfStock && (
               <p className="text-xs text-destructive mt-2">
                 Agotado
               </p>

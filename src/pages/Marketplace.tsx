@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, SlidersHorizontal, Smartphone, X, MapPin, User } from "lucide-react";
+import { Search, Filter, SlidersHorizontal, Smartphone, X, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -14,7 +14,6 @@ import {
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ProductGrid } from "@/components/products/ProductGrid";
-import { Product } from "@/components/products/ProductCard";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 import { useLocationStore } from "@/stores/location.store";
@@ -22,123 +21,15 @@ import { useProfile } from "@/hooks/useProfile";
 import { LocationSelectorModal } from "@/components/location/LocationSelectorModal";
 import { LocationContactSelector } from "@/components/checkout/LocationContactSelector";
 import { ContactDto } from "@/hooks/useContacts";
-
-// Sample products data
-const allProducts: Product[] = [
-  {
-    id: "1",
-    name: "Combo Familiar Premium",
-    description: "Arroz, aceite, pasta y más productos esenciales",
-    price: 89.99,
-    currency: "USD",
-    image: "https://images.unsplash.com/photo-1543168256-418811576931?w=400&h=400&fit=crop",
-    stock: 15,
-    vendor_id: "v1",
-    vendor_name: "Tienda Cuba",
-    category: "Alimentos",
-    isPopular: true,
-  },
-  {
-    id: "2",
-    name: "Kit de Aseo Personal",
-    description: "Jabón, champú, pasta dental y más",
-    price: 45.50,
-    currency: "USD",
-    image: "https://images.unsplash.com/photo-1556228720-195a672e8a03?w=400&h=400&fit=crop",
-    stock: 23,
-    vendor_id: "v2",
-    vendor_name: "Productos Cubanos",
-    category: "Higiene",
-    isNew: true,
-  },
-  {
-    id: "3",
-    name: "Electrodoméstico Multifunción",
-    description: "Licuadora, procesador y batidora en uno",
-    price: 159.00,
-    currency: "USD",
-    image: "https://images.unsplash.com/photo-1570222094114-d054a817e56b?w=400&h=400&fit=crop",
-    stock: 8,
-    vendor_id: "v3",
-    vendor_name: "ElectroCuba",
-    category: "Electrodomésticos",
-  },
-  {
-    id: "4",
-    name: "Pack Medicamentos Básicos",
-    description: "Analgésicos, vitaminas y suplementos",
-    price: 65.00,
-    currency: "USD",
-    image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=400&h=400&fit=crop",
-    stock: 50,
-    vendor_id: "v4",
-    vendor_name: "FarmaCuba",
-    category: "Salud",
-    isPopular: true,
-  },
-  {
-    id: "5",
-    name: "Ropa Casual Unisex",
-    description: "Camisetas, shorts y accesorios",
-    price: 55.00,
-    currency: "USD",
-    image: "https://images.unsplash.com/photo-1489987707025-afc232f7ea0f?w=400&h=400&fit=crop",
-    stock: 30,
-    vendor_id: "v5",
-    vendor_name: "ModaCuba",
-    category: "Ropa",
-    isNew: true,
-  },
-  {
-    id: "6",
-    name: "Set de Cocina Completo",
-    description: "Ollas, sartenes y utensilios",
-    price: 125.00,
-    currency: "USD",
-    image: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=400&fit=crop",
-    stock: 12,
-    vendor_id: "v1",
-    vendor_name: "Tienda Cuba",
-    category: "Hogar",
-  },
-  {
-    id: "7",
-    name: "Combo Bebé Premium",
-    description: "Pañales, leche y productos para bebé",
-    price: 95.00,
-    currency: "USD",
-    image: "https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?w=400&h=400&fit=crop",
-    stock: 20,
-    vendor_id: "v2",
-    vendor_name: "Productos Cubanos",
-    category: "Bebé",
-    isPopular: true,
-  },
-  {
-    id: "8",
-    name: "Teléfono Móvil Básico",
-    description: "Smartphone económico con buena batería",
-    price: 199.00,
-    currency: "USD",
-    image: "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=400&h=400&fit=crop",
-    stock: 5,
-    vendor_id: "v3",
-    vendor_name: "ElectroCuba",
-    category: "Electrónica",
-  },
-];
-
-const categories = [
-  "Todos",
-  "Alimentos",
-  "Higiene",
-  "Electrodomésticos",
-  "Salud",
-  "Ropa",
-  "Hogar",
-  "Bebé",
-  "Electrónica",
-];
+import { useProducts, useCategories } from "@/hooks/useProducts";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 const Marketplace = () => {
   const { isAuthenticated } = useAuthStore();
@@ -146,14 +37,36 @@ const Marketplace = () => {
   const { data: profile } = useProfile();
   
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState("popular");
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
   
   // Location modals
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showContactSelector, setShowContactSelector] = useState(false);
   const [selectedContact, setSelectedContact] = useState<ContactDto | null>(null);
+
+  // Map frontend sort values to backend sort format
+  const sortMapping: Record<string, string> = {
+    'popular': 'salesCount:desc',
+    'newest': 'createdAt:desc',
+    'price-asc': 'price:asc',
+    'price-desc': 'price:desc',
+  };
+
+  // Fetch products from API
+  const { data: productsData, isLoading: productsLoading } = useProducts({
+    page: currentPage,
+    pageSize,
+    q: searchQuery || undefined,
+    category: selectedCategory !== 'all' ? selectedCategory : undefined,
+    sort: sortMapping[sortBy] || undefined,
+  });
+
+  // Fetch categories from API
+  const { data: categories, isLoading: categoriesLoading } = useCategories();
 
   // Determine if user needs to select location
   const userHasLocation = isAuthenticated 
@@ -170,6 +83,11 @@ const Marketplace = () => {
       }
     }
   }, [userHasLocation, isAuthenticated]);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, selectedCategory, sortBy]);
 
   // Current location/contact display info
   const displayInfo = (() => {
@@ -191,28 +109,13 @@ const Marketplace = () => {
     };
   })();
 
-  // Filter and sort products
-  const filteredProducts = allProducts
-    .filter((product) => {
-      const matchesSearch = product.name
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase());
-      const matchesCategory =
-        selectedCategory === "Todos" || product.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    })
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "price-asc":
-          return a.price - b.price;
-        case "price-desc":
-          return b.price - a.price;
-        case "newest":
-          return a.isNew ? -1 : 1;
-        default: // popular
-          return a.isPopular ? -1 : 1;
-      }
-    });
+  const products = productsData?.data || [];
+  const totalPages = productsData?.totalPages || 1;
+  const totalCount = productsData?.totalCount || 0;
+
+  const handleCategoryClick = (categoryId: string) => {
+    setSelectedCategory(categoryId);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -245,21 +148,37 @@ const Marketplace = () => {
               {/* Categories */}
               <div className="card-elevated p-5">
                 <h3 className="font-semibold mb-4">Categorías</h3>
-                <div className="space-y-2">
-                  {categories.map((category) => (
+                {categoriesLoading ? (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
                     <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
+                      onClick={() => handleCategoryClick('all')}
                       className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
-                        selectedCategory === category
+                        selectedCategory === 'all'
                           ? "bg-primary text-primary-foreground"
                           : "text-muted-foreground hover:bg-muted"
                       }`}
                     >
-                      {category}
+                      Todos
                     </button>
-                  ))}
-                </div>
+                    {categories?.map((category) => (
+                      <button
+                        key={category.id}
+                        onClick={() => handleCategoryClick(category.id)}
+                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${
+                          selectedCategory === category.id
+                            ? "bg-primary text-primary-foreground"
+                            : "text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </aside>
@@ -346,14 +265,21 @@ const Marketplace = () => {
                     </Button>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {categories.map((category) => (
+                    <Badge
+                      variant={selectedCategory === 'all' ? "default" : "outline"}
+                      className="cursor-pointer"
+                      onClick={() => handleCategoryClick('all')}
+                    >
+                      Todos
+                    </Badge>
+                    {categories?.map((category) => (
                       <Badge
-                        key={category}
-                        variant={selectedCategory === category ? "default" : "outline"}
+                        key={category.id}
+                        variant={selectedCategory === category.id ? "default" : "outline"}
                         className="cursor-pointer"
-                        onClick={() => setSelectedCategory(category)}
+                        onClick={() => handleCategoryClick(category.id)}
                       >
-                        {category}
+                        {category.name}
                       </Badge>
                     ))}
                   </div>
@@ -362,13 +288,13 @@ const Marketplace = () => {
             )}
 
             {/* Active Filters */}
-            {(selectedCategory !== "Todos" || searchQuery) && (
+            {(selectedCategory !== 'all' || searchQuery) && (
               <div className="flex flex-wrap items-center gap-2 mb-6">
                 <span className="text-sm text-muted-foreground">Filtros:</span>
-                {selectedCategory !== "Todos" && (
+                {selectedCategory !== 'all' && (
                   <Badge variant="secondary" className="gap-1">
-                    {selectedCategory}
-                    <button onClick={() => setSelectedCategory("Todos")}>
+                    {categories?.find(c => c.id === selectedCategory)?.name || selectedCategory}
+                    <button onClick={() => setSelectedCategory('all')}>
                       <X className="h-3 w-3" />
                     </button>
                   </Badge>
@@ -386,12 +312,67 @@ const Marketplace = () => {
 
             {/* Results Count */}
             <p className="text-sm text-muted-foreground mb-6">
-              {filteredProducts.length} productos encontrados
+              {totalCount} productos encontrados
             </p>
 
-            {/* Product Grid */}
-            {filteredProducts.length > 0 ? (
-              <ProductGrid products={filteredProducts} />
+            {/* Loading State */}
+            {productsLoading ? (
+              <div className="flex justify-center items-center py-20">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : products.length > 0 ? (
+              <>
+                {/* Product Grid */}
+                <ProductGrid products={products} />
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="mt-8 flex justify-center">
+                    <Pagination>
+                      <PaginationContent>
+                        <PaginationItem>
+                          <PaginationPrevious 
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                        
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum: number;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+                          
+                          return (
+                            <PaginationItem key={pageNum}>
+                              <PaginationLink
+                                onClick={() => setCurrentPage(pageNum)}
+                                isActive={currentPage === pageNum}
+                                className="cursor-pointer"
+                              >
+                                {pageNum}
+                              </PaginationLink>
+                            </PaginationItem>
+                          );
+                        })}
+                        
+                        <PaginationItem>
+                          <PaginationNext 
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
+                          />
+                        </PaginationItem>
+                      </PaginationContent>
+                    </Pagination>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-12">
                 <p className="text-muted-foreground mb-4">
@@ -401,7 +382,7 @@ const Marketplace = () => {
                   variant="outline"
                   onClick={() => {
                     setSearchQuery("");
-                    setSelectedCategory("Todos");
+                    setSelectedCategory('all');
                   }}
                 >
                   Limpiar filtros
