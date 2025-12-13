@@ -93,6 +93,22 @@ async function getValidToken(): Promise<string | null> {
   return token;
 }
 
+// Helper to get location from localStorage
+const getLocationState = (): { municipality: string | null } => {
+  try {
+    const locationState = localStorage.getItem('qbolacel-location');
+    if (locationState) {
+      const parsed = JSON.parse(locationState);
+      return {
+        municipality: parsed.state?.municipality || null,
+      };
+    }
+  } catch {
+    return { municipality: null };
+  }
+  return { municipality: null };
+};
+
 // Base fetch wrapper with auth handling and automatic token refresh
 async function apiFetch<T>(
   endpoint: string,
@@ -103,6 +119,12 @@ async function apiFetch<T>(
     'Content-Type': 'application/json',
     ...options.headers,
   };
+
+  // Add municipality header if available
+  const { municipality } = getLocationState();
+  if (municipality) {
+    (headers as Record<string, string>)['X-Municipality'] = municipality;
+  }
 
   let { token } = getAuthState();
   if (requiresAuth || token) {
@@ -174,8 +196,8 @@ export interface UserProfile {
   email: string;
   phone?: string;
   avatar?: string;
-  province_id?: string;
-  municipality_id?: string;
+  province?: string;
+  municipality?: string;
   address?: string;
   created_at?: string;
 }
@@ -183,8 +205,7 @@ export interface UserProfile {
 export interface UpdateProfileRequest {
   name?: string;
   phone?: string;
-  province_id?: string;
-  municipality_id?: string;
+  municipality?: string;
   address?: string;
 }
 

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, SlidersHorizontal, Smartphone, X } from "lucide-react";
+import { Search, Filter, SlidersHorizontal, Smartphone, X, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +16,11 @@ import { Footer } from "@/components/layout/Footer";
 import { ProductGrid } from "@/components/products/ProductGrid";
 import { Product } from "@/components/products/ProductCard";
 import { Link } from "react-router-dom";
+import { useAuthStore } from "@/stores/auth.store";
+import { useLocationStore } from "@/stores/location.store";
+import { useProfile } from "@/hooks/useProfile";
+import { LocationSelectorModal } from "@/components/location/LocationSelectorModal";
+import { LocationContactSelector } from "@/components/checkout/LocationContactSelector";
 
 // Sample products data
 const allProducts: Product[] = [
@@ -135,10 +140,39 @@ const categories = [
 ];
 
 const Marketplace = () => {
+  const { isAuthenticated } = useAuthStore();
+  const { municipality, province, hasLocation } = useLocationStore();
+  const { data: profile } = useProfile();
+  
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [sortBy, setSortBy] = useState("popular");
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Location modals
+  const [showLocationModal, setShowLocationModal] = useState(false);
+  const [showContactSelector, setShowContactSelector] = useState(false);
+
+  // Determine if user needs to select location
+  const userHasLocation = isAuthenticated 
+    ? !!(profile?.municipality || municipality) 
+    : hasLocation();
+
+  // Show location modal on mount if no location
+  useEffect(() => {
+    if (!userHasLocation) {
+      if (isAuthenticated) {
+        setShowContactSelector(true);
+      } else {
+        setShowLocationModal(true);
+      }
+    }
+  }, [userHasLocation, isAuthenticated]);
+
+  // Current location display
+  const currentLocation = isAuthenticated && profile?.municipality
+    ? { municipality: profile.municipality, province: profile.province }
+    : { municipality, province };
 
   // Filter and sort products
   const filteredProducts = allProducts
@@ -173,9 +207,22 @@ const Marketplace = () => {
           <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
             Marketplace Qbolacel
           </h1>
-          <p className="text-primary-foreground/80 text-lg max-w-2xl mx-auto">
+          <p className="text-primary-foreground/80 text-lg max-w-2xl mx-auto mb-4">
             Envía productos a tu familia en Cuba. Miles de artículos disponibles con entrega garantizada.
           </p>
+          
+          {/* Location indicator */}
+          {currentLocation.municipality && (
+            <Button
+              variant="secondary"
+              size="sm"
+              className="gap-2"
+              onClick={() => isAuthenticated ? setShowContactSelector(true) : setShowLocationModal(true)}
+            >
+              <MapPin className="h-4 w-4" />
+              <span>{currentLocation.municipality}, {currentLocation.province}</span>
+            </Button>
+          )}
         </div>
       </section>
 
@@ -352,6 +399,23 @@ const Marketplace = () => {
       </div>
 
       <Footer />
+
+      {/* Location Modal for non-authenticated users */}
+      <LocationSelectorModal
+        open={showLocationModal}
+        onOpenChange={setShowLocationModal}
+        allowClose={userHasLocation}
+      />
+
+      {/* Contact Selector for authenticated users */}
+      <LocationContactSelector
+        open={showContactSelector}
+        onOpenChange={setShowContactSelector}
+        onSelect={(contact) => {
+          // When a contact is selected, we can use its location
+          setShowContactSelector(false);
+        }}
+      />
     </div>
   );
 };
