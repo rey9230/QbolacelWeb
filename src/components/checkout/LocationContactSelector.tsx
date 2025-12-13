@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin,
@@ -42,6 +43,7 @@ interface LocationContactSelectorProps {
   onOpenChange: (open: boolean) => void;
   onSelect: (contact: ContactDto) => void;
   selectedContactId?: string;
+  redirectOnClose?: string;
 }
 
 type View = "list" | "create";
@@ -60,7 +62,9 @@ export function LocationContactSelector({
   onOpenChange,
   onSelect,
   selectedContactId,
+  redirectOnClose,
 }: LocationContactSelectorProps) {
+  const navigate = useNavigate();
   const { data: contactsData, isLoading: isLoadingContacts } = useContacts();
   const { data: provinces, isLoading: isLoadingProvinces } = useProvinces();
   const createContact = useCreateContact();
@@ -109,6 +113,13 @@ export function LocationContactSelector({
     });
   };
 
+  const handleClose = () => {
+    onOpenChange(false);
+    if (redirectOnClose) {
+      navigate(redirectOnClose);
+    }
+  };
+
   const handleConfirmSelection = () => {
     const selectedContact = contacts.find((c) => c.id === localSelectedId);
     if (selectedContact) {
@@ -124,7 +135,7 @@ export function LocationContactSelector({
     formData.municipality;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -364,7 +375,7 @@ export function LocationContactSelector({
         <DialogFooter className="mt-4">
           {view === "list" ? (
             <>
-              <Button variant="outline" onClick={() => onOpenChange(false)}>
+              <Button variant="outline" onClick={handleClose}>
                 Cancelar
               </Button>
               <Button
