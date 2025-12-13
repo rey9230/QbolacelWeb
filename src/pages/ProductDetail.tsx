@@ -197,60 +197,78 @@ export default function ProductDetail() {
               animate={{ opacity: 1, x: 0 }}
               className="space-y-6"
             >
-              {/* Tags & Badges */}
+              {/* Category & Tags */}
               <div className="flex items-center gap-2 flex-wrap">
-                {product.tags.slice(0, 2).map((tag) => (
-                  <Badge key={tag} variant="secondary">{tag}</Badge>
+                {product.tags.slice(0, 3).map((tag) => (
+                  <Badge key={tag} variant="secondary" className="text-xs">{tag}</Badge>
                 ))}
-                {product.isFeatured && <Badge variant="gradient">Destacado</Badge>}
+                {product.isFeatured && (
+                  <Badge className="bg-gradient-to-r from-primary to-accent text-primary-foreground">
+                    ⭐ Destacado
+                  </Badge>
+                )}
               </div>
 
               {/* Title */}
-              <h1 className="text-3xl md:text-4xl font-bold">
+              <h1 className="text-3xl md:text-4xl font-bold leading-tight">
                 {product.name}
               </h1>
 
-              {/* Rating */}
-              {product.rating > 0 && (
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-1">
-                    <Star className="h-5 w-5 text-warning fill-warning" />
-                    <span className="font-bold">{product.rating.toFixed(1)}</span>
-                    <span className="text-muted-foreground">({product.reviewsCount} reviews)</span>
+              {/* Rating & Sales */}
+              <div className="flex items-center gap-4 flex-wrap">
+                {product.rating > 0 && (
+                  <div className="flex items-center gap-1.5 bg-warning/10 px-3 py-1.5 rounded-full">
+                    <Star className="h-4 w-4 text-warning fill-warning" />
+                    <span className="font-bold text-sm">{product.rating.toFixed(1)}</span>
+                    <span className="text-muted-foreground text-sm">({product.reviewsCount})</span>
                   </div>
-                  {product.salesCount > 0 && (
-                    <span className="text-muted-foreground">• {product.salesCount} vendidos</span>
-                  )}
-                </div>
-              )}
+                )}
+                {product.salesCount > 0 && (
+                  <span className="text-sm text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
+                    {product.salesCount} vendidos
+                  </span>
+                )}
+              </div>
 
-              {/* Price */}
-              <div className="flex items-baseline gap-3">
-                <span className="text-4xl font-bold text-primary">
-                  ${product.price.amount.toFixed(2)}
-                </span>
-                <span className="text-muted-foreground">{product.price.currency}</span>
+              {/* Price Section */}
+              <div className="bg-gradient-to-r from-primary/5 to-accent/5 p-4 rounded-xl border border-primary/10">
+                <div className="flex items-baseline gap-3">
+                  <span className="text-4xl font-bold text-primary">
+                    ${product.price.amount.toFixed(2)}
+                  </span>
+                  <span className="text-sm text-muted-foreground">{product.price.currency}</span>
+                </div>
+                {activePromotion && (
+                  <p className="text-sm text-success mt-1">
+                    🎉 Promoción activa: {activePromotion.amount}% OFF
+                  </p>
+                )}
               </div>
 
               {/* Description */}
               {product.description && (
-                <p className="text-muted-foreground text-lg">
-                  {product.description}
-                </p>
+                <div className="prose prose-sm max-w-none">
+                  <p className="text-muted-foreground leading-relaxed">
+                    {product.description}
+                  </p>
+                </div>
               )}
 
-              {/* Vendor/Agency */}
+              {/* Vendor/Agency Card */}
               {product.agencyId && (
-                <div className="flex items-center gap-3 p-4 bg-muted rounded-xl">
-                  <div className="p-2 rounded-lg bg-primary/10">
-                    <Store className="h-5 w-5 text-primary" />
+                <div className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl shadow-sm">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10">
+                    <Store className="h-6 w-6 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <p className="font-medium">Vendedor verificado</p>
-                    <p className="text-sm text-muted-foreground">
-                      ID: {product.agencyId}
+                    <p className="font-semibold">Vendedor Verificado</p>
+                    <p className="text-xs text-muted-foreground">
+                      Tienda #{product.agencyId.slice(0, 8)}
                     </p>
                   </div>
+                  <Badge variant="outline" className="text-success border-success/30 bg-success/5">
+                    ✓ Verificado
+                  </Badge>
                 </div>
               )}
 
@@ -311,23 +329,23 @@ export default function ProductDetail() {
               </div>
 
               {/* Trust Badges */}
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-border">
-                <div className="flex items-center gap-3">
+              <div className="grid grid-cols-2 gap-3 pt-6 border-t border-border">
+                <div className="flex items-center gap-3 p-3 bg-success/5 rounded-xl border border-success/10">
                   <div className="p-2 rounded-lg bg-success/10">
                     <Truck className="h-5 w-5 text-success" />
                   </div>
                   <div>
-                    <p className="font-medium">Envío a Cuba</p>
-                    <p className="text-sm text-muted-foreground">3-5 días</p>
+                    <p className="font-medium text-sm">Envío a Cuba</p>
+                    <p className="text-xs text-muted-foreground">3-5 días hábiles</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 p-3 bg-primary/5 rounded-xl border border-primary/10">
                   <div className="p-2 rounded-lg bg-primary/10">
                     <Shield className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <p className="font-medium">Compra Segura</p>
-                    <p className="text-sm text-muted-foreground">Garantía de entrega</p>
+                    <p className="font-medium text-sm">Compra Segura</p>
+                    <p className="text-xs text-muted-foreground">100% garantizado</p>
                   </div>
                 </div>
               </div>
