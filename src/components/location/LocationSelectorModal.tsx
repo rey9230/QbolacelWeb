@@ -95,7 +95,7 @@ export function LocationSelectorModal({
               disabled={loadingProvinces}
             >
               <SelectTrigger id="province">
-                <SelectValue placeholder={loadingProvinces ? "Cargando..." : "Selecciona provincia"} />
+                <SelectValue placeholder={loadingProvinces ? "Cargando..." : "Selecciona Provincia"} />
               </SelectTrigger>
               <SelectContent>
                 {provinces.map((province) => (
@@ -119,11 +119,11 @@ export function LocationSelectorModal({
                 <SelectValue 
                   placeholder={
                     !selectedProvince 
-                      ? "Primero selecciona provincia" 
+                      ? "Primero selecciona Provincia" 
                       : loadingMunicipalities 
                         ? "Cargando..." 
-                        : "Selecciona municipio"
-                  } 
+                        : "Selecciona Municipio"
+                  }
                 />
               </SelectTrigger>
               <SelectContent>

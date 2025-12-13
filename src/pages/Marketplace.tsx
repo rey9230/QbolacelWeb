@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, SlidersHorizontal, Smartphone, X, MapPin, Loader2, Tag } from "lucide-react";
+import { Search, Filter, SlidersHorizontal, X, MapPin, Loader2, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -15,19 +15,19 @@ import {
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ProductGrid } from "@/components/products/ProductGrid";
-import { Link } from "react-router-dom";
 import { useAuthStore } from "@/stores/auth.store";
 import { useLocationStore } from "@/stores/location.store";
 import { useProfile } from "@/hooks/useProfile";
 import { LocationSelectorModal } from "@/components/location/LocationSelectorModal";
 import { LocationContactSelector } from "@/components/checkout/LocationContactSelector";
-import { ContactDto } from "@/hooks/useContacts";
+import { ContactDto, useContacts } from "@/hooks/useContacts";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 
 const Marketplace = () => {
   const { isAuthenticated } = useAuthStore();
   const { municipality, province, hasLocation } = useLocationStore();
   const { data: profile } = useProfile();
+  const { data: contactsData } = useContacts();
   
   // Search and filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -49,6 +49,14 @@ const Marketplace = () => {
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showContactSelector, setShowContactSelector] = useState(false);
   const [selectedContact, setSelectedContact] = useState<ContactDto | null>(null);
+
+  // Load default contact automatically for authenticated users
+  useEffect(() => {
+    if (isAuthenticated && contactsData?.contacts && contactsData.contacts.length > 0 && !selectedContact) {
+      const defaultContact = contactsData.contacts.find(c => c.isDefault) || contactsData.contacts[0];
+      setSelectedContact(defaultContact);
+    }
+  }, [isAuthenticated, contactsData, selectedContact]);
 
   // Available tags (could be fetched from API in the future)
   const availableTags = [

@@ -269,7 +269,7 @@ export default function Account() {
                               onValueChange={handleProvinceChange}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar provincia" />
+                                <SelectValue placeholder="Seleccionar Provincia" />
                               </SelectTrigger>
                               <SelectContent>
                                 {provinces?.map((province) => (
@@ -294,7 +294,7 @@ export default function Account() {
                               disabled={!selectedProvince}
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Seleccionar municipio" />
+                                <SelectValue placeholder="Seleccionar Municipio" />
                               </SelectTrigger>
                               <SelectContent>
                                 {municipalities?.map((municipality) => (
