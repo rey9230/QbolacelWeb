@@ -8,10 +8,7 @@ export function useProfile() {
 
   return useQuery({
     queryKey: ["profile"],
-    queryFn: async () => {
-      const response = await authApi.me();
-      return response.data;
-    },
+    queryFn: () => authApi.me(),
     enabled: isAuthenticated,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

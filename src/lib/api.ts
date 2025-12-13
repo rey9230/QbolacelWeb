@@ -58,15 +58,10 @@ export interface RegisterRequest {
   password_confirmation: string;
 }
 
-export interface AuthResponse {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    avatar?: string;
-  };
-  token: string;
-  message?: string;
+export interface AuthTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  tokenType: string;
 }
 
 // ============ USER PROFILE ============
@@ -90,18 +85,63 @@ export interface UpdateProfileRequest {
   address?: string;
 }
 
-export const authApi = {
-  login: (data: LoginRequest) =>
-    apiFetch<AuthResponse>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+// Helper to temporarily store token for immediate use after login
+let tempToken: string | null = null;
 
-  register: (data: RegisterRequest) =>
-    apiFetch<AuthResponse>('/auth/register', {
+async function apiFetchWithToken<T>(
+  endpoint: string,
+  token: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`,
+    ...options.headers,
+  };
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Error de conexión' }));
+    throw new Error(error.message || `Error ${response.status}`);
+  }
+
+  return response.json();
+}
+
+export const authApi = {
+  login: async (data: LoginRequest): Promise<{ user: UserProfile; token: string }> => {
+    const tokenResponse = await apiFetch<AuthTokenResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+    });
+    
+    // Fetch user profile with the new token
+    const userResponse = await apiFetchWithToken<UserProfile>('/auth/me', tokenResponse.accessToken);
+    
+    return {
+      user: userResponse,
+      token: tokenResponse.accessToken,
+    };
+  },
+
+  register: async (data: RegisterRequest): Promise<{ user: UserProfile; token: string }> => {
+    const tokenResponse = await apiFetch<AuthTokenResponse>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    
+    // Fetch user profile with the new token
+    const userResponse = await apiFetchWithToken<UserProfile>('/auth/me', tokenResponse.accessToken);
+    
+    return {
+      user: userResponse,
+      token: tokenResponse.accessToken,
+    };
+  },
 
   logout: () =>
     apiFetch<{ message: string }>('/auth/logout', {
@@ -109,10 +149,10 @@ export const authApi = {
     }, true),
 
   me: () =>
-    apiFetch<{ data: UserProfile }>('/auth/me', {}, true),
+    apiFetch<UserProfile>('/auth/me', {}, true),
 
   updateProfile: (data: UpdateProfileRequest) =>
-    apiFetch<{ data: UserProfile }>('/auth/profile', {
+    apiFetch<UserProfile>('/auth/profile', {
       method: 'PUT',
       body: JSON.stringify(data),
     }, true),
