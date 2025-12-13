@@ -421,6 +421,15 @@ export interface ProductDetailResponse {
   similar: Product[];
 }
 
+// Cursor-based pagination response (semantic search)
+export interface CursorPageResponse<T> {
+  success: boolean;
+  limit: number;
+  nextCursor: string | null;
+  data: T[];
+}
+
+// Keep PageResponse for backwards compatibility if needed
 export interface PageResponse<T> {
   success: boolean;
   page: number;
@@ -431,31 +440,30 @@ export interface PageResponse<T> {
 }
 
 export interface ProductFilters {
-  page?: number;
-  pageSize?: number;
+  limit?: number;
+  cursor?: string;
   q?: string;
   category?: string;
   priceMin?: number;
   priceMax?: number;
   tag?: string;
-  stock?: string;
   sort?: string;
 }
 
 export const productsApi = {
+  // Cursor-based pagination (semantic search) - preferred for e-commerce
   getAll: (filters: ProductFilters = {}) => {
     const params = new URLSearchParams();
-    if (filters.page) params.append('page', String(filters.page));
-    if (filters.pageSize) params.append('pageSize', String(filters.pageSize));
-    if (filters.q) params.append('q', filters.q);
+    if (filters.limit) params.append('limit', String(filters.limit));
+    if (filters.cursor) params.append('cursor', filters.cursor);
+    if (filters.q) params.append('query', filters.q); // backend uses 'query' not 'q' for cursor
     if (filters.category) params.append('category', filters.category);
     if (filters.priceMin !== undefined) params.append('priceMin', String(filters.priceMin));
     if (filters.priceMax !== undefined) params.append('priceMax', String(filters.priceMax));
     if (filters.tag) params.append('tag', filters.tag);
-    if (filters.stock) params.append('stock', filters.stock);
     if (filters.sort) params.append('sort', filters.sort);
     
-    return apiFetch<PageResponse<Product>>(`/products/offset?${params.toString()}`);
+    return apiFetch<CursorPageResponse<Product>>(`/products/cursor?${params.toString()}`);
   },
 
   getById: (id: string, similarLimit = 4) =>

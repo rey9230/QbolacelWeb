@@ -20,13 +20,14 @@ const itemVariants = {
 };
 
 export function MarketplacePreview() {
-  // Fetch featured/popular products
+  // Fetch featured/popular products using cursor pagination
   const { data, isLoading } = useProducts({ 
-    pageSize: 4, 
+    limit: 4, 
     sort: 'salesCount:desc' 
   });
 
-  const featuredProducts = data?.data || [];
+  // Get first page of products
+  const featuredProducts = data?.pages[0]?.data || [];
 
   return (
     <section className="py-16">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import { Search, Filter, SlidersHorizontal, Smartphone, X, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,14 +22,6 @@ import { LocationSelectorModal } from "@/components/location/LocationSelectorMod
 import { LocationContactSelector } from "@/components/checkout/LocationContactSelector";
 import { ContactDto } from "@/hooks/useContacts";
 import { useProducts, useCategories } from "@/hooks/useProducts";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 
 const Marketplace = () => {
   const { isAuthenticated } = useAuthStore();
@@ -37,16 +29,24 @@ const Marketplace = () => {
   const { data: profile } = useProfile();
   
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState("popular");
   const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 20;
+  const loadMoreRef = useRef<HTMLDivElement>(null);
   
   // Location modals
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showContactSelector, setShowContactSelector] = useState(false);
   const [selectedContact, setSelectedContact] = useState<ContactDto | null>(null);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Map frontend sort values to backend sort format
   const sortMapping: Record<string, string> = {
@@ -56,11 +56,16 @@ const Marketplace = () => {
     'price-desc': 'price:desc',
   };
 
-  // Fetch products from API
-  const { data: productsData, isLoading: productsLoading } = useProducts({
-    page: currentPage,
-    pageSize,
-    q: searchQuery || undefined,
+  // Fetch products with cursor pagination
+  const { 
+    data: productsData, 
+    isLoading: productsLoading,
+    isFetchingNextPage,
+    hasNextPage,
+    fetchNextPage,
+  } = useProducts({
+    limit: 20,
+    q: debouncedSearch || undefined,
     category: selectedCategory !== 'all' ? selectedCategory : undefined,
     sort: sortMapping[sortBy] || undefined,
   });
@@ -84,10 +89,26 @@ const Marketplace = () => {
     }
   }, [userHasLocation, isAuthenticated]);
 
-  // Reset page when filters change
+  // Infinite scroll observer
+  const handleObserver = useCallback((entries: IntersectionObserverEntry[]) => {
+    const [target] = entries;
+    if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery, selectedCategory, sortBy]);
+    const element = loadMoreRef.current;
+    if (!element) return;
+
+    const observer = new IntersectionObserver(handleObserver, {
+      threshold: 0.1,
+      rootMargin: '100px',
+    });
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [handleObserver]);
 
   // Current location/contact display info
   const displayInfo = (() => {
@@ -109,9 +130,8 @@ const Marketplace = () => {
     };
   })();
 
-  const products = productsData?.data || [];
-  const totalPages = productsData?.totalPages || 1;
-  const totalCount = productsData?.totalCount || 0;
+  // Flatten paginated data
+  const products = productsData?.pages.flatMap(page => page.data) || [];
 
   const handleCategoryClick = (categoryId: string) => {
     setSelectedCategory(categoryId);
@@ -288,7 +308,7 @@ const Marketplace = () => {
             )}
 
             {/* Active Filters */}
-            {(selectedCategory !== 'all' || searchQuery) && (
+            {(selectedCategory !== 'all' || debouncedSearch) && (
               <div className="flex flex-wrap items-center gap-2 mb-6">
                 <span className="text-sm text-muted-foreground">Filtros:</span>
                 {selectedCategory !== 'all' && (
@@ -299,9 +319,9 @@ const Marketplace = () => {
                     </button>
                   </Badge>
                 )}
-                {searchQuery && (
+                {debouncedSearch && (
                   <Badge variant="secondary" className="gap-1">
-                    "{searchQuery}"
+                    "{debouncedSearch}"
                     <button onClick={() => setSearchQuery("")}>
                       <X className="h-3 w-3" />
                     </button>
@@ -310,9 +330,9 @@ const Marketplace = () => {
               </div>
             )}
 
-            {/* Results Count */}
+            {/* Results Info */}
             <p className="text-sm text-muted-foreground mb-6">
-              {totalCount} productos encontrados
+              {products.length} productos{hasNextPage && '+'}
             </p>
 
             {/* Loading State */}
@@ -325,53 +345,17 @@ const Marketplace = () => {
                 {/* Product Grid */}
                 <ProductGrid products={products} />
 
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="mt-8 flex justify-center">
-                    <Pagination>
-                      <PaginationContent>
-                        <PaginationItem>
-                          <PaginationPrevious 
-                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                            className={currentPage === 1 ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                          />
-                        </PaginationItem>
-                        
-                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                          let pageNum: number;
-                          if (totalPages <= 5) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 3) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= totalPages - 2) {
-                            pageNum = totalPages - 4 + i;
-                          } else {
-                            pageNum = currentPage - 2 + i;
-                          }
-                          
-                          return (
-                            <PaginationItem key={pageNum}>
-                              <PaginationLink
-                                onClick={() => setCurrentPage(pageNum)}
-                                isActive={currentPage === pageNum}
-                                className="cursor-pointer"
-                              >
-                                {pageNum}
-                              </PaginationLink>
-                            </PaginationItem>
-                          );
-                        })}
-                        
-                        <PaginationItem>
-                          <PaginationNext 
-                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                            className={currentPage === totalPages ? "pointer-events-none opacity-50" : "cursor-pointer"}
-                          />
-                        </PaginationItem>
-                      </PaginationContent>
-                    </Pagination>
-                  </div>
-                )}
+                {/* Infinite Scroll Trigger */}
+                <div ref={loadMoreRef} className="py-8 flex justify-center">
+                  {isFetchingNextPage && (
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  )}
+                  {!hasNextPage && products.length > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                      No hay más productos
+                    </p>
+                  )}
+                </div>
               </>
             ) : (
               <div className="text-center py-12">
