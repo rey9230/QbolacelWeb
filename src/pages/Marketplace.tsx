@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, SlidersHorizontal, Smartphone, X, MapPin } from "lucide-react";
+import { Search, Filter, SlidersHorizontal, Smartphone, X, MapPin, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +21,7 @@ import { useLocationStore } from "@/stores/location.store";
 import { useProfile } from "@/hooks/useProfile";
 import { LocationSelectorModal } from "@/components/location/LocationSelectorModal";
 import { LocationContactSelector } from "@/components/checkout/LocationContactSelector";
+import { ContactDto } from "@/hooks/useContacts";
 
 // Sample products data
 const allProducts: Product[] = [
@@ -152,10 +153,11 @@ const Marketplace = () => {
   // Location modals
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showContactSelector, setShowContactSelector] = useState(false);
+  const [selectedContact, setSelectedContact] = useState<ContactDto | null>(null);
 
   // Determine if user needs to select location
   const userHasLocation = isAuthenticated 
-    ? !!(profile?.municipality || municipality) 
+    ? !!(selectedContact || profile?.municipality || municipality) 
     : hasLocation();
 
   // Show location modal on mount if no location
@@ -169,10 +171,25 @@ const Marketplace = () => {
     }
   }, [userHasLocation, isAuthenticated]);
 
-  // Current location display
-  const currentLocation = isAuthenticated && profile?.municipality
-    ? { municipality: profile.municipality, province: profile.province }
-    : { municipality, province };
+  // Current location/contact display info
+  const displayInfo = (() => {
+    if (isAuthenticated && selectedContact) {
+      return {
+        name: selectedContact.fullName,
+        location: `${selectedContact.municipality}, ${selectedContact.province}`,
+      };
+    }
+    if (isAuthenticated && profile?.municipality) {
+      return {
+        name: profile.name,
+        location: `${profile.municipality}, ${profile.province}`,
+      };
+    }
+    return {
+      name: null,
+      location: municipality && province ? `${municipality}, ${province}` : null,
+    };
+  })();
 
   // Filter and sort products
   const filteredProducts = allProducts
@@ -211,16 +228,28 @@ const Marketplace = () => {
             Envía productos a tu familia en Cuba. Miles de artículos disponibles con entrega garantizada.
           </p>
           
-          {/* Location indicator */}
-          {currentLocation.municipality && (
+          {/* Location/Contact indicator */}
+          {displayInfo.location && (
             <Button
               variant="secondary"
               size="sm"
               className="gap-2"
               onClick={() => isAuthenticated ? setShowContactSelector(true) : setShowLocationModal(true)}
             >
-              <MapPin className="h-4 w-4" />
-              <span>{currentLocation.municipality}, {currentLocation.province}</span>
+              {displayInfo.name ? (
+                <>
+                  <User className="h-4 w-4" />
+                  <span className="font-medium">{displayInfo.name}</span>
+                  <span className="text-muted-foreground">•</span>
+                  <MapPin className="h-3 w-3" />
+                  <span>{displayInfo.location}</span>
+                </>
+              ) : (
+                <>
+                  <MapPin className="h-4 w-4" />
+                  <span>{displayInfo.location}</span>
+                </>
+              )}
             </Button>
           )}
         </div>
@@ -413,8 +442,10 @@ const Marketplace = () => {
         open={showContactSelector}
         onOpenChange={setShowContactSelector}
         onSelect={(contact) => {
+          setSelectedContact(contact);
           setShowContactSelector(false);
         }}
+        selectedContactId={selectedContact?.id}
         redirectOnClose={userHasLocation ? undefined : "/"}
       />
     </div>
