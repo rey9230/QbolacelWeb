@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { format } from "date-fns";
-import { es } from "date-fns/locale";
 import {
   Package,
-  ChevronRight,
   Loader2,
   ShoppingBag,
   Clock,
@@ -12,6 +9,7 @@ import {
   Truck,
   XCircle,
   Eye,
+  AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,50 +23,78 @@ import { useOrders, useOrder } from "@/hooks/useOrders";
 import { cn } from "@/lib/utils";
 import { Link } from "react-router-dom";
 
-const statusConfig = {
-  pending: {
-    label: "Pendiente",
+const statusConfig: Record<string, {
+  label: string;
+  icon: typeof Clock;
+  variant: "default" | "secondary" | "destructive" | "outline";
+  color: string;
+}> = {
+  CREATED: {
+    label: "Creada",
     icon: Clock,
-    variant: "secondary" as const,
+    variant: "secondary",
     color: "text-muted-foreground",
   },
-  processing: {
+  PROCESSING: {
     label: "Procesando",
     icon: Package,
-    variant: "default" as const,
+    variant: "default",
     color: "text-primary",
   },
-  shipped: {
-    label: "Enviado",
+  READY_FOR_DELIVERY: {
+    label: "Lista para envío",
+    icon: Package,
+    variant: "default",
+    color: "text-primary",
+  },
+  ASSIGNED_TO_DELIVERY: {
+    label: "Asignada",
     icon: Truck,
-    variant: "default" as const,
-    color: "text-info",
+    variant: "default",
+    color: "text-primary",
   },
-  delivered: {
-    label: "Entregado",
+  IN_TRANSIT: {
+    label: "En tránsito",
+    icon: Truck,
+    variant: "default",
+    color: "text-primary",
+  },
+  OUT_FOR_DELIVERY: {
+    label: "En reparto",
+    icon: Truck,
+    variant: "default",
+    color: "text-primary",
+  },
+  DELIVERED: {
+    label: "Entregada",
     icon: CheckCircle,
-    variant: "default" as const,
-    color: "text-success",
+    variant: "default",
+    color: "text-green-500",
   },
-  cancelled: {
-    label: "Cancelado",
+  CANCELED: {
+    label: "Cancelada",
     icon: XCircle,
-    variant: "destructive" as const,
+    variant: "destructive",
+    color: "text-destructive",
+  },
+  FAILED_DELIVERY: {
+    label: "Entrega fallida",
+    icon: AlertCircle,
+    variant: "destructive",
     color: "text-destructive",
   },
 };
 
-const paymentStatusConfig = {
-  pending: { label: "Pendiente", variant: "secondary" as const },
-  paid: { label: "Pagado", variant: "default" as const },
-  failed: { label: "Fallido", variant: "destructive" as const },
-  refunded: { label: "Reembolsado", variant: "outline" as const },
+const defaultStatus = {
+  label: "Desconocido",
+  icon: Clock,
+  variant: "secondary" as const,
+  color: "text-muted-foreground",
 };
 
 export function OrdersList() {
-  const [page, setPage] = useState(1);
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
-  const { data: ordersData, isLoading } = useOrders(page);
+  const { data: orders, isLoading } = useOrders();
   const { data: orderDetail, isLoading: detailLoading } = useOrder(
     selectedOrderId || ""
   );
@@ -81,7 +107,7 @@ export function OrdersList() {
     );
   }
 
-  if (!ordersData?.data?.length) {
+  if (!orders?.length) {
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -109,10 +135,9 @@ export function OrdersList() {
         animate={{ opacity: 1, y: 0 }}
         className="space-y-4"
       >
-        {ordersData.data.map((order) => {
-          const status = statusConfig[order.status];
+        {orders.map((order) => {
+          const status = statusConfig[order.status] || defaultStatus;
           const StatusIcon = status.icon;
-          const paymentStatus = paymentStatusConfig[order.payment_status];
 
           return (
             <div
@@ -125,17 +150,14 @@ export function OrdersList() {
                     <StatusIcon className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="font-semibold">Orden #{order.order_number}</p>
+                    <p className="font-semibold">
+                      Orden #{order.orderSku || order.id.slice(0, 8)}
+                    </p>
                     <p className="text-sm text-muted-foreground">
-                      {format(new Date(order.created_at), "d 'de' MMMM, yyyy", {
-                        locale: es,
-                      })}
+                      {order.createdAtFormatted}
                     </p>
                     <div className="flex flex-wrap gap-2 mt-2">
                       <Badge variant={status.variant}>{status.label}</Badge>
-                      <Badge variant={paymentStatus.variant}>
-                        Pago: {paymentStatus.label}
-                      </Badge>
                     </div>
                   </div>
                 </div>
@@ -144,7 +166,7 @@ export function OrdersList() {
                   <div className="text-right">
                     <p className="text-sm text-muted-foreground">Total</p>
                     <p className="font-bold text-primary">
-                      ${order.totals.total.toFixed(2)}
+                      ${order.grandTotal?.toFixed(2) || "0.00"} {order.currency || "USD"}
                     </p>
                   </div>
                   <Button
@@ -156,62 +178,9 @@ export function OrdersList() {
                   </Button>
                 </div>
               </div>
-
-              {/* Products Preview */}
-              <div className="mt-4 pt-4 border-t border-border">
-                <div className="flex items-center gap-2 overflow-x-auto pb-2">
-                  {order.items.slice(0, 4).map((item, index) => (
-                    <div
-                      key={index}
-                      className="relative flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden bg-muted"
-                    >
-                      <img
-                        src={item.product_image}
-                        alt={item.product_name}
-                        className="w-full h-full object-cover"
-                      />
-                      {item.quantity > 1 && (
-                        <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
-                          {item.quantity}
-                        </span>
-                      )}
-                    </div>
-                  ))}
-                  {order.items.length > 4 && (
-                    <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-sm font-medium text-muted-foreground">
-                      +{order.items.length - 4}
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
           );
         })}
-
-        {/* Pagination */}
-        {ordersData.meta && ordersData.meta.last_page > 1 && (
-          <div className="flex items-center justify-center gap-2 pt-4">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === 1}
-              onClick={() => setPage(page - 1)}
-            >
-              Anterior
-            </Button>
-            <span className="text-sm text-muted-foreground">
-              Página {page} de {ordersData.meta.last_page}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={page === ordersData.meta.last_page}
-              onClick={() => setPage(page + 1)}
-            >
-              Siguiente
-            </Button>
-          </div>
-        )}
       </motion.div>
 
       {/* Order Detail Dialog */}
@@ -222,7 +191,7 @@ export function OrdersList() {
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
-              Orden #{orderDetail?.data?.order_number || "..."}
+              Orden #{orderDetail?.orderSku || orderDetail?.id?.slice(0, 8) || "..."}
             </DialogTitle>
           </DialogHeader>
 
@@ -234,81 +203,73 @@ export function OrdersList() {
             <div className="space-y-6">
               {/* Status */}
               <div className="flex items-center gap-4">
-                <Badge variant={statusConfig[orderDetail.data.status].variant}>
-                  {statusConfig[orderDetail.data.status].label}
+                <Badge variant={(statusConfig[orderDetail.status] || defaultStatus).variant}>
+                  {(statusConfig[orderDetail.status] || defaultStatus).label}
                 </Badge>
-                <Badge
-                  variant={paymentStatusConfig[orderDetail.data.payment_status].variant}
-                >
-                  Pago: {paymentStatusConfig[orderDetail.data.payment_status].label}
-                </Badge>
+                <span className="text-sm text-muted-foreground">
+                  {orderDetail.createdAtFormatted}
+                </span>
               </div>
 
               {/* Items */}
               <div className="space-y-3">
-                <h4 className="font-semibold">Productos</h4>
-                {orderDetail.data.items.map((item, index) => (
+                <h4 className="font-semibold">Productos ({orderDetail.items.length})</h4>
+                {orderDetail.items.map((item, index) => (
                   <div
                     key={index}
                     className="flex items-center gap-4 p-3 bg-muted/50 rounded-lg"
                   >
-                    <img
-                      src={item.product_image}
-                      alt={item.product_name}
-                      className="w-14 h-14 rounded-lg object-cover"
-                    />
+                    <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                      <Package className="h-5 w-5 text-muted-foreground" />
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{item.product_name}</p>
+                      <p className="font-medium text-sm">
+                        Producto: {item.productId.slice(0, 8)}...
+                      </p>
                       <p className="text-sm text-muted-foreground">
-                        Cantidad: {item.quantity}
+                        Cantidad: {item.qty}
                       </p>
                     </div>
-                    <p className="font-semibold">${item.price.toFixed(2)}</p>
+                    <p className="font-semibold">
+                      ${item.unitPrice.toFixed(2)} {item.currency}
+                    </p>
                   </div>
                 ))}
               </div>
 
-              {/* Shipping */}
-              <div className="space-y-2">
-                <h4 className="font-semibold">Dirección de envío</h4>
-                <div className="p-4 bg-muted/50 rounded-lg text-sm">
-                  <p className="font-medium">{orderDetail.data.shipping_address.name}</p>
-                  <p className="text-muted-foreground">
-                    {orderDetail.data.shipping_address.phone}
-                  </p>
-                  <p className="text-muted-foreground mt-1">
-                    {orderDetail.data.shipping_address.address}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {orderDetail.data.shipping_address.municipality},{" "}
-                    {orderDetail.data.shipping_address.province}
-                  </p>
-                </div>
-              </div>
-
               {/* Totals */}
-              <div className="space-y-2 pt-4 border-t border-border">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Subtotal</span>
-                  <span>${orderDetail.data.totals.subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Envío</span>
-                  <span>${orderDetail.data.totals.shipping.toFixed(2)}</span>
-                </div>
-                {orderDetail.data.totals.tax > 0 && (
+              {orderDetail.totals && (
+                <div className="space-y-2 pt-4 border-t border-border">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Impuestos</span>
-                    <span>${orderDetail.data.totals.tax.toFixed(2)}</span>
+                    <span className="text-muted-foreground">Subtotal</span>
+                    <span>${orderDetail.totals.subtotal.toFixed(2)}</span>
                   </div>
-                )}
-                <div className="flex justify-between font-bold text-lg pt-2 border-t border-border">
-                  <span>Total</span>
-                  <span className="text-primary">
-                    ${orderDetail.data.totals.total.toFixed(2)}
-                  </span>
+                  {orderDetail.totals.shipping !== undefined && orderDetail.totals.shipping > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Envío</span>
+                      <span>${orderDetail.totals.shipping.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {orderDetail.totals.fees !== undefined && orderDetail.totals.fees > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Comisiones</span>
+                      <span>${orderDetail.totals.fees.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {orderDetail.totals.discount !== undefined && orderDetail.totals.discount > 0 && (
+                    <div className="flex justify-between text-sm text-green-500">
+                      <span>Descuento</span>
+                      <span>-${orderDetail.totals.discount.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-lg pt-2 border-t border-border">
+                    <span>Total</span>
+                    <span className="text-primary">
+                      ${orderDetail.totals.grandTotal.toFixed(2)} {orderDetail.totals.currency}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           ) : null}
         </DialogContent>

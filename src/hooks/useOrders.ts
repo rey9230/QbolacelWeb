@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ordersApi, type CreateOrderRequest, type Order } from "@/lib/api";
+import { ordersApi, type CreateOrderRequest, type Order, type OrderSummary } from "@/lib/api";
 import { useCartStore } from "@/stores/cart.store";
 import { toast } from "sonner";
 
@@ -8,15 +8,11 @@ export function useCreateOrder() {
   const clearCart = useCartStore((state) => state.clearCart);
 
   return useMutation({
-    mutationFn: (data: CreateOrderRequest) => ordersApi.create(data),
-    onSuccess: (response) => {
+    mutationFn: ({ data, idempotencyKey }: { data: CreateOrderRequest; idempotencyKey: string }) => 
+      ordersApi.create(data, idempotencyKey),
+    onSuccess: () => {
       clearCart();
       queryClient.invalidateQueries({ queryKey: ["orders"] });
-      
-      // If payment URL is returned, redirect to payment
-      if (response.payment_url) {
-        window.location.href = response.payment_url;
-      }
     },
     onError: (error: Error) => {
       toast.error("Error al crear la orden", {
@@ -26,10 +22,10 @@ export function useCreateOrder() {
   });
 }
 
-export function useOrders(page: number = 1) {
+export function useOrders() {
   return useQuery({
-    queryKey: ["orders", page],
-    queryFn: () => ordersApi.getAll(page),
+    queryKey: ["orders"],
+    queryFn: () => ordersApi.getAll(),
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
 }
@@ -47,4 +43,4 @@ export function generateIdempotencyKey(): string {
   return `order_${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
 }
 
-export type { Order, CreateOrderRequest };
+export type { Order, OrderSummary, CreateOrderRequest };

@@ -531,59 +531,68 @@ export const cartApi = {
 };
 
 // ============ ORDERS API ============
-export interface ShippingAddress {
-  name: string;
-  phone: string;
-  province: string;
-  municipality: string;
-  address: string;
-  notes?: string;
+// OrderSummary - para listado de órdenes
+export interface OrderSummary {
+  id: string;
+  orderSku: string | null;
+  status: string;
+  grandTotal: number | null;
+  currency: string | null;
+  createdAt: string;
+  createdAtFormatted: string;
 }
 
-export interface CreateOrderRequest {
-  shipping_address: ShippingAddress;
-  shipping_method: 'standard' | 'express';
-  payment_method: 'paypal' | 'card' | 'tropipay';
-  idempotency_key: string;
-}
-
+// Order - para detalle de orden
 export interface Order {
   id: string;
-  order_number: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+  orderSku: string | null;
+  status: string;
   items: {
-    product_id: string;
-    product_name: string;
-    product_image: string;
-    quantity: number;
-    price: number;
+    productId: string;
+    qty: number;
+    unitPrice: number;
+    currency: string;
   }[];
-  shipping_address: ShippingAddress;
-  shipping_method: string;
-  payment_method: string;
   totals: {
     subtotal: number;
-    shipping: number;
-    tax: number;
-    total: number;
+    shipping?: number;
+    fees?: number;
+    discount?: number;
+    grandTotal: number;
+    currency: string;
+  } | null;
+  createdAt: string;
+  createdAtFormatted: string;
+}
+
+// CreatePhysicalOrderRequest
+export interface CreateOrderRequest {
+  items: {
+    productId: string;
+    qty: number;
+  }[];
+  currency: string;
+  shipping?: {
+    method?: string;
+    address?: Record<string, string>;
   };
-  created_at: string;
-  updated_at: string;
 }
 
 export const ordersApi = {
-  create: (data: CreateOrderRequest) =>
-    apiFetch<{ data: Order; payment_url?: string }>('/orders', {
+  create: (data: CreateOrderRequest, idempotencyKey: string) =>
+    apiFetch<Order>('/orders/physical', {
       method: 'POST',
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+      },
       body: JSON.stringify(data),
     }, true),
 
-  getAll: (page: number = 1) =>
-    apiFetch<{ data: Order[]; meta: ProductsResponse['meta'] }>(`/orders?page=${page}`, {}, true),
+  getAll: () =>
+    apiFetch<OrderSummary[]>('/orders/physical/me', {}, true),
 
   getById: (id: string) =>
-    apiFetch<{ data: Order }>(`/orders/${id}`, {}, true),
+    apiFetch<Order>(`/orders/physical/${id}`, {}, true),
 };
 
 // ============ GEOGRAPHY API ============
