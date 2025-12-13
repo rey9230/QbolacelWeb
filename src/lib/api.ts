@@ -1,0 +1,325 @@
+const API_BASE_URL = 'https://api.qbolacel.com/api/v3';
+
+// Helper to get auth token from localStorage
+const getAuthToken = (): string | null => {
+  try {
+    const authState = localStorage.getItem('qbolacel-auth');
+    if (authState) {
+      const parsed = JSON.parse(authState);
+      return parsed.state?.token || null;
+    }
+  } catch {
+    return null;
+  }
+  return null;
+};
+
+// Base fetch wrapper with auth handling
+async function apiFetch<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  requiresAuth = false
+): Promise<T> {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  const token = getAuthToken();
+  if (requiresAuth || token) {
+    if (token) {
+      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Error de conexión' }));
+    throw new Error(error.message || `Error ${response.status}`);
+  }
+
+  return response.json();
+}
+
+// ============ AUTH API ============
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  name: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
+}
+
+export interface AuthResponse {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    avatar?: string;
+  };
+  token: string;
+  message?: string;
+}
+
+export const authApi = {
+  login: (data: LoginRequest) =>
+    apiFetch<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  register: (data: RegisterRequest) =>
+    apiFetch<AuthResponse>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  logout: () =>
+    apiFetch<{ message: string }>('/auth/logout', {
+      method: 'POST',
+    }, true),
+
+  me: () =>
+    apiFetch<{ user: AuthResponse['user'] }>('/auth/me', {}, true),
+};
+
+// ============ PRODUCTS API ============
+export interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  description: string;
+  price: number;
+  currency: string;
+  stock: number;
+  images: string[];
+  category_id: string;
+  category_name: string;
+  vendor_id: string;
+  vendor_name: string;
+  rating: number;
+  reviews_count: number;
+  created_at: string;
+}
+
+export interface ProductsResponse {
+  data: Product[];
+  meta: {
+    current_page: number;
+    last_page: number;
+    per_page: number;
+    total: number;
+  };
+}
+
+export interface ProductFilters {
+  page?: number;
+  per_page?: number;
+  search?: string;
+  category_id?: string;
+  min_price?: number;
+  max_price?: number;
+  sort_by?: 'price_asc' | 'price_desc' | 'newest' | 'popular';
+}
+
+export const productsApi = {
+  getAll: (filters: ProductFilters = {}) => {
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([key, value]) => {
+      if (value !== undefined && value !== '') {
+        params.append(key, String(value));
+      }
+    });
+    return apiFetch<ProductsResponse>(`/products?${params.toString()}`);
+  },
+
+  getById: (id: string) =>
+    apiFetch<{ data: Product }>(`/products/${id}`),
+
+  getBySlug: (slug: string) =>
+    apiFetch<{ data: Product }>(`/products/slug/${slug}`),
+};
+
+// ============ CATEGORIES API ============
+export interface Category {
+  id: string;
+  name: string;
+  slug: string;
+  image?: string;
+  products_count: number;
+}
+
+export const categoriesApi = {
+  getAll: () =>
+    apiFetch<{ data: Category[] }>('/categories'),
+};
+
+// ============ CART API ============
+export interface CartItemApi {
+  id: string;
+  product_id: string;
+  product: Product;
+  quantity: number;
+  subtotal: number;
+}
+
+export interface CartResponse {
+  data: CartItemApi[];
+  totals: {
+    subtotal: number;
+    shipping: number;
+    tax: number;
+    total: number;
+  };
+}
+
+export const cartApi = {
+  get: () =>
+    apiFetch<CartResponse>('/cart', {}, true),
+
+  sync: (items: { product_id: string; quantity: number }[]) =>
+    apiFetch<CartResponse>('/cart/sync', {
+      method: 'POST',
+      body: JSON.stringify({ items }),
+    }, true),
+
+  addItem: (product_id: string, quantity: number = 1) =>
+    apiFetch<CartResponse>('/cart/items', {
+      method: 'POST',
+      body: JSON.stringify({ product_id, quantity }),
+    }, true),
+
+  updateItem: (product_id: string, quantity: number) =>
+    apiFetch<CartResponse>(`/cart/items/${product_id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ quantity }),
+    }, true),
+
+  removeItem: (product_id: string) =>
+    apiFetch<CartResponse>(`/cart/items/${product_id}`, {
+      method: 'DELETE',
+    }, true),
+
+  clear: () =>
+    apiFetch<{ message: string }>('/cart', {
+      method: 'DELETE',
+    }, true),
+};
+
+// ============ ORDERS API ============
+export interface ShippingAddress {
+  name: string;
+  phone: string;
+  province: string;
+  municipality: string;
+  address: string;
+  notes?: string;
+}
+
+export interface CreateOrderRequest {
+  shipping_address: ShippingAddress;
+  shipping_method: 'standard' | 'express';
+  payment_method: 'paypal' | 'card' | 'tropipay';
+  idempotency_key: string;
+}
+
+export interface Order {
+  id: string;
+  order_number: string;
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  payment_status: 'pending' | 'paid' | 'failed' | 'refunded';
+  items: {
+    product_id: string;
+    product_name: string;
+    product_image: string;
+    quantity: number;
+    price: number;
+  }[];
+  shipping_address: ShippingAddress;
+  shipping_method: string;
+  payment_method: string;
+  totals: {
+    subtotal: number;
+    shipping: number;
+    tax: number;
+    total: number;
+  };
+  created_at: string;
+  updated_at: string;
+}
+
+export const ordersApi = {
+  create: (data: CreateOrderRequest) =>
+    apiFetch<{ data: Order; payment_url?: string }>('/orders', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }, true),
+
+  getAll: (page: number = 1) =>
+    apiFetch<{ data: Order[]; meta: ProductsResponse['meta'] }>(`/orders?page=${page}`, {}, true),
+
+  getById: (id: string) =>
+    apiFetch<{ data: Order }>(`/orders/${id}`, {}, true),
+};
+
+// ============ PROVINCES API ============
+export interface Province {
+  id: string;
+  name: string;
+}
+
+export interface Municipality {
+  id: string;
+  name: string;
+  province_id: string;
+}
+
+export const locationsApi = {
+  getProvinces: () =>
+    apiFetch<{ data: Province[] }>('/locations/provinces'),
+
+  getMunicipalities: (province_id: string) =>
+    apiFetch<{ data: Municipality[] }>(`/locations/provinces/${province_id}/municipalities`),
+};
+
+// ============ RECHARGES API ============
+export interface RechargeProduct {
+  id: string;
+  name: string;
+  type: 'cubacel' | 'nauta';
+  amount: number;
+  price: number;
+  currency: string;
+  bonus?: number;
+  bonus_type?: 'percentage' | 'fixed';
+  promo_expires_at?: string;
+}
+
+export interface RechargeRequest {
+  product_id: string;
+  phone_number?: string;
+  nauta_account?: string;
+  payment_method: 'paypal' | 'card' | 'tropipay';
+}
+
+export const rechargesApi = {
+  getProducts: () =>
+    apiFetch<{ data: RechargeProduct[] }>('/recharges/products'),
+
+  create: (data: RechargeRequest) =>
+    apiFetch<{ data: { id: string; status: string }; payment_url?: string }>('/recharges', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }, true),
+
+  getHistory: (page: number = 1) =>
+    apiFetch<{ data: { id: string; product: RechargeProduct; phone: string; status: string; created_at: string }[] }>(`/recharges/history?page=${page}`, {}, true),
+};

@@ -15,6 +15,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthStore } from "@/stores/auth.store";
 import { useToast } from "@/hooks/use-toast";
+import { authApi } from "@/lib/api";
 
 export function AuthModal() {
   const { 
@@ -43,22 +44,38 @@ export function AuthModal() {
     e.preventDefault();
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    // Mock successful login
-    setUser(
-      { id: "1", email: loginForm.email, name: "Usuario Demo" },
-      "mock-token"
-    );
-    
-    toast({
-      title: "¡Bienvenido!",
-      description: "Has iniciado sesión correctamente",
-    });
-    
-    setIsLoading(false);
-    closeAuthModal();
+    try {
+      const response = await authApi.login({
+        email: loginForm.email,
+        password: loginForm.password,
+      });
+      
+      setUser(
+        { 
+          id: response.user.id, 
+          email: response.user.email, 
+          name: response.user.name,
+          avatar: response.user.avatar 
+        },
+        response.token
+      );
+      
+      toast({
+        title: "¡Bienvenido!",
+        description: "Has iniciado sesión correctamente",
+      });
+      
+      setLoginForm({ email: "", password: "" });
+      closeAuthModal();
+    } catch (error) {
+      toast({
+        title: "Error de inicio de sesión",
+        description: error instanceof Error ? error.message : "Credenciales incorrectas",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -81,25 +98,58 @@ export function AuthModal() {
       });
       return;
     }
+
+    if (registerForm.password.length < 8) {
+      toast({
+        title: "Error",
+        description: "La contraseña debe tener al menos 8 caracteres",
+        variant: "destructive",
+      });
+      return;
+    }
     
     setIsLoading(true);
     
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    
-    // Mock successful registration
-    setUser(
-      { id: "1", email: registerForm.email, name: registerForm.name },
-      "mock-token"
-    );
-    
-    toast({
-      title: "¡Cuenta creada!",
-      description: "Tu cuenta ha sido creada correctamente",
-    });
-    
-    setIsLoading(false);
-    closeAuthModal();
+    try {
+      const response = await authApi.register({
+        name: registerForm.name,
+        email: registerForm.email,
+        password: registerForm.password,
+        password_confirmation: registerForm.confirmPassword,
+      });
+      
+      setUser(
+        { 
+          id: response.user.id, 
+          email: response.user.email, 
+          name: response.user.name,
+          avatar: response.user.avatar 
+        },
+        response.token
+      );
+      
+      toast({
+        title: "¡Cuenta creada!",
+        description: "Tu cuenta ha sido creada correctamente",
+      });
+      
+      setRegisterForm({
+        name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        acceptTerms: false,
+      });
+      closeAuthModal();
+    } catch (error) {
+      toast({
+        title: "Error al crear cuenta",
+        description: error instanceof Error ? error.message : "No se pudo crear la cuenta",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -147,6 +197,7 @@ export function AuthModal() {
                     value={loginForm.email}
                     onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -163,6 +214,7 @@ export function AuthModal() {
                     value={loginForm.password}
                     onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
@@ -214,7 +266,7 @@ export function AuthModal() {
                 </div>
               </div>
 
-              <Button type="button" variant="outline" className="w-full" size="lg">
+              <Button type="button" variant="outline" className="w-full" size="lg" disabled={isLoading}>
                 <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
                   <path
                     fill="currentColor"
@@ -258,6 +310,7 @@ export function AuthModal() {
                     value={registerForm.name}
                     onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -274,6 +327,7 @@ export function AuthModal() {
                     value={registerForm.email}
                     onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -290,6 +344,7 @@ export function AuthModal() {
                     value={registerForm.password}
                     onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
                     required
+                    disabled={isLoading}
                   />
                   <button
                     type="button"
@@ -313,6 +368,7 @@ export function AuthModal() {
                     value={registerForm.confirmPassword}
                     onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
                     required
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -324,6 +380,7 @@ export function AuthModal() {
                   onCheckedChange={(checked) => 
                     setRegisterForm({ ...registerForm, acceptTerms: checked as boolean })
                   }
+                  disabled={isLoading}
                 />
                 <label htmlFor="terms" className="text-sm text-muted-foreground leading-tight">
                   Acepto los{" "}
