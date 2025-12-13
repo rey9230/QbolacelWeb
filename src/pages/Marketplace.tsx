@@ -190,7 +190,7 @@ const Marketplace = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - Desktop */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24 space-y-4">
+            <div className="sticky top-24 h-[calc(100vh-120px)] overflow-y-auto space-y-4 pr-2 scrollbar-thin">
               {/* Price Range Filter */}
               <div className="card-elevated p-4">
                 <h3 className="font-semibold mb-3 text-sm">Precio (USD)</h3>
