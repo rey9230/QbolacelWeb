@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { ShoppingCart, Eye } from "lucide-react";
+import { ShoppingCart, Eye, Loader2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,26 +29,38 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCartStore();
   const { toast } = useToast();
+  const [isAdding, setIsAdding] = useState(false);
 
-  const handleAddToCart = (e: React.MouseEvent) => {
+  const handleAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     
-    addItem({
-      product_id: product.id,
-      name: product.name,
-      image: product.image,
-      price: product.price,
-      currency: product.currency,
-      stock: product.stock,
-      vendor_id: product.vendor_id,
-      vendor_name: product.vendor_name,
-    });
+    setIsAdding(true);
+    try {
+      await addItem({
+        productId: product.id,
+        name: product.name,
+        image: product.image,
+        price: product.price,
+        currency: product.currency,
+        stock: product.stock,
+        vendorId: product.vendor_id,
+        vendorName: product.vendor_name,
+      });
 
-    toast({
-      title: "¡Añadido al carrito!",
-      description: product.name,
-    });
+      toast({
+        title: "¡Añadido al carrito!",
+        description: product.name,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo añadir al carrito",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   return (
@@ -121,9 +134,13 @@ export function ProductCard({ product }: ProductCardProps) {
                 variant="gradient"
                 size="icon-sm"
                 onClick={handleAddToCart}
-                disabled={product.stock === 0}
+                disabled={product.stock === 0 || isAdding}
               >
-                <ShoppingCart className="h-4 w-4" />
+                {isAdding ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <ShoppingCart className="h-4 w-4" />
+                )}
               </Button>
             </div>
 

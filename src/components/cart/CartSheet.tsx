@@ -1,6 +1,7 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
-import { ShoppingBag, ArrowRight, Smartphone } from "lucide-react";
+import { ShoppingBag, ArrowRight, Smartphone, Loader2 } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -17,11 +18,18 @@ import { useAuthStore } from "@/stores/auth.store";
 
 export function CartSheet() {
   const navigate = useNavigate();
-  const { items, isOpen, closeCart, getSubtotal, getTotalItems } = useCartStore();
+  const { items, isOpen, isLoading, isSynced, closeCart, getSubtotal, getTotalItems, syncWithServer } = useCartStore();
   const { isAuthenticated, openAuthModal } = useAuthStore();
   
   const subtotal = getSubtotal();
   const totalItems = getTotalItems();
+
+  // Sync cart with server when opening and authenticated
+  useEffect(() => {
+    if (isOpen && isAuthenticated && !isSynced) {
+      syncWithServer();
+    }
+  }, [isOpen, isAuthenticated, isSynced, syncWithServer]);
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
@@ -52,7 +60,12 @@ export function CartSheet() {
 
         {/* Cart Items */}
         <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
-          {items.length === 0 ? (
+          {isLoading && items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-muted-foreground mt-4">Cargando carrito...</p>
+            </div>
+          ) : items.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center py-12">
               <div className="bg-muted rounded-full p-6 mb-4">
                 <ShoppingBag className="h-12 w-12 text-muted-foreground" />
@@ -74,7 +87,7 @@ export function CartSheet() {
           ) : (
             <AnimatePresence mode="popLayout">
               {items.map((item) => (
-                <CartItem key={item.product_id} item={item} />
+                <CartItem key={item.itemId} item={item} />
               ))}
             </AnimatePresence>
           )}
@@ -127,9 +140,16 @@ export function CartSheet() {
                 size="lg" 
                 className="w-full gap-2"
                 onClick={handleCheckout}
+                disabled={isLoading}
               >
-                Proceder al Checkout
-                <ArrowRight className="h-4 w-4" />
+                {isLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    Proceder al Checkout
+                    <ArrowRight className="h-4 w-4" />
+                  </>
+                )}
               </Button>
               <Button 
                 variant="ghost" 
