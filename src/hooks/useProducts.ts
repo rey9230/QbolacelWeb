@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { productsApi, categoriesApi, type ProductFilters, type Product, type Category } from "@/lib/api";
+import { productsApi, categoriesApi, type ProductFilters, type Product, type Category, type PageResponse, type ProductDetailResponse } from "@/lib/api";
 
 export function useProducts(filters: ProductFilters = {}) {
   return useQuery({
@@ -9,10 +9,10 @@ export function useProducts(filters: ProductFilters = {}) {
   });
 }
 
-export function useProduct(id: string) {
+export function useProduct(id: string, similarLimit = 4) {
   return useQuery({
-    queryKey: ["product", id],
-    queryFn: () => productsApi.getById(id),
+    queryKey: ["product", id, similarLimit],
+    queryFn: () => productsApi.getById(id, similarLimit),
     enabled: !!id,
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
@@ -26,4 +26,4 @@ export function useCategories() {
   });
 }
 
-export type { Product, Category, ProductFilters };
+export type { Product, Category, ProductFilters, PageResponse, ProductDetailResponse };
