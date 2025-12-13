@@ -190,8 +190,8 @@ const Marketplace = () => {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - Desktop */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24 space-y-4 max-h-[calc(100vh-120px)] overflow-y-auto pr-2">
-              {/* Price Range Filter - First for visibility */}
+            <div className="sticky top-24 space-y-4">
+              {/* Price Range Filter */}
               <div className="card-elevated p-4">
                 <h3 className="font-semibold mb-3 text-sm">Precio (USD)</h3>
                 <div className="space-y-3">
@@ -249,7 +249,7 @@ const Marketplace = () => {
                 </div>
               </div>
 
-              {/* Categories - Scrollable */}
+              {/* Categories */}
               <div className="card-elevated p-4">
                 <h3 className="font-semibold mb-3 text-sm">Categorías</h3>
                 {categoriesLoading ? (
@@ -257,7 +257,7 @@ const Marketplace = () => {
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
                   </div>
                 ) : (
-                  <div className="space-y-1 max-h-48 overflow-y-auto">
+                  <div className="space-y-1">
                     <button
                       onClick={() => handleCategoryClick('all')}
                       className={`w-full text-left px-2.5 py-1.5 rounded-md text-sm transition-colors ${
@@ -283,22 +283,6 @@ const Marketplace = () => {
                     ))}
                   </div>
                 )}
-              </div>
-
-              {/* Recharge Promo - At bottom */}
-              <div className="card-elevated p-4 gradient-card border border-primary/20">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="gradient-primary rounded-md p-1.5">
-                    <Smartphone className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-xs">Recargas Móvil</h3>
-                    <p className="text-[10px] text-muted-foreground">Desde $5</p>
-                  </div>
-                </div>
-                <Button variant="gradient" size="sm" className="w-full h-7 text-xs" asChild>
-                  <Link to="/recargas">Descargar App</Link>
-                </Button>
               </div>
             </div>
           </aside>
