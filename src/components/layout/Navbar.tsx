@@ -83,8 +83,10 @@ export function Navbar() {
             <CartButton />
 
             {isAuthenticated ? (
-              <Button variant="ghost" size="icon">
-                <User className="h-5 w-5" />
+              <Button variant="ghost" size="icon" asChild>
+                <Link to="/cuenta">
+                  <User className="h-5 w-5" />
+                </Link>
               </Button>
             ) : (
               <Button 
