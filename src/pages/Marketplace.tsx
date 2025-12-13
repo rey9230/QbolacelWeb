@@ -218,44 +218,7 @@ const Marketplace = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Banner */}
-      <section className="gradient-hero py-12">
-        <div className="container mx-auto px-4 text-center">
-          <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-            Marketplace Qbolacel
-          </h1>
-          <p className="text-primary-foreground/80 text-lg max-w-2xl mx-auto mb-4">
-            Envía productos a tu familia en Cuba. Miles de artículos disponibles con entrega garantizada.
-          </p>
-          
-          {/* Location/Contact indicator */}
-          {displayInfo.location && (
-            <Button
-              variant="secondary"
-              size="sm"
-              className="gap-2"
-              onClick={() => isAuthenticated ? setShowContactSelector(true) : setShowLocationModal(true)}
-            >
-              {displayInfo.name ? (
-                <>
-                  <User className="h-4 w-4" />
-                  <span className="font-medium">{displayInfo.name}</span>
-                  <span className="text-muted-foreground">•</span>
-                  <MapPin className="h-3 w-3" />
-                  <span>{displayInfo.location}</span>
-                </>
-              ) : (
-                <>
-                  <MapPin className="h-4 w-4" />
-                  <span>{displayInfo.location}</span>
-                </>
-              )}
-            </Button>
-          )}
-        </div>
-      </section>
-
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-6">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Sidebar - Desktop */}
           <aside className="hidden lg:block w-64 flex-shrink-0">
@@ -303,42 +266,64 @@ const Marketplace = () => {
 
           {/* Main Content */}
           <main className="flex-1">
-            {/* Search and Filters Bar */}
-            <div className="flex flex-col sm:flex-row gap-4 mb-6">
-              {/* Search */}
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar productos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
+            {/* Search, Location and Filters Bar */}
+            <div className="flex flex-col gap-4 mb-6">
+              {/* Location indicator row */}
+              {displayInfo.location && (
+                <button
+                  onClick={() => isAuthenticated ? setShowContactSelector(true) : setShowLocationModal(true)}
+                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors self-start"
+                >
+                  <MapPin className="h-4 w-4 text-primary" />
+                  <span>Entrega en:</span>
+                  {displayInfo.name && (
+                    <>
+                      <span className="font-medium text-foreground">{displayInfo.name}</span>
+                      <span>•</span>
+                    </>
+                  )}
+                  <span className="text-foreground">{displayInfo.location}</span>
+                  <span className="text-primary underline">Cambiar</span>
+                </button>
+              )}
+              
+              {/* Search and filters row */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* Search */}
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar productos..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+
+                {/* Sort */}
+                <Select value={sortBy} onValueChange={setSortBy}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SlidersHorizontal className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Ordenar por" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="popular">Más populares</SelectItem>
+                    <SelectItem value="newest">Más recientes</SelectItem>
+                    <SelectItem value="price-asc">Precio: menor a mayor</SelectItem>
+                    <SelectItem value="price-desc">Precio: mayor a menor</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {/* Mobile Filter Toggle */}
+                <Button
+                  variant="outline"
+                  className="lg:hidden"
+                  onClick={() => setShowFilters(!showFilters)}
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtros
+                </Button>
               </div>
-
-              {/* Sort */}
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SlidersHorizontal className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Ordenar por" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="popular">Más populares</SelectItem>
-                  <SelectItem value="newest">Más recientes</SelectItem>
-                  <SelectItem value="price-asc">Precio: menor a mayor</SelectItem>
-                  <SelectItem value="price-desc">Precio: mayor a menor</SelectItem>
-                </SelectContent>
-              </Select>
-
-              {/* Mobile Filter Toggle */}
-              <Button
-                variant="outline"
-                className="lg:hidden"
-                onClick={() => setShowFilters(!showFilters)}
-              >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
-              </Button>
             </div>
 
             {/* Mobile Filters */}
