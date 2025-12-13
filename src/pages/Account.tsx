@@ -47,8 +47,7 @@ export default function Account() {
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
-    province_id: "",
-    municipality_id: "",
+    municipality: "",
     address: "",
   });
 
@@ -65,11 +64,10 @@ export default function Account() {
       setFormData({
         name: profile.name || "",
         phone: profile.phone || "",
-        province_id: profile.province_id || "",
-        municipality_id: profile.municipality_id || "",
+        municipality: profile.municipality || "",
         address: profile.address || "",
       });
-      setSelectedProvince(profile.province_id || "");
+      setSelectedProvince(profile.province || "");
     }
   }, [profile]);
 
@@ -94,7 +92,7 @@ export default function Account() {
 
   const handleProvinceChange = (value: string) => {
     setSelectedProvince(value);
-    setFormData({ ...formData, province_id: value, municipality_id: "" });
+    setFormData({ ...formData, municipality: "" });
   };
 
   if (!isAuthenticated) {
@@ -102,8 +100,8 @@ export default function Account() {
   }
 
   // Province and municipality are now strings directly
-  const provinceName = formData.province_id;
-  const municipalityName = formData.municipality_id;
+  const provinceName = selectedProvince;
+  const municipalityName = formData.municipality;
 
   return (
     <div className="min-h-screen bg-background">
@@ -175,8 +173,7 @@ export default function Account() {
                             setFormData({
                               name: profile.name || "",
                               phone: profile.phone || "",
-                              province_id: profile.province_id || "",
-                              municipality_id: profile.municipality_id || "",
+                              municipality: profile.municipality || "",
                               address: profile.address || "",
                             });
                           }
@@ -268,7 +265,7 @@ export default function Account() {
                           <Label>Provincia</Label>
                           {isEditing ? (
                             <Select
-                              value={formData.province_id}
+                              value={selectedProvince}
                               onValueChange={handleProvinceChange}
                             >
                               <SelectTrigger>
@@ -290,9 +287,9 @@ export default function Account() {
                           <Label>Municipio</Label>
                           {isEditing ? (
                             <Select
-                              value={formData.municipality_id}
+                              value={formData.municipality}
                               onValueChange={(value) =>
-                                setFormData({ ...formData, municipality_id: value })
+                                setFormData({ ...formData, municipality: value })
                               }
                               disabled={!selectedProvince}
                             >
