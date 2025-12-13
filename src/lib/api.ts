@@ -1,4 +1,4 @@
-const API_BASE_URL = 'https://api.qbolacel.com/api/v3';
+const API_BASE_URL = 'https://api.qbolacel.com/api/v1';
 
 // Helper to get auth token from localStorage
 const getAuthToken = (): string | null => {
