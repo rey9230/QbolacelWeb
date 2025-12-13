@@ -109,6 +109,29 @@ const getLocationState = (): { municipality: string | null } => {
   return { municipality: null };
 };
 
+// Public fetch wrapper without authentication
+async function apiFetchPublic<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<T> {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Error de conexión' }));
+    throw new Error(error.message || `Error ${response.status}`);
+  }
+
+  return response.json();
+}
+
 // Base fetch wrapper with auth handling and automatic token refresh
 async function apiFetch<T>(
   endpoint: string,
@@ -572,15 +595,15 @@ export interface MunicipalityListResponse {
 
 export const geoApi = {
   getProvinces: () =>
-    apiFetch<ProvinceListResponse>('/geo/provinces'),
+    apiFetchPublic<ProvinceListResponse>('/geo/provinces'),
 
   getMunicipalities: (province?: string) => {
     const params = province ? `?province=${encodeURIComponent(province)}` : '';
-    return apiFetch<MunicipalityListResponse>(`/geo/municipalities${params}`);
+    return apiFetchPublic<MunicipalityListResponse>(`/geo/municipalities${params}`);
   },
 
   getProvinceOfMunicipality: (municipality: string) =>
-    apiFetch<{ municipality: string; province: string | null; found: boolean }>(
+    apiFetchPublic<{ municipality: string; province: string | null; found: boolean }>(
       `/geo/municipalities/${encodeURIComponent(municipality)}/province`
     ),
 };
