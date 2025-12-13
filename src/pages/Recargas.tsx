@@ -1,236 +1,339 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
 import { 
   Smartphone, 
   Wifi, 
-  Download, 
-  CheckCircle, 
   Zap,
-  ArrowRight,
-  Star,
   Shield,
   Clock,
-  Gift
+  Gift,
+  CheckCircle,
+  ArrowRight,
+  Download
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { cn } from "@/lib/utils";
 
-const rechargeOptions = [
-  { amount: 5, bonus: 0, popular: false },
-  { amount: 10, bonus: 2, popular: false },
-  { amount: 15, bonus: 3, popular: true },
-  { amount: 20, bonus: 5, popular: false },
-  { amount: 25, bonus: 7, popular: false },
-  { amount: 30, bonus: 10, popular: true },
+type RechargeType = "mobile" | "nauta";
+
+interface RechargeOption {
+  amount: number;
+  bonus?: number;
+  hours?: number;
+  popular?: boolean;
+  bestValue?: boolean;
+}
+
+const mobileOptions: RechargeOption[] = [
+  { amount: 5 },
+  { amount: 10, bonus: 1 },
+  { amount: 15, bonus: 2, popular: true },
+  { amount: 20, bonus: 3 },
+  { amount: 25, bonus: 4, bestValue: true },
+  { amount: 30, bonus: 5 },
 ];
 
-const nautaOptions = [
-  { hours: 1, price: 1.50 },
-  { hours: 5, price: 6.00 },
-  { hours: 10, price: 10.00 },
-  { hours: 20, price: 18.00 },
-  { hours: 30, price: 25.00 },
+const nautaOptions: RechargeOption[] = [
+  { amount: 3, hours: 1 },
+  { amount: 12, hours: 5, popular: true },
+  { amount: 20, hours: 10 },
+  { amount: 50, hours: 30, bestValue: true },
 ];
 
 const benefits = [
-  { icon: Zap, title: "Entrega Instantánea", description: "Tu recarga llega en segundos" },
-  { icon: Shield, title: "100% Seguro", description: "Transacciones encriptadas" },
-  { icon: Clock, title: "24/7 Disponible", description: "Recarga cuando quieras" },
-  { icon: Gift, title: "Bonificaciones", description: "Obtén saldo extra gratis" },
+  { icon: Zap, title: "Entrega Instantánea", description: "El saldo llega en segundos" },
+  { icon: Shield, title: "100% Seguro", description: "Pagos encriptados" },
+  { icon: Clock, title: "24/7 Disponible", description: "Recarga cualquier hora" },
+  { icon: Gift, title: "Bonos Exclusivos", description: "Saldo extra gratis" },
 ];
 
 const Recargas = () => {
+  const [rechargeType, setRechargeType] = useState<RechargeType>("mobile");
+  const [selectedAmount, setSelectedAmount] = useState<number>(15);
+
+  const options = rechargeType === "mobile" ? mobileOptions : nautaOptions;
+  const selectedOption = options.find(o => o.amount === selectedAmount);
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      {/* Hero Section */}
-      <section className="gradient-hero py-16 md:py-24 relative overflow-hidden">
+      {/* Hero Section - Clean */}
+      <section className={cn(
+        "py-16 md:py-20 relative overflow-hidden",
+        rechargeType === "mobile" 
+          ? "bg-gradient-to-br from-primary via-primary/90 to-accent"
+          : "bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-500"
+      )}>
         <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary-foreground rounded-full blur-3xl" />
-          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary-foreground rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl -translate-y-1/2" />
+          <div className="absolute bottom-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl translate-y-1/2" />
         </div>
 
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl mx-auto text-center">
-            <Badge variant="info" className="mb-6">
+          <div className="max-w-2xl mx-auto text-center">
+            <Badge className="bg-white/20 text-white border-white/30 mb-4">
               Servicio #1 en recargas a Cuba
             </Badge>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6">
-              Recarga móviles y Nauta
-              <span className="block text-primary-foreground/80">al instante</span>
+            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+              {rechargeType === "mobile" ? "Recargas Cubacel" : "Recargas Nauta"}
             </h1>
 
-            <p className="text-xl text-primary-foreground/80 mb-8 max-w-xl mx-auto">
-              Envía saldo a cualquier número Cubacel o cuenta Nauta en segundos. 
-              Descarga nuestra app y comienza ahora.
+            <p className="text-xl text-white/90 mb-8">
+              {rechargeType === "mobile" 
+                ? "Envía saldo móvil a Cuba al instante. Bonos exclusivos incluidos."
+                : "Internet para Cuba. Planes de navegación desde 1 hora."
+              }
             </p>
 
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <Button variant="hero-outline" size="xl" className="gap-2">
-                <Download className="h-5 w-5" />
-                App Store
-              </Button>
-              <Button variant="hero-outline" size="xl" className="gap-2">
-                <Download className="h-5 w-5" />
-                Google Play
-              </Button>
-            </div>
-
-            <div className="flex flex-wrap gap-4 justify-center">
-              <div className="flex items-center gap-2 text-primary-foreground/80">
-                <CheckCircle className="h-5 w-5 text-success" />
+            <div className="flex flex-wrap gap-4 justify-center text-white/80">
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
                 <span>Sin comisiones ocultas</span>
               </div>
-              <div className="flex items-center gap-2 text-primary-foreground/80">
-                <CheckCircle className="h-5 w-5 text-success" />
-                <span>Bonificaciones incluidas</span>
-              </div>
-              <div className="flex items-center gap-2 text-primary-foreground/80">
-                <CheckCircle className="h-5 w-5 text-success" />
-                <span>Soporte 24/7</span>
+              <div className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5" />
+                <span>Entrega inmediata</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Cubacel Section */}
-      <section className="py-16">
+      {/* Main Recharge Section */}
+      <section className="py-12 -mt-8">
         <div className="container mx-auto px-4">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="gradient-primary rounded-2xl p-3">
-              <Smartphone className="h-8 w-8 text-primary-foreground" />
-            </div>
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold">Recargas Cubacel</h2>
-              <p className="text-muted-foreground">Entrega instantánea a cualquier número</p>
-            </div>
-          </div>
+          <div className="max-w-4xl mx-auto">
+            {/* Card Container */}
+            <div className="bg-card border border-border rounded-3xl shadow-xl p-6 md:p-8">
+              {/* Type Selector */}
+              <div className="flex justify-center mb-8">
+                <div className="inline-flex p-1 rounded-2xl bg-muted">
+                  <button
+                    onClick={() => {
+                      setRechargeType("mobile");
+                      setSelectedAmount(15);
+                    }}
+                    className={cn(
+                      "flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all",
+                      rechargeType === "mobile"
+                        ? "bg-primary text-primary-foreground shadow-lg"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Smartphone className="h-5 w-5" />
+                    Móvil Cubacel
+                  </button>
+                  <button
+                    onClick={() => {
+                      setRechargeType("nauta");
+                      setSelectedAmount(12);
+                    }}
+                    className={cn(
+                      "flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all",
+                      rechargeType === "nauta"
+                        ? "bg-indigo-500 text-white shadow-lg"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    <Wifi className="h-5 w-5" />
+                    Nauta Internet
+                  </button>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-8">
-            {rechargeOptions.map((option) => (
-              <motion.div
-                key={option.amount}
-                whileHover={{ scale: 1.05 }}
-                className={`card-elevated p-6 text-center cursor-pointer border-2 transition-colors ${
-                  option.popular 
-                    ? "border-primary bg-primary/5" 
-                    : "border-transparent hover:border-primary/50"
-                }`}
-              >
-                {option.popular && (
-                  <Badge variant="popular" className="mb-2">Popular</Badge>
+              {/* Options Grid */}
+              <div className="mb-8">
+                <h3 className="text-lg font-semibold mb-4 text-center">
+                  Selecciona el monto
+                </h3>
+                <div className={cn(
+                  "grid gap-3",
+                  rechargeType === "mobile" ? "grid-cols-3 md:grid-cols-6" : "grid-cols-2 md:grid-cols-4"
+                )}>
+                  {options.map((option, i) => (
+                    <motion.button
+                      key={option.amount}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.05 }}
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => setSelectedAmount(option.amount)}
+                      className={cn(
+                        "relative p-4 rounded-2xl border-2 transition-all text-center",
+                        selectedAmount === option.amount
+                          ? rechargeType === "mobile"
+                            ? "border-primary bg-primary/5 shadow-lg"
+                            : "border-indigo-500 bg-indigo-500/5 shadow-lg"
+                          : "border-border bg-card hover:border-muted-foreground/50"
+                      )}
+                    >
+                      {option.popular && (
+                        <Badge 
+                          className={cn(
+                            "absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2",
+                            rechargeType === "mobile" ? "bg-primary" : "bg-indigo-500"
+                          )}
+                        >
+                          POPULAR
+                        </Badge>
+                      )}
+                      {option.bestValue && (
+                        <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2 bg-warning text-warning-foreground">
+                          MEJOR VALOR
+                        </Badge>
+                      )}
+
+                      <div className="text-2xl font-bold text-foreground">
+                        ${option.amount}
+                      </div>
+                      
+                      {option.hours && (
+                        <div className="text-sm text-muted-foreground">
+                          {option.hours}h navegación
+                        </div>
+                      )}
+
+                      {option.bonus && (
+                        <div className="flex items-center justify-center gap-1 mt-1 text-xs font-medium text-success">
+                          <Gift className="h-3 w-3" />
+                          +${option.bonus} bonus
+                        </div>
+                      )}
+                    </motion.button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Phone Input */}
+              <div className="mb-6">
+                <label className="text-sm font-medium mb-2 block">
+                  {rechargeType === "mobile" ? "Número de teléfono" : "Cuenta Nauta"}
+                </label>
+                <div className="flex gap-2">
+                  {rechargeType === "mobile" && (
+                    <div className="bg-muted px-4 py-3 rounded-xl font-mono text-sm flex items-center gap-2">
+                      <span className="text-lg">🇨🇺</span>
+                      +53
+                    </div>
+                  )}
+                  <input
+                    type={rechargeType === "mobile" ? "tel" : "email"}
+                    placeholder={rechargeType === "mobile" ? "5X XXX XXXX" : "usuario@nauta.com.cu"}
+                    className="flex-1 bg-muted px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              {/* Summary */}
+              {selectedOption && (
+                <div className={cn(
+                  "rounded-2xl p-4 mb-6",
+                  rechargeType === "mobile" 
+                    ? "bg-primary/5 border border-primary/20" 
+                    : "bg-indigo-500/5 border border-indigo-500/20"
+                )}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Total a pagar</p>
+                      <p className="text-2xl font-bold">
+                        ${selectedOption.amount}
+                        {selectedOption.bonus && (
+                          <span className="text-success ml-2 text-lg">
+                            +${selectedOption.bonus} bonus
+                          </span>
+                        )}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-muted-foreground">Recibe en Cuba</p>
+                      <p className="text-lg font-bold">
+                        {rechargeType === "mobile" 
+                          ? `$${selectedOption.amount + (selectedOption.bonus || 0)} saldo`
+                          : `${selectedOption.hours}h navegación`
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* CTA */}
+              <Button 
+                size="xl" 
+                className={cn(
+                  "w-full gap-2 text-lg",
+                  rechargeType === "nauta" && "bg-indigo-500 hover:bg-indigo-600"
                 )}
-                <p className="text-3xl font-bold text-foreground mb-1">
-                  ${option.amount}
-                </p>
-                {option.bonus > 0 && (
-                  <p className="text-sm text-success font-medium">
-                    +${option.bonus} bonus
-                  </p>
-                )}
-              </motion.div>
-            ))}
-          </div>
-
-          <div className="text-center">
-            <Button variant="gradient" size="lg" className="gap-2">
-              <Download className="h-5 w-5" />
-              Descargar App para Recargar
-            </Button>
-          </div>
-        </div>
-      </section>
-
-      {/* Nauta Section */}
-      <section className="py-16 bg-muted/50">
-        <div className="container mx-auto px-4">
-          <div className="flex items-center gap-3 mb-8">
-            <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-3">
-              <Wifi className="h-8 w-8 text-primary-foreground" />
-            </div>
-            <div>
-              <h2 className="text-2xl md:text-3xl font-bold">Recargas Nauta</h2>
-              <p className="text-muted-foreground">Navegación en Cuba desde cualquier lugar</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-            {nautaOptions.map((option) => (
-              <motion.div
-                key={option.hours}
-                whileHover={{ scale: 1.05 }}
-                className="card-elevated p-6 text-center cursor-pointer border-2 border-transparent hover:border-primary/50 transition-colors"
               >
-                <p className="text-3xl font-bold text-foreground mb-1">
-                  {option.hours}h
-                </p>
-                <p className="text-lg font-semibold text-primary">
-                  ${option.price.toFixed(2)}
-                </p>
-              </motion.div>
-            ))}
-          </div>
+                <Zap className="h-5 w-5" />
+                Recargar Ahora
+                <ArrowRight className="h-5 w-5" />
+              </Button>
 
-          <div className="text-center">
-            <Button variant="gradient" size="lg" className="gap-2">
-              <Download className="h-5 w-5" />
-              Descargar App para Recargar
-            </Button>
+              {/* Trust */}
+              <div className="flex items-center justify-center gap-2 mt-4 text-sm text-muted-foreground">
+                <Shield className="h-4 w-4" />
+                <span>Transacción 100% segura y encriptada</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Benefits */}
-      <section className="py-16">
+      <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4">
-          <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">
+          <h2 className="text-2xl font-bold text-center mb-10">
             ¿Por qué elegir Qbolacel?
           </h2>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {benefits.map((benefit) => (
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-4xl mx-auto">
+            {benefits.map((benefit, index) => (
               <motion.div
                 key={benefit.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                className="card-elevated p-6 text-center"
+                transition={{ delay: index * 0.1 }}
+                className="text-center"
               >
-                <div className="gradient-primary rounded-2xl p-4 inline-flex mb-4">
-                  <benefit.icon className="h-8 w-8 text-primary-foreground" />
+                <div className="inline-flex p-3 rounded-2xl bg-primary/10 mb-3">
+                  <benefit.icon className="h-6 w-6 text-primary" />
                 </div>
-                <h3 className="font-bold text-lg mb-2">{benefit.title}</h3>
-                <p className="text-muted-foreground">{benefit.description}</p>
+                <h3 className="font-bold mb-1">{benefit.title}</h3>
+                <p className="text-sm text-muted-foreground">{benefit.description}</p>
               </motion.div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA */}
-      <section className="py-16 gradient-hero">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-primary-foreground mb-4">
-            ¿Listo para recargar?
-          </h2>
-          <p className="text-xl text-primary-foreground/80 mb-8 max-w-md mx-auto">
-            Descarga la app y envía tu primera recarga en menos de 2 minutos
-          </p>
-          
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button variant="hero-outline" size="xl" className="gap-2">
-              <Download className="h-5 w-5" />
-              App Store
-            </Button>
-            <Button variant="hero-outline" size="xl" className="gap-2">
-              <Download className="h-5 w-5" />
-              Google Play
-            </Button>
+      {/* App CTA */}
+      <section className="py-12">
+        <div className="container mx-auto px-4">
+          <div className="max-w-2xl mx-auto text-center bg-muted rounded-3xl p-8">
+            <h3 className="text-xl font-bold mb-2">
+              Descarga la App Qbolacel
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              Recargas más rápidas, notificaciones y ofertas exclusivas
+            </p>
+            <div className="flex gap-3 justify-center">
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                App Store
+              </Button>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Google Play
+              </Button>
+            </div>
           </div>
         </div>
       </section>
