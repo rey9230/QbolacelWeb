@@ -143,9 +143,11 @@ async function apiFetch<T>(
     ...options.headers,
   };
 
-  // Add municipality header if available (skip for auth endpoints)
-  const isAuthEndpoint = endpoint.startsWith('/auth/');
-  if (!isAuthEndpoint) {
+  // Add municipality header only for marketplace-related endpoints
+  const isMarketplaceEndpoint = endpoint.startsWith('/products') || 
+                                 endpoint.startsWith('/categories') || 
+                                 endpoint.startsWith('/carts');
+  if (isMarketplaceEndpoint) {
     const { municipality } = getLocationState();
     if (municipality) {
       (headers as Record<string, string>)['X-Municipality'] = municipality;
