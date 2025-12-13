@@ -389,53 +389,84 @@ export const categoriesApi = {
 };
 
 // ============ CART API ============
-export interface CartItemApi {
-  id: string;
-  product_id: string;
-  product: Product;
-  quantity: number;
-  subtotal: number;
+export interface CartProductInfo {
+  name: string;
+  slug: string;
+  sku: string;
+  description?: string;
+  primaryImage?: string;
+  pictures: string[];
+  stock: number;
+  stockStatus: 'IN_STOCK' | 'OUT_OF_STOCK' | 'BACKORDER';
+  isPublished: boolean;
+  agencyId?: string;
+  agencyName?: string;
+  categoryIds: string[];
+  tags: string[];
+  attributes: Record<string, string>;
+  salesCount: number;
+  rating: number;
+  reviewsCount: number;
 }
 
-export interface CartResponse {
-  data: CartItemApi[];
-  totals: {
-    subtotal: number;
-    shipping: number;
-    tax: number;
-    total: number;
-  };
+export interface CartItemDto {
+  itemId: string;
+  productId: string;
+  qty: number;
+  unitPrice: number;
+  currency: string;
+  meta?: Record<string, string>;
+  product?: CartProductInfo;
+}
+
+export interface CartTotals {
+  subtotal: number;
+  currency: string;
+  totalItems: number;
+  uniqueProducts: number;
+}
+
+export interface CartDto {
+  id: string;
+  items: CartItemDto[];
+  totals: CartTotals;
+  updatedAt: string;
 }
 
 export const cartApi = {
   get: () =>
-    apiFetch<CartResponse>('/cart', {}, true),
+    apiFetch<CartDto>('/carts/me', {}, true),
 
-  sync: (items: { product_id: string; quantity: number }[]) =>
-    apiFetch<CartResponse>('/cart/sync', {
+  addItem: (productId: string, qty: number = 1) =>
+    apiFetch<CartDto>('/carts/me/items', {
       method: 'POST',
-      body: JSON.stringify({ items }),
+      body: JSON.stringify({ productId, qty }),
     }, true),
 
-  addItem: (product_id: string, quantity: number = 1) =>
-    apiFetch<CartResponse>('/cart/items', {
-      method: 'POST',
-      body: JSON.stringify({ product_id, quantity }),
-    }, true),
-
-  updateItem: (product_id: string, quantity: number) =>
-    apiFetch<CartResponse>(`/cart/items/${product_id}`, {
+  updateItem: (itemId: string, qty: number) =>
+    apiFetch<CartDto>(`/carts/me/items/${itemId}`, {
       method: 'PUT',
-      body: JSON.stringify({ quantity }),
+      body: JSON.stringify({ qty }),
     }, true),
 
-  removeItem: (product_id: string) =>
-    apiFetch<CartResponse>(`/cart/items/${product_id}`, {
+  removeItem: (itemId: string) =>
+    apiFetch<CartDto>(`/carts/me/items/${itemId}`, {
       method: 'DELETE',
     }, true),
 
   clear: () =>
-    apiFetch<{ message: string }>('/cart', {
+    apiFetch<CartDto>('/carts/me/clear', {
+      method: 'DELETE',
+    }, true),
+
+  applyCoupon: (code: string) =>
+    apiFetch<CartDto>('/carts/me/apply-coupon', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }, true),
+
+  removeCoupon: () =>
+    apiFetch<CartDto>('/carts/me/coupon', {
       method: 'DELETE',
     }, true),
 };

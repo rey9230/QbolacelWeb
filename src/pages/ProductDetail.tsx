@@ -71,19 +71,23 @@ export default function ProductDetail() {
   // In real app, fetch product by id
   const product = mockProduct;
 
-  const handleAddToCart = () => {
-    addItem({
-      product_id: product.id,
-      name: product.name,
-      image: product.images[0],
-      price: product.price,
-      currency: product.currency,
-      stock: product.stock,
-      vendor_id: product.vendor_id,
-      vendor_name: product.vendor_name,
-    }, quantity);
-    toast.success(`${product.name} añadido al carrito`);
-    openCart();
+  const handleAddToCart = async () => {
+    try {
+      await addItem({
+        productId: product.id,
+        name: product.name,
+        image: product.images[0],
+        price: product.price,
+        currency: product.currency,
+        stock: product.stock,
+        vendorId: product.vendor_id,
+        vendorName: product.vendor_name,
+      }, quantity);
+      toast.success(`${product.name} añadido al carrito`);
+      openCart();
+    } catch {
+      toast.error('Error al añadir al carrito');
+    }
   };
 
   const nextImage = () => {

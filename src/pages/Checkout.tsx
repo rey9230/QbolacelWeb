@@ -202,7 +202,7 @@ export default function Checkout() {
                 {/* Cart Items */}
                 <div className="lg:col-span-2 space-y-4">
                   {items.map((item) => (
-                    <div key={item.product_id} className="flex gap-4 p-4 bg-card rounded-xl border border-border">
+                    <div key={item.itemId} className="flex gap-4 p-4 bg-card rounded-xl border border-border">
                       <img
                         src={item.image}
                         alt={item.name}
@@ -210,7 +210,7 @@ export default function Checkout() {
                       />
                       <div className="flex-1">
                         <h3 className="font-medium">{item.name}</h3>
-                        <p className="text-sm text-muted-foreground">{item.vendor_name}</p>
+                        <p className="text-sm text-muted-foreground">{item.vendorName}</p>
                         <p className="font-bold text-primary mt-1">${item.price.toFixed(2)}</p>
                       </div>
                       <div className="flex flex-col items-end justify-between">
@@ -218,7 +218,7 @@ export default function Checkout() {
                           variant="ghost"
                           size="icon"
                           className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                          onClick={() => removeItem(item.product_id)}
+                          onClick={() => removeItem(item.itemId)}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -227,7 +227,7 @@ export default function Checkout() {
                             variant="outline"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => updateQty(item.product_id, item.qty - 1)}
+                            onClick={() => updateQty(item.itemId, item.qty - 1)}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
@@ -236,7 +236,7 @@ export default function Checkout() {
                             variant="outline"
                             size="icon"
                             className="h-8 w-8"
-                            onClick={() => updateQty(item.product_id, item.qty + 1)}
+                            onClick={() => updateQty(item.itemId, item.qty + 1)}
                             disabled={item.qty >= item.stock}
                           >
                             <Plus className="h-3 w-3" />
@@ -559,7 +559,7 @@ export default function Checkout() {
                   {/* Mini cart preview */}
                   <div className="space-y-3 mb-4">
                     {items.slice(0, 3).map((item) => (
-                      <div key={item.product_id} className="flex items-center gap-3">
+                      <div key={item.itemId} className="flex items-center gap-3">
                         <img
                           src={item.image}
                           alt={item.name}

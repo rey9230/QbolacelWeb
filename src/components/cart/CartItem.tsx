@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
-import { Minus, Plus, Trash2 } from "lucide-react";
+import { Minus, Plus, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCartStore, CartItem as CartItemType } from "@/stores/cart.store";
+import { useState } from "react";
 
 interface CartItemProps {
   item: CartItemType;
@@ -9,6 +10,25 @@ interface CartItemProps {
 
 export function CartItem({ item }: CartItemProps) {
   const { updateQty, removeItem } = useCartStore();
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleUpdateQty = async (newQty: number) => {
+    setIsUpdating(true);
+    try {
+      await updateQty(item.itemId, newQty);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleRemove = async () => {
+    setIsUpdating(true);
+    try {
+      await removeItem(item.itemId);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
 
   return (
     <motion.div
@@ -33,7 +53,7 @@ export function CartItem({ item }: CartItemProps) {
           {item.name}
         </h4>
         <p className="text-xs text-muted-foreground mb-2">
-          {item.vendor_name}
+          {item.vendorName}
         </p>
         
         <div className="flex items-center justify-between">
@@ -42,11 +62,15 @@ export function CartItem({ item }: CartItemProps) {
             <Button
               variant="outline"
               size="icon-sm"
-              onClick={() => updateQty(item.product_id, item.qty - 1)}
-              disabled={item.qty <= 1}
+              onClick={() => handleUpdateQty(item.qty - 1)}
+              disabled={item.qty <= 1 || isUpdating}
               className="h-7 w-7"
             >
-              <Minus className="h-3 w-3" />
+              {isUpdating ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Minus className="h-3 w-3" />
+              )}
             </Button>
             <span className="w-8 text-center text-sm font-medium">
               {item.qty}
@@ -54,11 +78,15 @@ export function CartItem({ item }: CartItemProps) {
             <Button
               variant="outline"
               size="icon-sm"
-              onClick={() => updateQty(item.product_id, item.qty + 1)}
-              disabled={item.qty >= item.stock}
+              onClick={() => handleUpdateQty(item.qty + 1)}
+              disabled={item.qty >= item.stock || isUpdating}
               className="h-7 w-7"
             >
-              <Plus className="h-3 w-3" />
+              {isUpdating ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Plus className="h-3 w-3" />
+              )}
             </Button>
           </div>
 
@@ -73,10 +101,15 @@ export function CartItem({ item }: CartItemProps) {
       <Button
         variant="ghost"
         size="icon-sm"
-        onClick={() => removeItem(item.product_id)}
+        onClick={handleRemove}
+        disabled={isUpdating}
         className="text-muted-foreground hover:text-destructive self-start"
       >
-        <Trash2 className="h-4 w-4" />
+        {isUpdating ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <Trash2 className="h-4 w-4" />
+        )}
       </Button>
     </motion.div>
   );
