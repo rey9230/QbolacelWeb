@@ -143,16 +143,16 @@ async function apiFetch<T>(
     ...options.headers,
   };
 
-  // Add municipality header only for marketplace-related endpoints
-  const isMarketplaceEndpoint = endpoint.startsWith('/products') || 
-                                 endpoint.startsWith('/categories') || 
-                                 endpoint.startsWith('/carts');
-  if (isMarketplaceEndpoint) {
-    const { municipality } = getLocationState();
-    if (municipality) {
-      (headers as Record<string, string>)['X-Municipality'] = municipality;
-    }
-  }
+  // TODO: Re-enable when backend CORS allows X-Municipality header
+  // const isMarketplaceEndpoint = endpoint.startsWith('/products') || 
+  //                                endpoint.startsWith('/categories') || 
+  //                                endpoint.startsWith('/carts');
+  // if (isMarketplaceEndpoint) {
+  //   const { municipality } = getLocationState();
+  //   if (municipality) {
+  //     (headers as Record<string, string>)['X-Municipality'] = municipality;
+  //   }
+  // }
 
   let { token } = getAuthState();
   if (requiresAuth || token) {
