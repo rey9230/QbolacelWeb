@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Smartphone, 
@@ -50,9 +51,29 @@ const benefits = [
   { icon: Gift, title: "Bonos Exclusivos", description: "Saldo extra gratis" },
 ];
 
+interface LocationState {
+  type?: RechargeType;
+  amount?: number;
+}
+
 const Recargas = () => {
-  const [rechargeType, setRechargeType] = useState<RechargeType>("mobile");
-  const [selectedAmount, setSelectedAmount] = useState<number>(15);
+  const location = useLocation();
+  const state = location.state as LocationState | null;
+
+  const [rechargeType, setRechargeType] = useState<RechargeType>(state?.type || "mobile");
+  const [selectedAmount, setSelectedAmount] = useState<number>(
+    state?.amount || (state?.type === "nauta" ? 12 : 15)
+  );
+
+  // Update selection if navigated with state
+  useEffect(() => {
+    if (state?.type) {
+      setRechargeType(state.type);
+    }
+    if (state?.amount) {
+      setSelectedAmount(state.amount);
+    }
+  }, [state]);
 
   const options = rechargeType === "mobile" ? mobileOptions : nautaOptions;
   const selectedOption = options.find(o => o.amount === selectedAmount);
