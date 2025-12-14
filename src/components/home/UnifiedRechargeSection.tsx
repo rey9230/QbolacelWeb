@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Smartphone, Wifi, Zap, Gift, Shield, Clock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -31,8 +32,18 @@ const nautaOffers: RechargeOffer[] = [
 ];
 
 export function UnifiedRechargeSection() {
+  const navigate = useNavigate();
   const [rechargeType, setRechargeType] = useState<RechargeType>("mobile");
   const [selectedAmount, setSelectedAmount] = useState<number | null>(20);
+
+  const handleRechargeClick = () => {
+    navigate("/recargas", {
+      state: {
+        type: rechargeType,
+        amount: selectedAmount,
+      },
+    });
+  };
 
   const offers = rechargeType === "mobile" ? mobileOffers : nautaOffers;
   const selectedOffer = offers.find(o => o.amount === selectedAmount);
@@ -116,7 +127,15 @@ export function UnifiedRechargeSection() {
                 transition={{ delay: i * 0.05 }}
                 whileHover={{ scale: 1.03, y: -3 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => setSelectedAmount(offer.amount)}
+                onClick={() => {
+                  setSelectedAmount(offer.amount);
+                  navigate("/recargas", {
+                    state: {
+                      type: rechargeType,
+                      amount: offer.amount,
+                    },
+                  });
+                }}
                 className={cn(
                   "relative p-4 rounded-2xl border-2 transition-all text-center",
                   selectedAmount === offer.amount
@@ -215,6 +234,7 @@ export function UnifiedRechargeSection() {
                       "gap-2",
                       rechargeType === "nauta" && "bg-indigo-500 hover:bg-indigo-600"
                     )}
+                    onClick={handleRechargeClick}
                   >
                     <Zap className="h-5 w-5" />
                     Recargar Ahora
