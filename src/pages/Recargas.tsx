@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { RechargeCheckoutModal } from "@/components/recharge/RechargeCheckoutModal";
 import { cn } from "@/lib/utils";
 
 type RechargeType = "mobile" | "nauta";
@@ -64,6 +65,8 @@ const Recargas = () => {
   const [selectedAmount, setSelectedAmount] = useState<number>(
     state?.amount || (state?.type === "nauta" ? 12 : 15)
   );
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   // Update selection if navigated with state
   useEffect(() => {
@@ -77,6 +80,12 @@ const Recargas = () => {
 
   const options = rechargeType === "mobile" ? mobileOptions : nautaOptions;
   const selectedOption = options.find(o => o.amount === selectedAmount);
+
+  const handleRechargeClick = () => {
+    if (phoneNumber.trim().length > 0 && selectedOption) {
+      setCheckoutOpen(true);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -246,6 +255,8 @@ const Recargas = () => {
                   <input
                     type={rechargeType === "mobile" ? "tel" : "email"}
                     placeholder={rechargeType === "mobile" ? "5X XXX XXXX" : "usuario@nauta.com.cu"}
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
                     className="flex-1 bg-muted px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                 </div>
@@ -291,6 +302,8 @@ const Recargas = () => {
                   "w-full gap-2 text-lg",
                   rechargeType === "nauta" && "bg-indigo-500 hover:bg-indigo-600"
                 )}
+                onClick={handleRechargeClick}
+                disabled={!phoneNumber.trim()}
               >
                 <Zap className="h-5 w-5" />
                 Recargar Ahora
@@ -360,6 +373,17 @@ const Recargas = () => {
       </section>
 
       <Footer />
+
+      {/* Checkout Modal */}
+      {selectedOption && (
+        <RechargeCheckoutModal
+          open={checkoutOpen}
+          onOpenChange={setCheckoutOpen}
+          rechargeType={rechargeType}
+          selectedOption={selectedOption}
+          phoneNumber={phoneNumber}
+        />
+      )}
     </div>
   );
 };
