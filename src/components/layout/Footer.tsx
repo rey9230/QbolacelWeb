@@ -1,15 +1,5 @@
 import { Link } from "react-router-dom";
-import { 
-  Smartphone, 
-  Wifi, 
-  ShoppingBag, 
-  Mail,
-  Phone,
-  MapPin,
-  Facebook,
-  Instagram,
-  Twitter
-} from "lucide-react";
+import { Smartphone, Wifi, ShoppingBag, Mail, Phone, MapPin, Facebook, Instagram, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import logoVertical from "@/assets/logo-vertical.svg";
 
@@ -41,24 +31,31 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <Link to="/">
-              <img 
-                src={logoVertical} 
-                alt="Qbolacel" 
-                className="h-20 brightness-0 invert"
-              />
+              <img src={logoVertical} alt="Qbolacel" className="h-20 brightness-0 invert" />
             </Link>
             <p className="text-primary-foreground/70 text-sm">
-              La plataforma #1 para recargas móviles y envío de productos a Cuba. 
-              Rápido, seguro y confiable.
+              La plataforma #1 para recargas móviles y envío de productos a Cuba. Rápido, seguro y confiable.
             </p>
             <div className="flex gap-3">
-              <Button variant="ghost" size="icon" className="text-primary-foreground/70 hover:text-primary-foreground h-9 w-9">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-primary-foreground/70 hover:text-primary-foreground h-9 w-9"
+              >
                 <Facebook className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-primary-foreground/70 hover:text-primary-foreground h-9 w-9">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-primary-foreground/70 hover:text-primary-foreground h-9 w-9"
+              >
                 <Instagram className="h-5 w-5" />
               </Button>
-              <Button variant="ghost" size="icon" className="text-primary-foreground/70 hover:text-primary-foreground h-9 w-9">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-primary-foreground/70 hover:text-primary-foreground h-9 w-9"
+              >
                 <Twitter className="h-5 w-5" />
               </Button>
             </div>
@@ -85,14 +82,14 @@ export function Footer() {
             <div className="mt-6">
               <h4 className="font-medium mb-3 text-sm">Descarga la App</h4>
               <div className="flex gap-2">
-                <a 
-                  href="#" 
+                <a
+                  href="#"
                   className="bg-primary-foreground/10 text-primary-foreground px-3 py-2 rounded-lg text-xs font-medium hover:bg-primary-foreground/20 transition-colors"
                 >
                   App Store
                 </a>
-                <a 
-                  href="#" 
+                <a
+                  href="#"
                   className="bg-primary-foreground/10 text-primary-foreground px-3 py-2 rounded-lg text-xs font-medium hover:bg-primary-foreground/20 transition-colors"
                 >
                   Google Play
@@ -124,15 +121,15 @@ export function Footer() {
             <ul className="space-y-3">
               <li className="flex items-center gap-2 text-sm text-primary-foreground/70">
                 <Mail className="h-4 w-4" />
-                soporte@qbolacel.com
+                qbolacel@gmail.com
               </li>
               <li className="flex items-center gap-2 text-sm text-primary-foreground/70">
                 <Phone className="h-4 w-4" />
-                +1 (786) 555-0123
+                +1 (727) 276-0465
               </li>
               <li className="flex items-start gap-2 text-sm text-primary-foreground/70">
                 <MapPin className="h-4 w-4 mt-0.5" />
-                Miami, FL, USA
+                Saint Petersburg, FL, USA
               </li>
             </ul>
 
@@ -158,7 +155,7 @@ export function Footer() {
         {/* Bottom */}
         <div className="mt-12 pt-8 border-t border-primary-foreground/10 text-center">
           <p className="text-sm text-primary-foreground/50">
-            © {new Date().getFullYear()} Qbolacel. Todos los derechos reservados.
+            © {new Date().getFullYear()} Qbolacel LLC. Todos los derechos reservados.
           </p>
         </div>
       </div>

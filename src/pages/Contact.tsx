@@ -13,13 +13,13 @@ const contactInfo = [
   {
     icon: Mail,
     title: "Email",
-    value: "soporte@qbolacel.com",
+    value: "qbolacel@gmail.com",
     description: "Respuesta en 24 horas",
   },
   {
     icon: Phone,
     title: "Teléfono",
-    value: "+1 (786) 555-0123",
+    value: "+1 (727) 276-0465",
     description: "Lunes a Viernes, 9am - 6pm EST",
   },
   {
@@ -31,7 +31,7 @@ const contactInfo = [
   {
     icon: MapPin,
     title: "Oficina",
-    value: "Miami, Florida",
+    value: "Saint Petersburg, Florida",
     description: "Estados Unidos",
   },
 ];
@@ -48,10 +48,10 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
+
     // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
     toast.success("Mensaje enviado correctamente. Te responderemos pronto.");
     setFormData({ name: "", email: "", subject: "", message: "" });
     setIsSubmitting(false);
@@ -60,17 +60,12 @@ export default function Contact() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       {/* Hero */}
       <section className="py-16 bg-muted/30">
         <div className="container mx-auto px-4 text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Contacto
-            </h1>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Contacto</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               ¿Tienes preguntas? Estamos aquí para ayudarte. Contáctanos por cualquiera de nuestros canales.
             </p>
@@ -111,10 +106,8 @@ export default function Contact() {
               animate={{ opacity: 1, y: 0 }}
               className="bg-card border border-border rounded-2xl p-8"
             >
-              <h2 className="text-2xl font-bold mb-6 text-center">
-                Envíanos un mensaje
-              </h2>
-              
+              <h2 className="text-2xl font-bold mb-6 text-center">Envíanos un mensaje</h2>
+
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -139,7 +132,7 @@ export default function Contact() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="subject">Asunto</Label>
                   <Input
@@ -150,7 +143,7 @@ export default function Contact() {
                     required
                   />
                 </div>
-                
+
                 <div className="space-y-2">
                   <Label htmlFor="message">Mensaje</Label>
                   <Textarea
@@ -162,7 +155,7 @@ export default function Contact() {
                     required
                   />
                 </div>
-                
+
                 <Button type="submit" size="lg" className="w-full gap-2" disabled={isSubmitting}>
                   {isSubmitting ? (
                     "Enviando..."
