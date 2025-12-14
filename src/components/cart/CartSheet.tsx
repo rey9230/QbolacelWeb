@@ -2,13 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { ShoppingBag, ArrowRight, Smartphone, Loader2 } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-} from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -20,7 +14,7 @@ export function CartSheet() {
   const navigate = useNavigate();
   const { items, isOpen, isLoading, isSynced, closeCart, getSubtotal, getTotalItems, syncWithServer } = useCartStore();
   const { isAuthenticated, openAuthModal } = useAuthStore();
-  
+
   const subtotal = getSubtotal();
   const totalItems = getTotalItems();
 
@@ -33,11 +27,11 @@ export function CartSheet() {
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
-      openAuthModal('login');
+      openAuthModal("login");
       return;
     }
     closeCart();
-    navigate('/checkout');
+    navigate("/checkout");
   };
 
   return (
@@ -52,7 +46,7 @@ export function CartSheet() {
             <div>
               <SheetTitle className="text-left">Tu Carrito</SheetTitle>
               <SheetDescription className="text-left">
-                {totalItems} {totalItems === 1 ? 'artículo' : 'artículos'}
+                {totalItems} {totalItems === 1 ? "artículo" : "artículos"}
               </SheetDescription>
             </div>
           </div>
@@ -74,11 +68,11 @@ export function CartSheet() {
               <p className="text-muted-foreground text-sm mb-6 max-w-[200px]">
                 Explora nuestro marketplace y encuentra productos increíbles
               </p>
-              <Button 
-                variant="gradient" 
+              <Button
+                variant="gradient"
                 onClick={() => {
                   closeCart();
-                  navigate('/marketplace');
+                  navigate("/marketplace");
                 }}
               >
                 Explorar Productos
@@ -93,17 +87,13 @@ export function CartSheet() {
           )}
 
           {/* Promo Banner */}
-          {items.length > 0 && (
+          {items.length > 1000 && (
             <div className="mt-4 p-4 rounded-xl bg-primary/5 border border-primary/20">
               <div className="flex items-start gap-3">
                 <Smartphone className="h-5 w-5 text-primary mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-foreground">
-                    ¿También necesitas recargar?
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Descarga la app y envía saldo a Cuba
-                  </p>
+                  <p className="text-sm font-medium text-foreground">¿También necesitas recargar?</p>
+                  <p className="text-xs text-muted-foreground">Descarga la app y envía saldo a Cuba</p>
                   <Badge variant="promo" className="mt-2">
                     $2 de bonificación
                   </Badge>
@@ -135,9 +125,9 @@ export function CartSheet() {
 
             {/* Actions */}
             <div className="space-y-2">
-              <Button 
-                variant="gradient" 
-                size="lg" 
+              <Button
+                variant="gradient"
+                size="lg"
                 className="w-full gap-2"
                 onClick={handleCheckout}
                 disabled={isLoading}
@@ -151,12 +141,12 @@ export function CartSheet() {
                   </>
                 )}
               </Button>
-              <Button 
-                variant="ghost" 
+              <Button
+                variant="ghost"
                 className="w-full"
                 onClick={() => {
                   closeCart();
-                  navigate('/marketplace');
+                  navigate("/marketplace");
                 }}
               >
                 Continuar Comprando
