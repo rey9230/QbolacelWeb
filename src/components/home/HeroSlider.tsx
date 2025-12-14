@@ -5,6 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
 
+// Desktop images
+import slide1Desktop from "@/assets/hero/slide1-desktop.jpg";
+import slide2Desktop from "@/assets/hero/slide2-desktop.jpg";
+import slide3Desktop from "@/assets/hero/slide3-desktop.jpg";
+import slide4Desktop from "@/assets/hero/slide4-desktop.jpg";
+
+// Mobile images
+import slide1Mobile from "@/assets/hero/slide1-mobile.jpg";
+import slide2Mobile from "@/assets/hero/slide2-mobile.jpg";
+import slide3Mobile from "@/assets/hero/slide3-mobile.jpg";
+import slide4Mobile from "@/assets/hero/slide4-mobile.jpg";
+
 interface Slide {
   id: number;
   title: string;
@@ -13,8 +25,9 @@ interface Slide {
   ctaLink: string;
   badge?: string;
   icon: React.ElementType;
-  gradient: string;
-  image?: string;
+  imageDesktop: string;
+  imageMobile: string;
+  overlayColor: string;
 }
 
 const slides: Slide[] = [
@@ -26,7 +39,9 @@ const slides: Slide[] = [
     ctaLink: "/recargas",
     badge: "OFERTA ESPECIAL",
     icon: Smartphone,
-    gradient: "from-primary via-primary/90 to-accent",
+    imageDesktop: slide1Desktop,
+    imageMobile: slide1Mobile,
+    overlayColor: "from-primary/80 via-primary/50 to-transparent",
   },
   {
     id: 2,
@@ -36,7 +51,9 @@ const slides: Slide[] = [
     ctaLink: "/recargas",
     badge: "NAUTA",
     icon: Wifi,
-    gradient: "from-indigo-600 via-blue-600 to-cyan-500",
+    imageDesktop: slide2Desktop,
+    imageMobile: slide2Mobile,
+    overlayColor: "from-indigo-900/80 via-indigo-900/50 to-transparent",
   },
   {
     id: 3,
@@ -46,7 +63,9 @@ const slides: Slide[] = [
     ctaLink: "/recargas",
     badge: "NUEVO USUARIO",
     icon: Gift,
-    gradient: "from-success via-emerald-600 to-teal-500",
+    imageDesktop: slide3Desktop,
+    imageMobile: slide3Mobile,
+    overlayColor: "from-success/80 via-success/50 to-transparent",
   },
   {
     id: 4,
@@ -56,7 +75,9 @@ const slides: Slide[] = [
     ctaLink: "/marketplace",
     badge: "MARKETPLACE",
     icon: Percent,
-    gradient: "from-warning via-orange-500 to-rose-500",
+    imageDesktop: slide4Desktop,
+    imageMobile: slide4Mobile,
+    overlayColor: "from-warning/80 via-warning/50 to-transparent",
   },
 ];
 
@@ -88,42 +109,34 @@ export function HeroSlider() {
 
   return (
     <section className="relative h-[500px] md:h-[550px] overflow-hidden">
-      {/* Background */}
+      {/* Background Image */}
       <AnimatePresence mode="wait">
         <motion.div
           key={slide.id}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          initial={{ opacity: 0, scale: 1.1 }}
+          animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
-          className={`absolute inset-0 bg-gradient-to-br ${slide.gradient}`}
+          transition={{ duration: 0.7 }}
+          className="absolute inset-0"
         >
-          {/* Decorative elements */}
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-white rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-            <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-white rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
-          </div>
+          {/* Desktop Image */}
+          <img
+            src={slide.imageDesktop}
+            alt={slide.title}
+            className="hidden md:block absolute inset-0 w-full h-full object-cover"
+          />
+          {/* Mobile Image */}
+          <img
+            src={slide.imageMobile}
+            alt={slide.title}
+            className="block md:hidden absolute inset-0 w-full h-full object-cover"
+          />
           
-          {/* Animated particles */}
-          {[...Array(8)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-3 h-3 bg-white/20 rounded-full"
-              style={{
-                left: `${10 + i * 12}%`,
-                top: `${20 + (i % 3) * 25}%`,
-              }}
-              animate={{
-                y: [0, -20, 0],
-                opacity: [0.2, 0.5, 0.2],
-              }}
-              transition={{
-                duration: 3 + i * 0.5,
-                repeat: Infinity,
-                delay: i * 0.3,
-              }}
-            />
-          ))}
+          {/* Gradient Overlay for text readability */}
+          <div className={`absolute inset-0 bg-gradient-to-r ${slide.overlayColor}`} />
+          
+          {/* Additional dark overlay for better text contrast */}
+          <div className="absolute inset-0 bg-black/20" />
         </motion.div>
       </AnimatePresence>
 
@@ -139,7 +152,7 @@ export function HeroSlider() {
             className="max-w-2xl"
           >
             {slide.badge && (
-              <Badge className="bg-white/20 text-white border-white/30 mb-4">
+              <Badge className="bg-white/20 text-white border-white/30 mb-4 backdrop-blur-sm">
                 {slide.badge}
               </Badge>
             )}
@@ -150,18 +163,18 @@ export function HeroSlider() {
               </div>
             </div>
 
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight drop-shadow-lg">
               {slide.title}
             </h2>
 
-            <p className="text-xl text-white/90 mb-8 max-w-lg">
+            <p className="text-xl text-white/90 mb-8 max-w-lg drop-shadow-md">
               {slide.subtitle}
             </p>
 
             <Button 
               asChild
               size="xl" 
-              className="bg-white text-foreground hover:bg-white/90 font-bold gap-2"
+              className="bg-white text-foreground hover:bg-white/90 font-bold gap-2 shadow-lg"
             >
               <Link to={slide.ctaLink}>
                 {slide.cta}
