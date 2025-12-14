@@ -127,15 +127,7 @@ export function UnifiedRechargeSection() {
                 transition={{ delay: i * 0.05 }}
                 whileHover={{ scale: 1.03, y: -3 }}
                 whileTap={{ scale: 0.98 }}
-                onClick={() => {
-                  setSelectedAmount(offer.amount);
-                  navigate("/recargas", {
-                    state: {
-                      type: rechargeType,
-                      amount: offer.amount,
-                    },
-                  });
-                }}
+                onClick={() => setSelectedAmount(offer.amount)}
                 className={cn(
                   "relative p-4 rounded-2xl border-2 transition-all text-center",
                   selectedAmount === offer.amount
