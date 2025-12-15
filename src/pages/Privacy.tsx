@@ -41,7 +41,6 @@ export default function Privacy() {
                   <li>Nombre completo</li>
                   <li>Dirección de correo electrónico</li>
                   <li>Número de teléfono</li>
-                  <li>Region del ussuario</li>
                   <li>Dirección de envío (para productos del marketplace)</li>
                   <li>Información de pago (procesada de forma segura por terceros)</li>
                   <li>
