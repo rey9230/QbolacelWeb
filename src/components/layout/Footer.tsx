@@ -13,6 +13,7 @@ const quickLinks = [
   { label: "Inicio", to: "/" },
   { label: "Recargas", to: "/recargas" },
   { label: "Marketplace", to: "/marketplace" },
+  { label: "Sobre Nosotros", to: "/sobre-nosotros" },
   { label: "Preguntas Frecuentes", to: "/preguntas-frecuentes" },
   { label: "Contacto", to: "/contacto" },
 ];
