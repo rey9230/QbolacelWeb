@@ -16,7 +16,7 @@ export default function Privacy() {
               <Shield className="h-8 w-8 text-primary" />
             </div>
             <h1 className="text-4xl font-bold mb-4">Política de Privacidad</h1>
-            <p className="text-muted-foreground">Última actualización: Diciembre 2024</p>
+            <p className="text-muted-foreground">Última actualización: Diciembre 2025</p>
           </motion.div>
         </div>
       </section>
@@ -41,8 +41,13 @@ export default function Privacy() {
                   <li>Nombre completo</li>
                   <li>Dirección de correo electrónico</li>
                   <li>Número de teléfono</li>
+                  <li>Region del ussuario</li>
                   <li>Dirección de envío (para productos del marketplace)</li>
                   <li>Información de pago (procesada de forma segura por terceros)</li>
+                  <li>
+                    Ubicación general o región (para personalizar la experiencia y mostrar publicidad u ofertas locales
+                    relevantes)
+                  </li>
                 </ul>
 
                 <h3>2.2 Información de Uso</h3>
