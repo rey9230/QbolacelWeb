@@ -45,6 +45,18 @@ const slides: Slide[] = [
   },
   {
     id: 2,
+    title: "Envía productos a Cuba",
+    subtitle: "Marketplace con miles de artículos. Entrega garantizada en toda la isla.",
+    cta: "Ver Catálogo",
+    ctaLink: "/marketplace",
+    badge: "MARKETPLACE",
+    icon: Percent,
+    imageDesktop: slide4Desktop,
+    imageMobile: slide4Mobile,
+    overlayColor: "from-warning/80 via-warning/50 to-transparent",
+  },
+  {
+    id: 3,
     title: "Internet para Cuba",
     subtitle: "Recargas Nauta desde $3. Mantén conectada a tu familia.",
     cta: "Ver Planes Nauta",
@@ -56,7 +68,7 @@ const slides: Slide[] = [
     overlayColor: "from-indigo-900/80 via-indigo-900/50 to-transparent",
   },
   {
-    id: 3,
+    id: 4,
     title: "Primera Recarga: 10% Extra",
     subtitle: "Usa código BIENVENIDO10 y recibe más saldo en tu primera recarga.",
     cta: "Obtener Bonus",
@@ -67,18 +79,6 @@ const slides: Slide[] = [
     imageMobile: slide3Mobile,
     overlayColor: "from-success/80 via-success/50 to-transparent",
   },
-  {
-    id: 4,
-    title: "Envía productos a Cuba",
-    subtitle: "Marketplace con miles de artículos. Entrega garantizada en toda la isla.",
-    cta: "Ver Catálogo",
-    ctaLink: "/marketplace",
-    badge: "MARKETPLACE",
-    icon: Percent,
-    imageDesktop: slide4Desktop,
-    imageMobile: slide4Mobile,
-    overlayColor: "from-warning/80 via-warning/50 to-transparent",
-  },
 ];
 
 export function HeroSlider() {
@@ -87,7 +87,7 @@ export function HeroSlider() {
 
   useEffect(() => {
     if (!isAutoPlaying) return;
-    
+
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
@@ -131,10 +131,10 @@ export function HeroSlider() {
             alt={slide.title}
             className="block md:hidden absolute inset-0 w-full h-full object-cover"
           />
-          
+
           {/* Gradient Overlay for text readability */}
           <div className={`absolute inset-0 bg-gradient-to-r ${slide.overlayColor}`} />
-          
+
           {/* Additional dark overlay for better text contrast */}
           <div className="absolute inset-0 bg-black/20" />
         </motion.div>
@@ -152,9 +152,7 @@ export function HeroSlider() {
             className="max-w-2xl"
           >
             {slide.badge && (
-              <Badge className="bg-white/20 text-white border-white/30 mb-4 backdrop-blur-sm">
-                {slide.badge}
-              </Badge>
+              <Badge className="bg-white/20 text-white border-white/30 mb-4 backdrop-blur-sm">{slide.badge}</Badge>
             )}
 
             <div className="flex items-center gap-4 mb-4">
@@ -167,18 +165,10 @@ export function HeroSlider() {
               {slide.title}
             </h2>
 
-            <p className="text-xl text-white/90 mb-8 max-w-lg drop-shadow-md">
-              {slide.subtitle}
-            </p>
+            <p className="text-xl text-white/90 mb-8 max-w-lg drop-shadow-md">{slide.subtitle}</p>
 
-            <Button 
-              asChild
-              size="xl" 
-              className="bg-white text-foreground hover:bg-white/90 font-bold gap-2 shadow-lg"
-            >
-              <Link to={slide.ctaLink}>
-                {slide.cta}
-              </Link>
+            <Button asChild size="xl" className="bg-white text-foreground hover:bg-white/90 font-bold gap-2 shadow-lg">
+              <Link to={slide.ctaLink}>{slide.cta}</Link>
             </Button>
           </motion.div>
         </AnimatePresence>
@@ -207,9 +197,7 @@ export function HeroSlider() {
             key={index}
             onClick={() => goToSlide(index)}
             className={`w-3 h-3 rounded-full transition-all ${
-              index === currentSlide 
-                ? "bg-white w-8" 
-                : "bg-white/40 hover:bg-white/60"
+              index === currentSlide ? "bg-white w-8" : "bg-white/40 hover:bg-white/60"
             }`}
             aria-label={`Go to slide ${index + 1}`}
           />
