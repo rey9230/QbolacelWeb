@@ -151,14 +151,27 @@ export default function Checkout() {
     try {
       // Paso 1: Crear la orden física en el backend
       const idempotencyKey = generateIdempotencyKey();
+
+      const address: Record<string, string> = {
+        fullName: selectedContact.fullName,
+        phone: selectedContact.phone,
+        municipality: selectedContact.municipality,
+        street: selectedContact.street,
+      };
+      if (selectedContact.betweenStreets) {
+        address.betweenStreets = selectedContact.betweenStreets;
+      }
+
       const orderData = {
-        items: items.map(item => ({
+        items: items.map((item) => ({
           productId: item.productId,
           qty: item.qty,
         })),
         currency: "USD",
-        contactId: selectedContact.id,
-        shippingMethod: shippingData.shippingMethod,
+        shipping: {
+          method: shippingData.shippingMethod,
+          address,
+        },
       };
 
       const order = await createOrderMutation.mutateAsync({ data: orderData, idempotencyKey });
