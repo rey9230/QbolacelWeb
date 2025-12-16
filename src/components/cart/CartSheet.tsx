@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AnimatePresence } from "framer-motion";
 import { ShoppingBag, ArrowRight, Smartphone, Loader2 } from "lucide-react";
@@ -12,18 +11,11 @@ import { useAuthStore } from "@/stores/auth.store";
 
 export function CartSheet() {
   const navigate = useNavigate();
-  const { items, isOpen, isLoading, isSynced, closeCart, getSubtotal, getTotalItems, syncWithServer } = useCartStore();
+  const { items, isOpen, isLoading, closeCart, getSubtotal, getTotalItems } = useCartStore();
   const { isAuthenticated, openAuthModal } = useAuthStore();
 
   const subtotal = getSubtotal();
   const totalItems = getTotalItems();
-
-  // Sync cart with server when opening and authenticated
-  useEffect(() => {
-    if (isOpen && isAuthenticated && !isSynced) {
-      syncWithServer();
-    }
-  }, [isOpen, isAuthenticated, isSynced, syncWithServer]);
 
   const handleCheckout = () => {
     if (!isAuthenticated) {
