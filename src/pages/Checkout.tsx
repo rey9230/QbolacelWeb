@@ -157,19 +157,8 @@ export default function Checkout() {
           qty: item.qty,
         })),
         currency: "USD",
-        shipping: {
-          method: shippingData.shippingMethod,
-          address: {
-            fullName: shippingData.fullName,
-            phone: shippingData.phone,
-            email: shippingData.email,
-            province: shippingData.province,
-            municipality: shippingData.municipality,
-            street: shippingData.address,
-            betweenStreets: shippingData.betweenStreets,
-            notes: shippingData.notes,
-          },
-        },
+        contactId: selectedContact.id,
+        shippingMethod: shippingData.shippingMethod,
       };
 
       const order = await createOrderMutation.mutateAsync({ data: orderData, idempotencyKey });
