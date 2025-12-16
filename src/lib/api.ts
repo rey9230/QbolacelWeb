@@ -205,10 +205,9 @@ export interface LoginRequest {
 }
 
 export interface RegisterRequest {
-  name: string;
+  userName: string;
   email: string;
   password: string;
-  password_confirmation: string;
 }
 
 export interface AuthTokenResponse {
@@ -220,14 +219,15 @@ export interface AuthTokenResponse {
 // ============ USER PROFILE ============
 export interface UserProfile {
   id: string;
-  name: string;
+  userName: string;
   email: string;
   phone?: string;
   avatar?: string;
   province?: string;
   municipality?: string;
   address?: string;
-  created_at?: string;
+  roles?: string[];
+  location?: string | null;
 }
 
 export interface UpdateProfileRequest {

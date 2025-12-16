@@ -62,7 +62,7 @@ export default function Account() {
   useEffect(() => {
     if (profile) {
       setFormData({
-        name: profile.name || "",
+        name: profile.userName || "",
         phone: profile.phone || "",
         municipality: profile.municipality || "",
         address: profile.address || "",
@@ -171,7 +171,7 @@ export default function Account() {
                           setIsEditing(false);
                           if (profile) {
                             setFormData({
-                              name: profile.name || "",
+                              name: profile.userName || "",
                               phone: profile.phone || "",
                               municipality: profile.municipality || "",
                               address: profile.address || "",
@@ -210,7 +210,7 @@ export default function Account() {
                         <User className="h-8 w-8 text-primary" />
                       </div>
                       <div>
-                        <p className="font-medium text-lg">{profile?.name || "Usuario"}</p>
+                        <p className="font-medium text-lg">{profile?.userName || "Usuario"}</p>
                         <p className="text-muted-foreground flex items-center gap-1">
                           <Mail className="h-4 w-4" />
                           {profile?.email}
@@ -233,7 +233,7 @@ export default function Account() {
                               placeholder="Tu nombre"
                             />
                           ) : (
-                            <p className="text-foreground py-2">{profile?.name || "-"}</p>
+                            <p className="text-foreground py-2">{profile?.userName || "-"}</p>
                           )}
                         </div>
                         <div className="space-y-2">

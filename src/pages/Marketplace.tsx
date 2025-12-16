@@ -150,7 +150,7 @@ const Marketplace = () => {
     }
     if (isAuthenticated && profile?.municipality) {
       return {
-        name: profile.name,
+        name: profile.userName,
         location: `${profile.municipality}, ${profile.province}`,
       };
     }
