@@ -13,6 +13,10 @@ import Marketplace from "./pages/Marketplace";
 import Recargas from "./pages/Recargas";
 import ProductDetail from "./pages/ProductDetail";
 import Checkout from "./pages/Checkout";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
+import CheckoutCancel from "./pages/CheckoutCancel";
+import RechargeSuccess from "./pages/RechargeSuccess";
+import RechargeCancel from "./pages/RechargeCancel";
 import Account from "./pages/Account";
 import Contact from "./pages/Contact";
 import FAQ from "./pages/FAQ";
@@ -34,9 +38,13 @@ const App = () => (
           {/* Public Pages */}
           <Route path="/" element={<Index />} />
           <Route path="/recargas" element={<Recargas />} />
+          <Route path="/recargas/success" element={<RechargeSuccess />} />
+          <Route path="/recargas/cancel" element={<RechargeCancel />} />
           <Route path="/marketplace" element={<Marketplace />} />
           <Route path="/productos/:id" element={<ProductDetail />} />
           <Route path="/checkout" element={<Checkout />} />
+          <Route path="/checkout/success" element={<CheckoutSuccess />} />
+          <Route path="/checkout/cancel" element={<CheckoutCancel />} />
           <Route path="/cuenta" element={<Account />} />
 
           {/* Info Pages */}

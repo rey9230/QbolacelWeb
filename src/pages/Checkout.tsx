@@ -35,22 +35,22 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 const paymentMethods = [
-  { 
-    id: "paypal", 
-    name: "PayPal", 
+  {
+    id: "paypal",
+    name: "PayPal",
     description: "Paga de forma segura con tu cuenta PayPal",
     icon: "💳",
     recommended: true
   },
-  { 
-    id: "card", 
-    name: "Tarjeta de Crédito/Débito", 
+  {
+    id: "card",
+    name: "Tarjeta de Crédito/Débito",
     description: "Visa, Mastercard, American Express",
     icon: "💳"
   },
-  { 
-    id: "tropipay", 
-    name: "TropiPay", 
+  {
+    id: "tropipay",
+    name: "TropiPay",
     description: "Billetera digital para Cuba",
     icon: "🌴"
   },
@@ -117,15 +117,73 @@ export default function Checkout() {
   };
 
   const handlePlaceOrder = async () => {
-    setIsProcessing(true);
-    
-    // Simulate order processing
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setCurrentStep("confirmation");
-    clearCart();
-    setIsProcessing(false);
+    if (!paymentSelection) {
+      toast.error("Selecciona un método de pago");
+      return;
+    }
+
+    try {
+      // Paso 1: Crear la orden física en el backend
+      const idempotencyKey = generateIdempotencyKey();
+      const orderData = {
+        items: items.map(item => ({
+          productId: item.productId,
+          qty: item.qty,
+        })),
+        currency: "USD",
+        shipping: {
+          method: shippingData.shippingMethod,
+          address: {
+            fullName: shippingData.fullName,
+            phone: shippingData.phone,
+            email: shippingData.email,
+            province: shippingData.province,
+            municipality: shippingData.municipality,
+            street: shippingData.address,
+            betweenStreets: shippingData.betweenStreets,
+            notes: shippingData.notes,
+          },
+        },
+      };
+
+      const order = await createOrder.mutateAsync({ data: orderData, idempotencyKey });
+      setOrderSku(order.orderSku);
+
+      // Paso 2: Iniciar el checkout de pago
+      if (paymentSelection.type === "saved" && paymentSelection.savedPaymentMethodId) {
+        // Pago rápido con tarjeta guardada (1-click)
+        await processQuickMarketplace(order.id, paymentSelection.savedPaymentMethodId);
+      } else {
+        // Checkout con redirección al proveedor
+        const provider = mapPaymentMethodToProvider(paymentSelection.type);
+
+        await initiateMarketplaceCheckout({
+          orderId: order.id,
+          customer: user ? {
+            firstName: user.name.split(" ")[0],
+            lastName: user.name.split(" ").slice(1).join(" ") || user.name,
+            email: user.email,
+          } : {
+            firstName: shippingData.fullName.split(" ")[0],
+            lastName: shippingData.fullName.split(" ").slice(1).join(" ") || shippingData.fullName,
+            email: shippingData.email,
+          },
+          saveCard: paymentSelection.saveCard,
+          provider,
+        });
+      }
+    } catch (error) {
+      console.error("Error al procesar la orden:", error);
+      // Los errores se manejan en los hooks
+    }
   };
+
+  // Resetear el checkout cuando se vuelve al paso anterior
+  useEffect(() => {
+    if (currentStep !== "payment") {
+      resetCheckout();
+    }
+  }, [currentStep, resetCheckout]);
 
   if (items.length === 0 && currentStep !== "confirmation") {
     return (
@@ -514,39 +572,21 @@ export default function Checkout() {
                       Selecciona cómo deseas pagar
                     </h2>
 
-                    <RadioGroup
-                      value={paymentMethod}
-                      onValueChange={setPaymentMethod}
-                      className="space-y-3"
-                    >
-                      {paymentMethods.map((method) => (
-                        <label
-                          key={method.id}
-                          className={cn(
-                            "flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-colors",
-                            paymentMethod === method.id
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-muted-foreground/50"
-                          )}
-                        >
-                          <div className="flex items-center gap-3">
-                            <RadioGroupItem value={method.id} />
-                            <div className="text-2xl">{method.icon}</div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium">{method.name}</p>
-                                {method.recommended && (
-                                  <span className="text-[10px] bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                                    RECOMENDADO
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground">{method.description}</p>
-                            </div>
-                          </div>
-                        </label>
-                      ))}
-                    </RadioGroup>
+                    <PaymentMethodSelector
+                      value={paymentSelection ?? undefined}
+                      onSelect={setPaymentSelection}
+                      showSaveCardOption={true}
+                      variant="primary"
+                      disabled={isProcessing}
+                    />
+
+                    {/* Error message */}
+                    {checkoutError && (
+                      <div className="mt-4 bg-destructive/10 border border-destructive/30 rounded-xl p-3 flex items-center gap-2 text-sm text-destructive">
+                        <AlertTriangle className="h-4 w-4 flex-shrink-0" />
+                        {checkoutError}
+                      </div>
+                    )}
 
                     <div className="mt-6 p-4 bg-muted rounded-lg flex items-center gap-3">
                       <Shield className="h-5 w-5 text-primary" />
@@ -602,14 +642,17 @@ export default function Checkout() {
                   <Button 
                     className="w-full mt-6 gap-2"
                     onClick={handlePlaceOrder}
-                    disabled={isProcessing}
+                    disabled={isProcessing || !paymentSelection}
                   >
                     {isProcessing ? (
-                      "Procesando..."
-                    ) : (
                       <>
-                        🔒 Pagar ${total.toFixed(2)}
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Procesando...
                       </>
+                    ) : paymentSelection?.type === "saved" ? (
+                      <>🔒 Pagar ${total.toFixed(2)} (1-clic)</>
+                    ) : (
+                      <>🔒 Pagar ${total.toFixed(2)}</>
                     )}
                   </Button>
                 </div>
@@ -639,7 +682,7 @@ export default function Checkout() {
               </h1>
               
               <p className="text-xl text-muted-foreground mb-2">
-                Orden #QBC-{Math.random().toString(36).substr(2, 8).toUpperCase()}
+                Orden #{orderSku || `QBC-${Math.random().toString(36).substr(2, 8).toUpperCase()}`}
               </p>
 
               <p className="text-muted-foreground mb-8">

@@ -698,3 +698,149 @@ export const rechargesApi = {
   getHistory: (page: number = 1) =>
     apiFetch<{ data: { id: string; product: RechargeProduct; phone: string; status: string; created_at: string }[] }>(`/recharges/history?page=${page}`, {}, true),
 };
+
+// ============ UNIFIED CHECKOUT API ============
+// Basado en PAYMENT_IMPLEMENTATION.md
+
+export interface CustomerInfo {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone?: string;
+  countryCode?: string;
+}
+
+export type TransactionStatus =
+  | 'CREATED'
+  | 'PENDING_PAYMENT'
+  | 'PROCESSING'
+  | 'COMPLETED'
+  | 'FAILED'
+  | 'CANCELLED'
+  | 'EXPIRED';
+
+export type PaymentProvider = 'TROPIPAY' | 'PAYPAL' | 'STRIPE';
+
+export interface MarketplaceCheckoutRequest {
+  orderId: string;
+  customer?: CustomerInfo;
+  successUrl: string;
+  cancelUrl: string;
+  provider?: PaymentProvider;
+  savedPaymentMethodId?: string;
+  saveCardForFuture?: boolean;
+  expirationMinutes?: number;
+}
+
+export interface RechargeCheckoutRequest {
+  rechargeOrderId: string;
+  customer?: CustomerInfo;
+  successUrl: string;
+  cancelUrl: string;
+  provider?: PaymentProvider;
+  savedPaymentMethodId?: string;
+  saveCardForFuture?: boolean;
+}
+
+export interface QuickRechargeRequest {
+  rechargeOrderId: string;
+  savedPaymentMethodId: string;
+}
+
+export interface QuickMarketplaceRequest {
+  orderId: string;
+  savedPaymentMethodId: string;
+}
+
+export interface CheckoutResponse {
+  transactionId: string;
+  transactionSku: string;
+  status: TransactionStatus;
+  paymentUrl: string | null;
+  shortUrl: string | null;
+  expiresAt: string | null;
+  provider: PaymentProvider;
+  amount: number;
+  currency: string;
+  isDirectCharge: boolean;
+}
+
+export interface TransactionStatusResponse {
+  transactionId: string;
+  transactionSku: string;
+  status: TransactionStatus;
+  amount: number;
+  currency: string;
+  provider: PaymentProvider;
+  createdAt: string;
+  updatedAt: string;
+  completedAt?: string;
+  failureReason?: string;
+}
+
+export type CardBrand = 'VISA' | 'MASTERCARD' | 'AMEX' | 'DISCOVER' | 'OTHER';
+
+export interface SavedPaymentMethod {
+  id: string;
+  displayName: string;
+  last4: string;
+  brand: CardBrand;
+  expMonth: number;
+  expYear: number;
+  isDefault: boolean;
+  isExpired: boolean;
+}
+
+export const unifiedCheckoutApi = {
+  // Checkout de Marketplace (genera link de pago)
+  marketplaceCheckout: (request: MarketplaceCheckoutRequest) =>
+    apiFetch<CheckoutResponse>('/unified-checkout/marketplace', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }, true),
+
+  // Checkout de Recarga (genera link de pago)
+  rechargeCheckout: (request: RechargeCheckoutRequest) =>
+    apiFetch<CheckoutResponse>('/unified-checkout/recharge', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }, true),
+
+  // Pago rápido de recarga (1-click con tarjeta guardada)
+  quickRecharge: (request: QuickRechargeRequest) =>
+    apiFetch<CheckoutResponse>('/unified-checkout/quick-recharge', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }, true),
+
+  // Pago rápido de marketplace (1-click con tarjeta guardada)
+  quickMarketplace: (request: QuickMarketplaceRequest) =>
+    apiFetch<CheckoutResponse>('/unified-checkout/quick-marketplace', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    }, true),
+
+  // Consultar estado de transacción
+  getStatus: (transactionId: string) =>
+    apiFetch<TransactionStatusResponse>(`/unified-checkout/status/${transactionId}`, {}, true),
+};
+
+// ============ PAYMENT METHODS API ============
+
+export const paymentMethodsApi = {
+  // Listar todas las tarjetas guardadas
+  getAll: () =>
+    apiFetch<SavedPaymentMethod[]>('/payment-methods', {}, true),
+
+  // Eliminar una tarjeta guardada
+  delete: (methodId: string) =>
+    apiFetch<void>(`/payment-methods/${methodId}`, {
+      method: 'DELETE',
+    }, true),
+
+  // Establecer tarjeta como predeterminada
+  setDefault: (methodId: string) =>
+    apiFetch<SavedPaymentMethod>(`/payment-methods/${methodId}/default`, {
+      method: 'PUT',
+    }, true),
+};
