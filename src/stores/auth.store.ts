@@ -56,6 +56,8 @@ export const useAuthStore = create<AuthStore>()(
           refreshToken: null,
           isAuthenticated: false,
         });
+        // Clear cart from localStorage on logout
+        localStorage.removeItem('qbolacel-cart');
       },
       
       openAuthModal: (tab = 'login') => {
