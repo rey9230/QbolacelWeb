@@ -195,10 +195,29 @@ export const useCartStore = create<CartStore>()(
           return;
         }
         
+        const localItems = get().items;
         set({ isLoading: true });
+        
         try {
-          const cart = await cartApi.get();
-          get().setFromServerCart(cart);
+          // First, get the server cart
+          const serverCart = await cartApi.get();
+          const serverProductIds = new Set(serverCart.items.map(item => item.productId));
+          
+          // Find local items that are NOT on the server (by productId)
+          const itemsToAdd = localItems.filter(item => !serverProductIds.has(item.productId));
+          
+          // Add local items to server sequentially to avoid race conditions
+          let finalCart = serverCart;
+          for (const item of itemsToAdd) {
+            try {
+              finalCart = await cartApi.addItem(item.productId, item.qty);
+            } catch (error) {
+              console.warn(`Could not add item ${item.productId} to server cart:`, error);
+            }
+          }
+          
+          // Set the final merged cart from server
+          get().setFromServerCart(finalCart);
           set({ isLoading: false, isSynced: true });
         } catch (error) {
           console.error('Error syncing cart with server:', error);
