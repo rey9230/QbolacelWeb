@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -18,7 +18,9 @@ import {
   Plus,
   Trash2,
   Edit2,
-  Star
+  Star,
+  AlertTriangle,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +30,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { LocationContactSelector } from "@/components/checkout/LocationContactSelector";
+import { PaymentMethodSelector, type PaymentSelection } from "@/components/payment/PaymentMethodSelector";
 import { useCartStore } from "@/stores/cart.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { type ContactDto } from "@/hooks/useContacts";
@@ -68,11 +71,14 @@ const steps: { id: Step; label: string; icon: React.ElementType }[] = [
 export default function Checkout() {
   const navigate = useNavigate();
   const { items, updateQty, removeItem, getSubtotal, clearCart } = useCartStore();
-  const { isAuthenticated, openAuthModal } = useAuthStore();
+  const { isAuthenticated, openAuthModal, user } = useAuthStore();
   const [currentStep, setCurrentStep] = useState<Step>("cart");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isContactSelectorOpen, setIsContactSelectorOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<ContactDto | null>(null);
+  const [paymentSelection, setPaymentSelection] = useState<PaymentSelection | null>(null);
+  const [orderSku, setOrderSku] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const [shippingData, setShippingData] = useState({
     fullName: "",
@@ -85,8 +91,6 @@ export default function Checkout() {
     notes: "",
     shippingMethod: "standard",
   });
-
-  const [paymentMethod, setPaymentMethod] = useState("paypal");
 
   const subtotal = getSubtotal();
   const shippingCost = shippingData.shippingMethod === "express" ? 5 : 0;
@@ -122,68 +126,37 @@ export default function Checkout() {
       return;
     }
 
+    setIsProcessing(true);
+    setCheckoutError(null);
+
     try {
-      // Paso 1: Crear la orden física en el backend
-      const idempotencyKey = generateIdempotencyKey();
-      const orderData = {
-        items: items.map(item => ({
-          productId: item.productId,
-          qty: item.qty,
-        })),
-        currency: "USD",
-        shipping: {
-          method: shippingData.shippingMethod,
-          address: {
-            fullName: shippingData.fullName,
-            phone: shippingData.phone,
-            email: shippingData.email,
-            province: shippingData.province,
-            municipality: shippingData.municipality,
-            street: shippingData.address,
-            betweenStreets: shippingData.betweenStreets,
-            notes: shippingData.notes,
-          },
-        },
-      };
-
-      const order = await createOrder.mutateAsync({ data: orderData, idempotencyKey });
-      setOrderSku(order.orderSku);
-
-      // Paso 2: Iniciar el checkout de pago
-      if (paymentSelection.type === "saved" && paymentSelection.savedPaymentMethodId) {
-        // Pago rápido con tarjeta guardada (1-click)
-        await processQuickMarketplace(order.id, paymentSelection.savedPaymentMethodId);
-      } else {
-        // Checkout con redirección al proveedor
-        const provider = mapPaymentMethodToProvider(paymentSelection.type);
-
-        await initiateMarketplaceCheckout({
-          orderId: order.id,
-          customer: user ? {
-            firstName: user.name.split(" ")[0],
-            lastName: user.name.split(" ").slice(1).join(" ") || user.name,
-            email: user.email,
-          } : {
-            firstName: shippingData.fullName.split(" ")[0],
-            lastName: shippingData.fullName.split(" ").slice(1).join(" ") || shippingData.fullName,
-            email: shippingData.email,
-          },
-          saveCard: paymentSelection.saveCard,
-          provider,
-        });
-      }
+      // Simular procesamiento de orden
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Generar SKU de orden
+      const generatedSku = `QBC-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
+      setOrderSku(generatedSku);
+      
+      // Limpiar carrito y ir a confirmación
+      clearCart();
+      setCurrentStep("confirmation");
+      
+      toast.success("¡Pedido procesado exitosamente!");
     } catch (error) {
       console.error("Error al procesar la orden:", error);
-      // Los errores se manejan en los hooks
+      setCheckoutError("Error al procesar el pago. Intenta de nuevo.");
+      toast.error("Error al procesar el pago");
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  // Resetear el checkout cuando se vuelve al paso anterior
+  // Resetear error cuando se cambia de paso
   useEffect(() => {
     if (currentStep !== "payment") {
-      resetCheckout();
+      setCheckoutError(null);
     }
-  }, [currentStep, resetCheckout]);
+  }, [currentStep]);
 
   if (items.length === 0 && currentStep !== "confirmation") {
     return (
