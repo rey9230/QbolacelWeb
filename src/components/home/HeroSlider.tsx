@@ -58,7 +58,7 @@ const slides: Slide[] = [
   {
     id: 3,
     title: "Internet para Cuba",
-    subtitle: "Recargas Nauta desde $3. Mantén conectada a tu familia.",
+    subtitle: "Recargas Nauta desde $6. Mantén conectada a tu familia.",
     cta: "Ver Planes Nauta",
     ctaLink: "/recargas",
     badge: "NAUTA",
