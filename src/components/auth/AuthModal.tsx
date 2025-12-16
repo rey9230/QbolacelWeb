@@ -54,7 +54,7 @@ export function AuthModal() {
         { 
           id: user.id, 
           email: user.email, 
-          name: user.name,
+          name: user.userName,
           avatar: user.avatar 
         },
         token,
@@ -113,17 +113,16 @@ export function AuthModal() {
     
     try {
       const { user, token, refreshToken } = await authApi.register({
-        name: registerForm.name,
+        userName: registerForm.name,
         email: registerForm.email,
         password: registerForm.password,
-        password_confirmation: registerForm.confirmPassword,
       });
       
       setUser(
         { 
           id: user.id, 
           email: user.email, 
-          name: user.name,
+          name: user.userName,
           avatar: user.avatar 
         },
         token,
