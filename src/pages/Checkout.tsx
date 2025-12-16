@@ -9,7 +9,6 @@ import {
   ChevronLeft,
   ChevronRight,
   MapPin,
-  User,
   Phone,
   Mail,
   Package,
@@ -30,34 +29,29 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { LocationContactSelector } from "@/components/checkout/LocationContactSelector";
-import { PaymentMethodSelector, type PaymentSelection } from "@/components/payment/PaymentMethodSelector";
+import { 
+  PaymentMethodSelector, 
+  type PaymentSelection,
+  type PaymentMethodType 
+} from "@/components/payment/PaymentMethodSelector";
 import { useCartStore } from "@/stores/cart.store";
 import { useAuthStore } from "@/stores/auth.store";
 import { type ContactDto } from "@/hooks/useContacts";
+import { useCreateOrder, generateIdempotencyKey } from "@/hooks/useOrders";
+import { useCheckout, type PaymentProvider } from "@/hooks/useCheckout";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-const paymentMethods = [
-  {
-    id: "paypal",
-    name: "PayPal",
-    description: "Paga de forma segura con tu cuenta PayPal",
-    icon: "💳",
-    recommended: true
-  },
-  {
-    id: "card",
-    name: "Tarjeta de Crédito/Débito",
-    description: "Visa, Mastercard, American Express",
-    icon: "💳"
-  },
-  {
-    id: "tropipay",
-    name: "TropiPay",
-    description: "Billetera digital para Cuba",
-    icon: "🌴"
-  },
-];
+// Mapeo de tipos de método de pago a proveedores del backend
+const mapPaymentMethodToProvider = (type: PaymentMethodType): PaymentProvider | undefined => {
+  const mapping: Record<PaymentMethodType, PaymentProvider | undefined> = {
+    tropipay: "TROPIPAY",
+    paypal: "PAYPAL",
+    card: "STRIPE",
+    saved: undefined,
+  };
+  return mapping[type];
+};
 
 type Step = "cart" | "shipping" | "payment" | "confirmation";
 
@@ -73,12 +67,10 @@ export default function Checkout() {
   const { items, updateQty, removeItem, getSubtotal, clearCart } = useCartStore();
   const { isAuthenticated, openAuthModal, user } = useAuthStore();
   const [currentStep, setCurrentStep] = useState<Step>("cart");
-  const [isProcessing, setIsProcessing] = useState(false);
   const [isContactSelectorOpen, setIsContactSelectorOpen] = useState(false);
   const [selectedContact, setSelectedContact] = useState<ContactDto | null>(null);
   const [paymentSelection, setPaymentSelection] = useState<PaymentSelection | null>(null);
   const [orderSku, setOrderSku] = useState<string | null>(null);
-  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   const [shippingData, setShippingData] = useState({
     fullName: "",
@@ -91,6 +83,31 @@ export default function Checkout() {
     notes: "",
     shippingMethod: "standard",
   });
+
+  // Hook para crear orden
+  const createOrderMutation = useCreateOrder();
+  
+  // Hook para checkout/pago
+  const {
+    isLoading: isCheckoutLoading,
+    error: checkoutError,
+    initiateMarketplaceCheckout,
+    processQuickMarketplace,
+    reset: resetCheckout,
+  } = useCheckout({
+    onSuccess: (response) => {
+      if (response.isDirectCharge && response.status === "COMPLETED") {
+        // Pago directo exitoso (1-click)
+        setOrderSku(response.transactionSku);
+        clearCart();
+        setCurrentStep("confirmation");
+        toast.success("¡Pedido procesado exitosamente!");
+      }
+      // Si no es directo, la redirección se maneja automáticamente en el hook
+    },
+  });
+
+  const isProcessing = createOrderMutation.isPending || isCheckoutLoading;
 
   const subtotal = getSubtotal();
   const shippingCost = shippingData.shippingMethod === "express" ? 5 : 0;
@@ -126,37 +143,77 @@ export default function Checkout() {
       return;
     }
 
-    setIsProcessing(true);
-    setCheckoutError(null);
+    if (!selectedContact) {
+      toast.error("Selecciona una dirección de entrega");
+      return;
+    }
 
     try {
-      // Simular procesamiento de orden
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Paso 1: Crear la orden física en el backend
+      const idempotencyKey = generateIdempotencyKey();
+      const orderData = {
+        items: items.map(item => ({
+          productId: item.productId,
+          qty: item.qty,
+        })),
+        currency: "USD",
+        shipping: {
+          method: shippingData.shippingMethod,
+          address: {
+            fullName: shippingData.fullName,
+            phone: shippingData.phone,
+            email: shippingData.email,
+            province: shippingData.province,
+            municipality: shippingData.municipality,
+            street: shippingData.address,
+            betweenStreets: shippingData.betweenStreets,
+            notes: shippingData.notes,
+          },
+        },
+      };
+
+      const order = await createOrderMutation.mutateAsync({ data: orderData, idempotencyKey });
       
-      // Generar SKU de orden
-      const generatedSku = `QBC-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
-      setOrderSku(generatedSku);
-      
-      // Limpiar carrito y ir a confirmación
-      clearCart();
-      setCurrentStep("confirmation");
-      
-      toast.success("¡Pedido procesado exitosamente!");
+      // Guardar el SKU de la orden
+      if (order.orderSku) {
+        setOrderSku(order.orderSku);
+      }
+
+      // Paso 2: Iniciar el checkout de pago
+      if (paymentSelection.type === "saved" && paymentSelection.savedPaymentMethodId) {
+        // Pago rápido con tarjeta guardada (1-click)
+        await processQuickMarketplace(order.id, paymentSelection.savedPaymentMethodId);
+      } else {
+        // Checkout con redirección al proveedor
+        const provider = mapPaymentMethodToProvider(paymentSelection.type);
+
+        await initiateMarketplaceCheckout({
+          orderId: order.id,
+          customer: user ? {
+            firstName: user.name?.split(" ")[0] || "Cliente",
+            lastName: user.name?.split(" ").slice(1).join(" ") || "",
+            email: user.email,
+          } : {
+            firstName: shippingData.fullName.split(" ")[0],
+            lastName: shippingData.fullName.split(" ").slice(1).join(" ") || shippingData.fullName,
+            email: shippingData.email,
+          },
+          saveCard: paymentSelection.saveCard,
+          provider,
+        });
+      }
     } catch (error) {
       console.error("Error al procesar la orden:", error);
-      setCheckoutError("Error al procesar el pago. Intenta de nuevo.");
-      toast.error("Error al procesar el pago");
-    } finally {
-      setIsProcessing(false);
+      // Los errores se manejan en los hooks con toasts
     }
   };
 
-  // Resetear error cuando se cambia de paso
+  // Resetear el checkout cuando se vuelve al paso anterior
   useEffect(() => {
     if (currentStep !== "payment") {
-      setCheckoutError(null);
+      resetCheckout();
     }
-  }, [currentStep]);
+  }, [currentStep, resetCheckout]);
 
   if (items.length === 0 && currentStep !== "confirmation") {
     return (
