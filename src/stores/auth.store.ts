@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { useCartStore } from './cart.store';
+import { queryClient } from '@/lib/queryClient';
 
 export interface User {
   id: string;
@@ -61,6 +62,8 @@ export const useAuthStore = create<AuthStore>()(
         useCartStore.getState().resetCart();
         // Clear cart from localStorage on logout
         localStorage.removeItem('qbolacel-cart');
+        // Clear all React Query cache to prevent stale data from previous user
+        queryClient.clear();
       },
       
       openAuthModal: (tab = 'login') => {
