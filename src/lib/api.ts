@@ -615,10 +615,8 @@ export interface CreateOrderRequest {
     qty: number;
   }[];
   currency: string;
-  shipping?: {
-    method?: string;
-    address?: Record<string, string>;
-  };
+  contactId: string;
+  shippingMethod?: string;
 }
 
 export const ordersApi = {
