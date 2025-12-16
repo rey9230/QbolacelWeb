@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { useCartStore } from './cart.store';
 
 export interface User {
   id: string;
@@ -56,6 +57,8 @@ export const useAuthStore = create<AuthStore>()(
           refreshToken: null,
           isAuthenticated: false,
         });
+        // Reset cart store on logout
+        useCartStore.getState().resetCart();
         // Clear cart from localStorage on logout
         localStorage.removeItem('qbolacel-cart');
       },
