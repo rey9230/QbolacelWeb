@@ -14,7 +14,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthStore } from "@/stores/auth.store";
-import { useCartStore } from "@/stores/cart.store";
 import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api";
 
@@ -26,7 +25,6 @@ export function AuthModal() {
     setAuthModalTab,
     setUser 
   } = useAuthStore();
-  const { syncWithServer } = useCartStore();
   const { toast } = useToast();
   
   const [showPassword, setShowPassword] = useState(false);
@@ -62,9 +60,6 @@ export function AuthModal() {
         token,
         refreshToken
       );
-      
-      // Sync cart with server after login
-      await syncWithServer();
       
       toast({
         title: "¡Bienvenido!",
@@ -133,9 +128,6 @@ export function AuthModal() {
         token,
         refreshToken
       );
-      
-      // Sync cart with server after registration
-      await syncWithServer();
       
       toast({
         title: "¡Cuenta creada!",

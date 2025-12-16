@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { CartSheet } from "@/components/cart/CartSheet";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { useCartSync } from "@/hooks/useCartSync";
 
 // Pages
 import Index from "./pages/Index";
@@ -27,41 +28,46 @@ import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <ScrollToTop />
-        <Routes>
-          {/* Public Pages */}
-          <Route path="/" element={<Index />} />
-          <Route path="/recargas" element={<Recargas />} />
-          <Route path="/recargas/success" element={<RechargeSuccess />} />
-          <Route path="/recargas/cancel" element={<RechargeCancel />} />
-          <Route path="/marketplace" element={<Marketplace />} />
-          <Route path="/productos/:id" element={<ProductDetail />} />
-          <Route path="/checkout" element={<Checkout />} />
-          <Route path="/checkout/success" element={<CheckoutSuccess />} />
-          <Route path="/checkout/cancel" element={<CheckoutCancel />} />
-          <Route path="/cuenta" element={<Account />} />
+const App = () => {
+  useCartSync();
 
-          {/* Info Pages */}
-          <Route path="/contacto" element={<Contact />} />
-          <Route path="/preguntas-frecuentes" element={<FAQ />} />
-          <Route path="/sobre-nosotros" element={<About />} />
-          <Route path="/terminos" element={<Terms />} />
-          <Route path="/privacidad" element={<Privacy />} />
-          
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <CartSheet />
-        <AuthModal />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <ScrollToTop />
+          <Routes>
+            {/* Public Pages */}
+            <Route path="/" element={<Index />} />
+            <Route path="/recargas" element={<Recargas />} />
+            <Route path="/recargas/success" element={<RechargeSuccess />} />
+            <Route path="/recargas/cancel" element={<RechargeCancel />} />
+            <Route path="/marketplace" element={<Marketplace />} />
+            <Route path="/productos/:id" element={<ProductDetail />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/checkout/success" element={<CheckoutSuccess />} />
+            <Route path="/checkout/cancel" element={<CheckoutCancel />} />
+            <Route path="/cuenta" element={<Account />} />
+
+            {/* Info Pages */}
+            <Route path="/contacto" element={<Contact />} />
+            <Route path="/preguntas-frecuentes" element={<FAQ />} />
+            <Route path="/sobre-nosotros" element={<About />} />
+            <Route path="/terminos" element={<Terms />} />
+            <Route path="/privacidad" element={<Privacy />} />
+
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <CartSheet />
+          <AuthModal />
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
+
