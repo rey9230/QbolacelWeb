@@ -140,7 +140,7 @@ export default function ProductDetail() {
                 <img
                   src={currentImage}
                   alt={product.name}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
                 
                 {/* Navigation Arrows */}
