@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -10,40 +10,18 @@ import {
   Gift,
   CheckCircle,
   ArrowRight,
-  Download
+  Download,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { RechargeCheckoutModal } from "@/components/recharge/RechargeCheckoutModal";
+import { useTopupProducts, type TopupProduct } from "@/hooks/useTopup";
 import { cn } from "@/lib/utils";
 
 type RechargeType = "mobile" | "nauta";
-
-interface RechargeOption {
-  amount: number;
-  bonus?: number;
-  hours?: number;
-  popular?: boolean;
-  bestValue?: boolean;
-}
-
-const mobileOptions: RechargeOption[] = [
-  { amount: 5 },
-  { amount: 10, bonus: 1 },
-  { amount: 15, bonus: 2, popular: true },
-  { amount: 20, bonus: 3 },
-  { amount: 25, bonus: 4, bestValue: true },
-  { amount: 30, bonus: 5 },
-];
-
-const nautaOptions: RechargeOption[] = [
-  { amount: 3, hours: 1 },
-  { amount: 12, hours: 5, popular: true },
-  { amount: 20, hours: 10 },
-  { amount: 50, hours: 30, bestValue: true },
-];
 
 const benefits = [
   { icon: Zap, title: "Entrega Instantánea", description: "El saldo llega en segundos" },
@@ -54,6 +32,7 @@ const benefits = [
 
 interface LocationState {
   type?: RechargeType;
+  productId?: string;
   amount?: number;
 }
 
@@ -62,29 +41,64 @@ const Recargas = () => {
   const state = location.state as LocationState | null;
 
   const [rechargeType, setRechargeType] = useState<RechargeType>(state?.type || "mobile");
-  const [selectedAmount, setSelectedAmount] = useState<number>(
-    state?.amount || (state?.type === "nauta" ? 12 : 15)
-  );
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(state?.productId || null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+
+  // Fetch products from API
+  const { data: allProducts, isLoading, error } = useTopupProducts({ country: "CU" });
+
+  // Filter products by type
+  const mobileProducts = useMemo(() => 
+    allProducts?.filter(p => p.operator === "CUBACEL" || p.productType === "MOBILE_TOPUP") || [],
+    [allProducts]
+  );
+
+  const nautaProducts = useMemo(() => 
+    allProducts?.filter(p => p.operator === "NAUTA" || p.productType === "NAUTA") || [],
+    [allProducts]
+  );
+
+  const products = rechargeType === "mobile" ? mobileProducts : nautaProducts;
+
+  // Auto-select first product if none selected
+  useEffect(() => {
+    if (products.length > 0 && !selectedProductId) {
+      // Try to select popular/featured product first
+      const featured = products.find(p => p.isFeatured);
+      setSelectedProductId(featured?.id || products[0].id);
+    }
+  }, [products, selectedProductId]);
 
   // Update selection if navigated with state
   useEffect(() => {
     if (state?.type) {
       setRechargeType(state.type);
     }
-    if (state?.amount) {
-      setSelectedAmount(state.amount);
+    if (state?.productId) {
+      setSelectedProductId(state.productId);
     }
   }, [state]);
 
-  const options = rechargeType === "mobile" ? mobileOptions : nautaOptions;
-  const selectedOption = options.find(o => o.amount === selectedAmount);
+  const selectedProduct = products.find(p => p.id === selectedProductId);
 
   const handleRechargeClick = () => {
-    if (phoneNumber.trim().length > 0 && selectedOption) {
+    if (phoneNumber.trim().length > 0 && selectedProduct) {
       setCheckoutOpen(true);
     }
+  };
+
+  const handleTypeChange = (type: RechargeType) => {
+    setRechargeType(type);
+    setSelectedProductId(null); // Reset selection when switching type
+  };
+
+  // Helper to calculate bonus from receiveValue
+  const getBonus = (product: TopupProduct) => {
+    if (product.receiveValue && product.salePrice && product.receiveValue > product.salePrice) {
+      return product.receiveValue - product.salePrice;
+    }
+    return null;
   };
 
   return (
@@ -144,10 +158,7 @@ const Recargas = () => {
               <div className="flex justify-center mb-8">
                 <div className="inline-flex p-1 rounded-2xl bg-muted">
                   <button
-                    onClick={() => {
-                      setRechargeType("mobile");
-                      setSelectedAmount(15);
-                    }}
+                    onClick={() => handleTypeChange("mobile")}
                     className={cn(
                       "flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all",
                       rechargeType === "mobile"
@@ -159,10 +170,7 @@ const Recargas = () => {
                     Móvil Cubacel
                   </button>
                   <button
-                    onClick={() => {
-                      setRechargeType("nauta");
-                      setSelectedAmount(12);
-                    }}
+                    onClick={() => handleTypeChange("nauta")}
                     className={cn(
                       "flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all",
                       rechargeType === "nauta"
@@ -176,145 +184,182 @@ const Recargas = () => {
                 </div>
               </div>
 
-              {/* Options Grid */}
-              <div className="mb-8">
-                <h3 className="text-lg font-semibold mb-4 text-center">
-                  Selecciona el monto
-                </h3>
-                <div className={cn(
-                  "grid gap-3",
-                  rechargeType === "mobile" ? "grid-cols-3 md:grid-cols-6" : "grid-cols-2 md:grid-cols-4"
-                )}>
-                  {options.map((option, i) => (
-                    <motion.button
-                      key={option.amount}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.05 }}
-                      whileHover={{ scale: 1.03 }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={() => setSelectedAmount(option.amount)}
-                      className={cn(
-                        "relative p-4 rounded-2xl border-2 transition-all text-center",
-                        selectedAmount === option.amount
-                          ? rechargeType === "mobile"
-                            ? "border-primary bg-primary/5 shadow-lg"
-                            : "border-indigo-500 bg-indigo-500/5 shadow-lg"
-                          : "border-border bg-card hover:border-muted-foreground/50"
-                      )}
-                    >
-                      {option.popular && (
-                        <Badge 
-                          className={cn(
-                            "absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2",
-                            rechargeType === "mobile" ? "bg-primary" : "bg-indigo-500"
-                          )}
-                        >
-                          POPULAR
-                        </Badge>
-                      )}
-                      {option.bestValue && (
-                        <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2 bg-warning text-warning-foreground">
-                          MEJOR VALOR
-                        </Badge>
-                      )}
-
-                      <div className="text-2xl font-bold text-foreground">
-                        ${option.amount}
-                      </div>
-                      
-                      {option.hours && (
-                        <div className="text-sm text-muted-foreground">
-                          {option.hours}h navegación
-                        </div>
-                      )}
-
-                      {option.bonus && (
-                        <div className="flex items-center justify-center gap-1 mt-1 text-xs font-medium text-success">
-                          <Gift className="h-3 w-3" />
-                          +${option.bonus} bonus
-                        </div>
-                      )}
-                    </motion.button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Phone Input */}
-              <div className="mb-6">
-                <label className="text-sm font-medium mb-2 block">
-                  {rechargeType === "mobile" ? "Número de teléfono" : "Cuenta Nauta"}
-                </label>
-                <div className="flex gap-2">
-                  {rechargeType === "mobile" && (
-                    <div className="bg-muted px-4 py-3 rounded-xl font-mono text-sm flex items-center gap-2">
-                      <span className="text-lg">🇨🇺</span>
-                      +53
-                    </div>
-                  )}
-                  <input
-                    type={rechargeType === "mobile" ? "tel" : "email"}
-                    placeholder={rechargeType === "mobile" ? "5X XXX XXXX" : "usuario@nauta.com.cu"}
-                    value={phoneNumber}
-                    onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="flex-1 bg-muted px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                </div>
-              </div>
-
-              {/* Summary */}
-              {selectedOption && (
-                <div className={cn(
-                  "rounded-2xl p-4 mb-6",
-                  rechargeType === "mobile" 
-                    ? "bg-primary/5 border border-primary/20" 
-                    : "bg-indigo-500/5 border border-indigo-500/20"
-                )}>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total a pagar</p>
-                      <p className="text-2xl font-bold">
-                        ${selectedOption.amount}
-                        {selectedOption.bonus && (
-                          <span className="text-success ml-2 text-lg">
-                            +${selectedOption.bonus} bonus
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-muted-foreground">Recibe en Cuba</p>
-                      <p className="text-lg font-bold">
-                        {rechargeType === "mobile" 
-                          ? `$${selectedOption.amount + (selectedOption.bonus || 0)} saldo`
-                          : `${selectedOption.hours}h navegación`
-                        }
-                      </p>
-                    </div>
-                  </div>
+              {/* Loading State */}
+              {isLoading && (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-2 text-muted-foreground">Cargando productos...</span>
                 </div>
               )}
 
-              {/* CTA */}
-              <Button 
-                size="xl" 
-                className={cn(
-                  "w-full gap-2 text-lg",
-                  rechargeType === "nauta" && "bg-indigo-500 hover:bg-indigo-600"
-                )}
-                onClick={handleRechargeClick}
-                disabled={!phoneNumber.trim()}
-              >
-                <Zap className="h-5 w-5" />
-                Recargar Ahora
-                <ArrowRight className="h-5 w-5" />
-              </Button>
+              {/* Error State */}
+              {error && (
+                <div className="text-center py-8 text-destructive">
+                  <p>Error al cargar los productos. Por favor, intenta de nuevo.</p>
+                </div>
+              )}
 
-              {/* Trust */}
-              <div className="flex items-center justify-center gap-2 mt-4 text-sm text-muted-foreground">
-                <Shield className="h-4 w-4" />
-                <span>Transacción 100% segura y encriptada</span>
-              </div>
+              {/* Products Grid */}
+              {!isLoading && !error && products.length > 0 && (
+                <>
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold mb-4 text-center">
+                      Selecciona el monto
+                    </h3>
+                    <div className={cn(
+                      "grid gap-3",
+                      products.length <= 4 ? "grid-cols-2 md:grid-cols-4" : "grid-cols-3 md:grid-cols-6"
+                    )}>
+                      {products.map((product, i) => {
+                        const bonus = getBonus(product);
+                        const isSelected = selectedProductId === product.id;
+                        
+                        return (
+                          <motion.button
+                            key={product.id}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: i * 0.05 }}
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.98 }}
+                            onClick={() => setSelectedProductId(product.id)}
+                            className={cn(
+                              "relative p-4 rounded-2xl border-2 transition-all text-center",
+                              isSelected
+                                ? rechargeType === "mobile"
+                                  ? "border-primary bg-primary/5 shadow-lg"
+                                  : "border-indigo-500 bg-indigo-500/5 shadow-lg"
+                                : "border-border bg-card hover:border-muted-foreground/50"
+                            )}
+                          >
+                            {product.isFeatured && (
+                              <Badge 
+                                className={cn(
+                                  "absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2",
+                                  rechargeType === "mobile" ? "bg-primary" : "bg-indigo-500"
+                                )}
+                              >
+                                POPULAR
+                              </Badge>
+                            )}
+                            {product.isPromotion && product.promotionLabel && (
+                              <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2 bg-warning text-warning-foreground">
+                                {product.promotionLabel}
+                              </Badge>
+                            )}
+
+                            <div className="text-2xl font-bold text-foreground">
+                              ${product.salePrice}
+                            </div>
+                            
+                            {product.validity && (
+                              <div className="text-sm text-muted-foreground">
+                                {product.validity}
+                              </div>
+                            )}
+
+                            {bonus && (
+                              <div className="flex items-center justify-center gap-1 mt-1 text-xs font-medium text-success">
+                                <Gift className="h-3 w-3" />
+                                +${bonus} bonus
+                              </div>
+                            )}
+
+                            {product.receiveValue && product.receiveCurrency && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                Recibe: {product.receiveValue} {product.receiveCurrency}
+                              </div>
+                            )}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Phone Input */}
+                  <div className="mb-6">
+                    <label className="text-sm font-medium mb-2 block">
+                      {rechargeType === "mobile" ? "Número de teléfono" : "Cuenta Nauta"}
+                    </label>
+                    <div className="flex gap-2">
+                      {rechargeType === "mobile" && (
+                        <div className="bg-muted px-4 py-3 rounded-xl font-mono text-sm flex items-center gap-2">
+                          <span className="text-lg">🇨🇺</span>
+                          +53
+                        </div>
+                      )}
+                      <input
+                        type={rechargeType === "mobile" ? "tel" : "email"}
+                        placeholder={rechargeType === "mobile" ? "5X XXX XXXX" : "usuario@nauta.com.cu"}
+                        value={phoneNumber}
+                        onChange={(e) => setPhoneNumber(e.target.value)}
+                        className="flex-1 bg-muted px-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Summary */}
+                  {selectedProduct && (
+                    <div className={cn(
+                      "rounded-2xl p-4 mb-6",
+                      rechargeType === "mobile" 
+                        ? "bg-primary/5 border border-primary/20" 
+                        : "bg-indigo-500/5 border border-indigo-500/20"
+                    )}>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">Total a pagar</p>
+                          <p className="text-2xl font-bold">
+                            ${selectedProduct.salePrice} {selectedProduct.saleCurrency}
+                            {getBonus(selectedProduct) && (
+                              <span className="text-success ml-2 text-lg">
+                                +${getBonus(selectedProduct)} bonus
+                              </span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-muted-foreground">Recibe en Cuba</p>
+                          <p className="text-lg font-bold">
+                            {selectedProduct.receiveValue 
+                              ? `${selectedProduct.receiveValue} ${selectedProduct.receiveCurrency || 'CUP'}`
+                              : `$${selectedProduct.salePrice} saldo`
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* CTA */}
+                  <Button 
+                    size="xl" 
+                    className={cn(
+                      "w-full gap-2 text-lg",
+                      rechargeType === "nauta" && "bg-indigo-500 hover:bg-indigo-600"
+                    )}
+                    onClick={handleRechargeClick}
+                    disabled={!phoneNumber.trim() || !selectedProduct}
+                  >
+                    <Zap className="h-5 w-5" />
+                    Recargar Ahora
+                    <ArrowRight className="h-5 w-5" />
+                  </Button>
+
+                  {/* Trust */}
+                  <div className="flex items-center justify-center gap-2 mt-4 text-sm text-muted-foreground">
+                    <Shield className="h-4 w-4" />
+                    <span>Transacción 100% segura y encriptada</span>
+                  </div>
+                </>
+              )}
+
+              {/* No products */}
+              {!isLoading && !error && products.length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p>No hay productos disponibles en este momento.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -375,13 +420,13 @@ const Recargas = () => {
       <Footer />
 
       {/* Checkout Modal */}
-      {selectedOption && (
+      {selectedProduct && (
         <RechargeCheckoutModal
           open={checkoutOpen}
           onOpenChange={setCheckoutOpen}
+          product={selectedProduct}
+          accountNumber={phoneNumber}
           rechargeType={rechargeType}
-          selectedOption={selectedOption}
-          phoneNumber={phoneNumber}
         />
       )}
     </div>

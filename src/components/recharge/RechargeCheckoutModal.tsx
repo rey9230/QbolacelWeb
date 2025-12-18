@@ -8,6 +8,7 @@ import {
   Shield,
   AlertTriangle,
   Loader2,
+  CheckCircle,
 } from "lucide-react";
 import {
   Dialog,
@@ -22,129 +23,135 @@ import { Badge } from "@/components/ui/badge";
 import {
   PaymentMethodSelector,
   type PaymentSelection,
-  type PaymentMethodType,
 } from "@/components/payment/PaymentMethodSelector";
-import { useCheckout, type PaymentProvider } from "@/hooks/useCheckout";
+import { usePurchaseTopup, generateIdempotencyKey, type TopupProduct } from "@/hooks/useTopup";
 import { useAuthStore } from "@/stores/auth.store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 type RechargeType = "mobile" | "nauta";
 
-interface RechargeOption {
-  amount: number;
-  bonus?: number;
-  hours?: number;
-}
-
 interface RechargeCheckoutModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  product: TopupProduct;
+  accountNumber: string;
   rechargeType: RechargeType;
-  selectedOption: RechargeOption;
-  phoneNumber: string;
-  /** ID de la orden de recarga (generado previamente) */
-  rechargeOrderId?: string;
 }
-
-// Mapeo de tipos de método de pago a proveedores del backend
-const mapPaymentMethodToProvider = (type: PaymentMethodType): PaymentProvider | undefined => {
-  const mapping: Record<PaymentMethodType, PaymentProvider | undefined> = {
-    tropipay: "TROPIPAY",
-    paypal: "PAYPAL",
-    card: "STRIPE",
-    saved: undefined, // Las tarjetas guardadas no necesitan provider
-  };
-  return mapping[type];
-};
 
 export const RechargeCheckoutModal = ({
   open,
   onOpenChange,
+  product,
+  accountNumber,
   rechargeType,
-  selectedOption,
-  phoneNumber,
-  rechargeOrderId,
 }: RechargeCheckoutModalProps) => {
-  const { user, isAuthenticated, openAuthModal } = useAuthStore();
+  const { isAuthenticated, openAuthModal } = useAuthStore();
   const [paymentSelection, setPaymentSelection] = useState<PaymentSelection | null>(null);
   const [acceptedNoRefund, setAcceptedNoRefund] = useState(false);
+  const [purchaseSuccess, setPurchaseSuccess] = useState(false);
 
-  const {
-    isLoading,
-    error,
-    initiateRechargeCheckout,
-    processQuickRecharge,
-    reset,
-  } = useCheckout({
+  const { mutate: purchaseTopup, isPending: isLoading, error } = usePurchaseTopup({
     onSuccess: (response) => {
-      if (response.isDirectCharge && response.status === "COMPLETED") {
-        // Pago directo exitoso
-        onOpenChange(false);
-        toast.success("¡Recarga exitosa!", {
-          description: `Tu recarga de $${selectedOption.amount} ha sido procesada.`,
+      if (response.status === "SUCCESS") {
+        setPurchaseSuccess(true);
+      } else if (response.status === "PROCESSING") {
+        toast.info("Procesando...", {
+          description: "Tu recarga está siendo procesada. Recibirás una confirmación pronto.",
         });
+        onOpenChange(false);
       }
-      // Si no es directo, la redirección se maneja automáticamente
     },
     onError: () => {
-      // El error ya se muestra en el hook
+      // Error handled by hook
     },
   });
 
-  // Resetear estado al cerrar el modal
+  // Reset state when modal closes
   useEffect(() => {
     if (!open) {
       setPaymentSelection(null);
       setAcceptedNoRefund(false);
-      reset();
+      setPurchaseSuccess(false);
     }
-  }, [open, reset]);
+  }, [open]);
 
-  const totalReceived = rechargeType === "mobile"
-    ? `$${selectedOption.amount + (selectedOption.bonus || 0)} saldo`
-    : `${selectedOption.hours}h navegación`;
+  // Calculate bonus
+  const bonus = product.receiveValue && product.salePrice && product.receiveValue > product.salePrice
+    ? product.receiveValue - product.salePrice
+    : null;
+
+  const totalReceived = product.receiveValue
+    ? `${product.receiveValue} ${product.receiveCurrency || 'CUP'}`
+    : `$${product.salePrice} saldo`;
 
   const handleConfirmPayment = async () => {
     if (!paymentSelection || !acceptedNoRefund) return;
 
-    // Verificar autenticación
+    // Verify authentication
     if (!isAuthenticated) {
       openAuthModal("login");
       toast.info("Inicia sesión para continuar con el pago");
       return;
     }
 
-    // TODO: En producción, el rechargeOrderId debe obtenerse de una llamada
-    // previa para crear la orden de recarga
-    const orderId = rechargeOrderId || `rch_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+    // Generate idempotency key
+    const idempotencyKey = generateIdempotencyKey();
 
-    try {
-      if (paymentSelection.type === "saved" && paymentSelection.savedPaymentMethodId) {
-        // Pago rápido con tarjeta guardada (1-click)
-        await processQuickRecharge(orderId, paymentSelection.savedPaymentMethodId);
-      } else {
-        // Checkout con redirección al proveedor
-        const provider = mapPaymentMethodToProvider(paymentSelection.type);
-
-        await initiateRechargeCheckout({
-          rechargeOrderId: orderId,
-          customer: user ? {
-            firstName: user.name.split(" ")[0],
-            lastName: user.name.split(" ").slice(1).join(" ") || user.name,
-            email: user.email,
-          } : undefined,
-          saveCard: paymentSelection.saveCard,
-          provider,
-        });
-      }
-    } catch (err) {
-      // Error manejado por el hook
-      console.error("Error en el checkout:", err);
-    }
+    // Execute purchase
+    purchaseTopup({
+      data: {
+        productId: product.id,
+        accountNumber: rechargeType === "mobile" ? `+53${accountNumber}` : accountNumber,
+        currency: product.saleCurrency || "USD",
+      },
+      idempotencyKey,
+    });
   };
 
-  const canProceed = paymentSelection && acceptedNoRefund && phoneNumber.trim().length > 0;
+  const canProceed = paymentSelection && acceptedNoRefund && accountNumber.trim().length > 0;
+
+  // Success screen
+  if (purchaseSuccess) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <div className="py-8 text-center">
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="inline-flex p-4 rounded-full bg-success/10 mb-4"
+            >
+              <CheckCircle className="h-12 w-12 text-success" />
+            </motion.div>
+            <h2 className="text-2xl font-bold mb-2">¡Recarga Exitosa!</h2>
+            <p className="text-muted-foreground mb-6">
+              Tu recarga de ${product.salePrice} ha sido procesada correctamente.
+            </p>
+            <div className="bg-muted rounded-xl p-4 mb-6 text-left">
+              <div className="flex justify-between mb-2">
+                <span className="text-muted-foreground">Destino:</span>
+                <span className="font-mono">
+                  {rechargeType === "mobile" ? `+53 ${accountNumber}` : accountNumber}
+                </span>
+              </div>
+              <div className="flex justify-between mb-2">
+                <span className="text-muted-foreground">Monto:</span>
+                <span className="font-semibold">${product.salePrice}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Recibido:</span>
+                <span className="font-semibold text-success">{totalReceived}</span>
+              </div>
+            </div>
+            <Button onClick={() => onOpenChange(false)} className="w-full">
+              Cerrar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -180,22 +187,27 @@ export const RechargeCheckoutModal = ({
                 {rechargeType === "mobile" ? "Número destino" : "Cuenta Nauta"}
               </span>
               <span className="font-mono font-medium">
-                {rechargeType === "mobile" ? `+53 ${phoneNumber}` : phoneNumber}
+                {rechargeType === "mobile" ? `+53 ${accountNumber}` : accountNumber}
               </span>
+            </div>
+
+            <div className="flex items-center justify-between mb-3">
+              <span className="text-sm text-muted-foreground">Producto</span>
+              <span className="font-medium text-sm">{product.name}</span>
             </div>
 
             <div className="border-t border-border/50 pt-3 mt-3">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-lg">${selectedOption.amount}</p>
+                  <p className="font-semibold text-lg">${product.salePrice}</p>
                   <p className="text-xs text-muted-foreground">Total a pagar</p>
                 </div>
                 <div className="text-right">
                   <p className="font-semibold text-lg flex items-center gap-1">
                     {totalReceived}
-                    {selectedOption.bonus && (
+                    {bonus && (
                       <span className="text-success text-sm">
-                        (+${selectedOption.bonus})
+                        (+${bonus})
                       </span>
                     )}
                   </p>
@@ -204,15 +216,15 @@ export const RechargeCheckoutModal = ({
               </div>
             </div>
 
-            {selectedOption.bonus && (
+            {bonus && (
               <div className="flex items-center gap-2 mt-3 p-2 rounded-lg bg-success/10 text-success text-sm">
                 <Gift className="h-4 w-4" />
-                <span>¡Incluye ${selectedOption.bonus} de bonus gratis!</span>
+                <span>¡Incluye ${bonus} de bonus gratis!</span>
               </div>
             )}
           </div>
 
-          {/* Payment Methods - Usando componente compartido */}
+          {/* Payment Methods */}
           <PaymentMethodSelector
             value={paymentSelection ?? undefined}
             onSelect={setPaymentSelection}
@@ -225,7 +237,7 @@ export const RechargeCheckoutModal = ({
           {error && (
             <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-3 flex items-center gap-2 text-sm text-destructive">
               <AlertTriangle className="h-4 w-4 flex-shrink-0" />
-              {error}
+              {error.message}
             </div>
           )}
 
@@ -286,15 +298,10 @@ export const RechargeCheckoutModal = ({
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Procesando...
                 </>
-              ) : paymentSelection?.type === "saved" ? (
-                <>
-                  <CreditCard className="h-4 w-4 mr-2" />
-                  Pagar ${selectedOption.amount} (1-clic)
-                </>
               ) : (
                 <>
                   <CreditCard className="h-4 w-4 mr-2" />
-                  Pagar ${selectedOption.amount}
+                  Pagar ${product.salePrice}
                 </>
               )}
             </Button>
