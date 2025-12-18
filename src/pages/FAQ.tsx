@@ -99,7 +99,7 @@ const faqCategories = [
       {
         question: "¿Cómo puedo contactar al soporte?",
         answer:
-          "Puedes contactarnos por email (qbolacel@gmail.com), teléfono (+1 727-276-0465), o chat en vivo disponible 24/7 en nuestra web.",
+          "Puedes contactarnos por email (soporte@qbolacel.com), teléfono (+1 727-276-0465), o chat en vivo disponible 24/7 en nuestra web.",
       },
       {
         question: "¿Tienen app móvil?",

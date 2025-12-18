@@ -190,7 +190,7 @@ export default function Terms() {
                 <p>Para consultas sobre estos Términos y Condiciones, puede comunicarse con nosotros a través de:</p>
                 <ul>
                   <li>
-                    <strong>Correo electrónico:</strong> qbolacel@gmail.com
+                    <strong>Correo electrónico:</strong> soporte@qbolacel.com
                   </li>
                   <li>
                     <strong>Teléfono:</strong> +1 (727) 276-0465

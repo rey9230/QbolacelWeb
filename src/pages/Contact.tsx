@@ -13,7 +13,7 @@ const contactInfo = [
   {
     icon: Mail,
     title: "Email",
-    value: "qbolacel@gmail.com",
+    value: "soporte@qbolacel.com",
     description: "Respuesta en 24 horas",
   },
   {

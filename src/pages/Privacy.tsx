@@ -180,7 +180,7 @@ export default function Privacy() {
                 <h2>12. Contacto</h2>
                 <p>Para preguntas sobre esta política o para ejercer sus derechos, contáctenos:</p>
                 <ul>
-                  <li>Email: qbolacel@gmail.com</li>
+                  <li>Email: soporte@qbolacel.com</li>
                   <li>Teléfono: +1 (727) 276-0465</li>
                   <li>Dirección: Saint Petersburg, Florida, Estados Unidos</li>
                 </ul>
