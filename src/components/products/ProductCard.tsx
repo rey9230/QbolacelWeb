@@ -75,7 +75,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <Link to={`/productos/${product.id}`}>
         <div className="card-elevated hover-lift overflow-hidden">
           {/* Image Container */}
-          <div className="relative aspect-square overflow-hidden bg-muted">
+          <div className="relative aspect-square overflow-hidden bg-white">
             <img
               src={imageUrl}
               alt={product.name}
