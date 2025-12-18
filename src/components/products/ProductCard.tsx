@@ -79,7 +79,7 @@ export function ProductCard({ product }: ProductCardProps) {
             <img
               src={imageUrl}
               alt={product.name}
-              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+              className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-110"
             />
             
             {/* Badges */}
