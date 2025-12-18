@@ -1,52 +1,66 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Smartphone, Wifi, Zap, Gift, Shield, Clock, ArrowRight } from "lucide-react";
+import { Smartphone, Wifi, Zap, Gift, Shield, Clock, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTopupProducts, type TopupProduct } from "@/hooks/useTopup";
 import { cn } from "@/lib/utils";
 
 type RechargeType = "mobile" | "nauta";
 
-interface RechargeOffer {
-  amount: number;
-  bonus?: number;
-  popular?: boolean;
-  bestValue?: boolean;
-}
-
-const mobileOffers: RechargeOffer[] = [
-  { amount: 5 },
-  { amount: 10, bonus: 1, popular: true },
-  { amount: 15, bonus: 2 },
-  { amount: 20, bonus: 3, bestValue: true },
-  { amount: 25, bonus: 4 },
-  { amount: 30, bonus: 5 },
-];
-
-const nautaOffers: RechargeOffer[] = [
-  { amount: 3 },
-  { amount: 12, bonus: 1, popular: true },
-  { amount: 20, bonus: 2 },
-  { amount: 50, bonus: 5, bestValue: true },
-];
-
 export function UnifiedRechargeSection() {
   const navigate = useNavigate();
   const [rechargeType, setRechargeType] = useState<RechargeType>("mobile");
-  const [selectedAmount, setSelectedAmount] = useState<number | null>(20);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+
+  // Fetch products from API
+  const { data: allProducts, isLoading } = useTopupProducts({ country: "CU" });
+
+  // Filter products by type
+  const mobileProducts = useMemo(() => 
+    allProducts?.filter(p => p.operator === "CUBACEL" || p.productType === "MOBILE_TOPUP") || [],
+    [allProducts]
+  );
+
+  const nautaProducts = useMemo(() => 
+    allProducts?.filter(p => p.operator === "NAUTA" || p.productType === "NAUTA") || [],
+    [allProducts]
+  );
+
+  const products = rechargeType === "mobile" ? mobileProducts : nautaProducts;
+
+  // Auto-select featured product when products load or type changes
+  useMemo(() => {
+    if (products.length > 0 && !selectedProductId) {
+      const featured = products.find(p => p.isFeatured);
+      setSelectedProductId(featured?.id || products[0].id);
+    }
+  }, [products]);
+
+  const selectedProduct = products.find(p => p.id === selectedProductId);
 
   const handleRechargeClick = () => {
     navigate("/recargas", {
       state: {
         type: rechargeType,
-        amount: selectedAmount,
+        productId: selectedProductId,
       },
     });
   };
 
-  const offers = rechargeType === "mobile" ? mobileOffers : nautaOffers;
-  const selectedOffer = offers.find(o => o.amount === selectedAmount);
+  const handleTypeChange = (type: RechargeType) => {
+    setRechargeType(type);
+    setSelectedProductId(null);
+  };
+
+  // Helper to calculate bonus
+  const getBonus = (product: TopupProduct) => {
+    if (product.receiveValue && product.salePrice && product.receiveValue > product.salePrice) {
+      return product.receiveValue - product.salePrice;
+    }
+    return null;
+  };
 
   return (
     <section className="py-16 bg-gradient-to-b from-background via-muted/20 to-background">
@@ -75,10 +89,7 @@ export function UnifiedRechargeSection() {
         >
           <div className="inline-flex p-1 rounded-2xl bg-muted">
             <button
-              onClick={() => {
-                setRechargeType("mobile");
-                setSelectedAmount(20);
-              }}
+              onClick={() => handleTypeChange("mobile")}
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all",
                 rechargeType === "mobile"
@@ -90,10 +101,7 @@ export function UnifiedRechargeSection() {
               Móvil Cubacel
             </button>
             <button
-              onClick={() => {
-                setRechargeType("nauta");
-                setSelectedAmount(12);
-              }}
+              onClick={() => handleTypeChange("nauta")}
               className={cn(
                 "flex items-center gap-2 px-6 py-3 rounded-xl font-medium transition-all",
                 rechargeType === "nauta"
@@ -108,79 +116,93 @@ export function UnifiedRechargeSection() {
         </motion.div>
 
         <div className="max-w-4xl mx-auto">
-          {/* Offers Grid */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            whileInView={{ opacity: 1 }}
-            viewport={{ once: true }}
-            className={cn(
-              "grid gap-3 mb-8",
-              rechargeType === "mobile" ? "grid-cols-3 md:grid-cols-6" : "grid-cols-2 md:grid-cols-4"
-            )}
-          >
-            {offers.map((offer, i) => (
-              <motion.button
-                key={offer.amount}
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                whileHover={{ scale: 1.03, y: -3 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => setSelectedAmount(offer.amount)}
-                className={cn(
-                  "relative p-4 rounded-2xl border-2 transition-all text-center",
-                  selectedAmount === offer.amount
-                    ? rechargeType === "mobile"
-                      ? "border-primary bg-primary/5 shadow-lg shadow-primary/20"
-                      : "border-indigo-500 bg-indigo-500/5 shadow-lg shadow-indigo-500/20"
-                    : "border-border bg-card hover:border-muted-foreground/50",
-                  offer.popular && "ring-2 ring-offset-2",
-                  offer.popular && rechargeType === "mobile" && "ring-primary",
-                  offer.popular && rechargeType === "nauta" && "ring-indigo-500"
-                )}
-              >
-                {offer.popular && (
-                  <Badge 
+          {/* Loading State */}
+          {isLoading && (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          )}
+
+          {/* Products Grid */}
+          {!isLoading && products.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className={cn(
+                "grid gap-3 mb-8",
+                products.length <= 4 ? "grid-cols-2 md:grid-cols-4" : "grid-cols-3 md:grid-cols-6"
+              )}
+            >
+              {products.map((product, i) => {
+                const bonus = getBonus(product);
+                const isSelected = selectedProductId === product.id;
+                
+                return (
+                  <motion.button
+                    key={product.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.05 }}
+                    whileHover={{ scale: 1.03, y: -3 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => setSelectedProductId(product.id)}
                     className={cn(
-                      "absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2",
-                      rechargeType === "mobile" ? "bg-primary" : "bg-indigo-500"
+                      "relative p-4 rounded-2xl border-2 transition-all text-center",
+                      isSelected
+                        ? rechargeType === "mobile"
+                          ? "border-primary bg-primary/5 shadow-lg shadow-primary/20"
+                          : "border-indigo-500 bg-indigo-500/5 shadow-lg shadow-indigo-500/20"
+                        : "border-border bg-card hover:border-muted-foreground/50",
+                      product.isFeatured && "ring-2 ring-offset-2",
+                      product.isFeatured && rechargeType === "mobile" && "ring-primary",
+                      product.isFeatured && rechargeType === "nauta" && "ring-indigo-500"
                     )}
                   >
-                    POPULAR
-                  </Badge>
-                )}
-                {offer.bestValue && (
-                  <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2 bg-warning text-warning-foreground">
-                    MEJOR VALOR
-                  </Badge>
-                )}
+                    {product.isFeatured && (
+                      <Badge 
+                        className={cn(
+                          "absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2",
+                          rechargeType === "mobile" ? "bg-primary" : "bg-indigo-500"
+                        )}
+                      >
+                        POPULAR
+                      </Badge>
+                    )}
+                    {product.isPromotion && product.promotionLabel && (
+                      <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2 bg-warning text-warning-foreground">
+                        {product.promotionLabel}
+                      </Badge>
+                    )}
 
-                <div className="text-2xl font-bold text-foreground">
-                  ${offer.amount}
-                </div>
-                
-                {rechargeType === "nauta" && (
-                  <div className="text-sm text-muted-foreground">
-                    {offer.amount === 3 ? "1h" : offer.amount === 12 ? "5h" : offer.amount === 20 ? "10h" : "30h"}
-                  </div>
-                )}
+                    <div className="text-2xl font-bold text-foreground">
+                      ${product.salePrice}
+                    </div>
+                    
+                    {product.validity && (
+                      <div className="text-sm text-muted-foreground">
+                        {product.validity}
+                      </div>
+                    )}
 
-                {offer.bonus && (
-                  <div className={cn(
-                    "flex items-center justify-center gap-1 mt-1 text-xs font-medium",
-                    rechargeType === "mobile" ? "text-success" : "text-indigo-500"
-                  )}>
-                    <Gift className="h-3 w-3" />
-                    +${offer.bonus}
-                  </div>
-                )}
-              </motion.button>
-            ))}
-          </motion.div>
+                    {bonus && (
+                      <div className={cn(
+                        "flex items-center justify-center gap-1 mt-1 text-xs font-medium",
+                        rechargeType === "mobile" ? "text-success" : "text-indigo-500"
+                      )}>
+                        <Gift className="h-3 w-3" />
+                        +${bonus}
+                      </div>
+                    )}
+                  </motion.button>
+                );
+              })}
+            </motion.div>
+          )}
 
-          {/* Selected Amount Summary */}
-          {selectedOffer && (
+          {/* Selected Product Summary */}
+          {selectedProduct && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -208,10 +230,10 @@ export function UnifiedRechargeSection() {
                       {rechargeType === "mobile" ? "Recarga Cubacel" : "Recarga Nauta"}
                     </p>
                     <p className="text-2xl font-bold">
-                      ${selectedOffer.amount}
-                      {selectedOffer.bonus && (
+                      ${selectedProduct.salePrice}
+                      {getBonus(selectedProduct) && (
                         <span className="text-success ml-2 text-lg">
-                          +${selectedOffer.bonus} bonus
+                          +${getBonus(selectedProduct)} bonus
                         </span>
                       )}
                     </p>

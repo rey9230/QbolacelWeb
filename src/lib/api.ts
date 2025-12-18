@@ -665,39 +665,153 @@ export const geoApi = {
     ),
 };
 
-// ============ RECHARGES API ============
-export interface RechargeProduct {
+// ============ TOPUP API ============
+// Nuevo sistema de productos de recarga (multi-proveedor)
+
+export interface TopupProduct {
   id: string;
+  sku: string;
+  slug: string;
   name: string;
-  type: 'cubacel' | 'nauta';
-  amount: number;
-  price: number;
-  currency: string;
-  bonus?: number;
-  bonus_type?: 'percentage' | 'fixed';
-  promo_expires_at?: string;
+  shortDescription?: string;
+  description?: string;
+  
+  // Clasificación
+  country: string;
+  operator: string;  // "CUBACEL", "NAUTA"
+  productType: string;  // "MOBILE_TOPUP", "NAUTA", "DATA_PACK", etc.
+  
+  // Precios
+  salePrice: number;
+  saleCurrency: string;
+  originalPrice?: number;
+  receiveValue?: number;
+  receiveCurrency?: string;
+  
+  // Montos variables
+  isVariableAmount: boolean;
+  minAmount?: number;
+  maxAmount?: number;
+  amountStep?: number;
+  suggestedAmounts?: number[];
+  
+  // Visibilidad
+  isFeatured: boolean;
+  isPromotion: boolean;
+  promotionLabel?: string;
+  promotionEndsAt?: string;
+  
+  // Media
+  imageUrl?: string;
+  iconUrl?: string;
+  
+  // Otros
+  validity?: string;
+  tags: string[];
 }
 
-export interface RechargeRequest {
-  product_id: string;
-  phone_number?: string;
-  nauta_account?: string;
-  payment_method: 'paypal' | 'card' | 'tropipay';
+export type TopupTransactionStatus = 'PENDING' | 'PROCESSING' | 'SUCCESS' | 'FAILED';
+
+export interface TopupTransaction {
+  id: string;
+  productId: string;
+  productSku: string;
+  productName: string;
+  
+  accountNumber: string;
+  accountType: string;  // "MSISDN", "EMAIL"
+  country: string;
+  operator: string;
+  
+  salePrice: number;
+  saleCurrency: string;
+  receiveValue?: number;
+  receiveCurrency?: string;
+  
+  status: TopupTransactionStatus;
+  statusMessage?: string;
+  
+  providerId: string;
+  providerTransactionId?: string;
+  
+  deliveredValue?: number;
+  deliveredCurrency?: string;
+  deliveredAt?: string;
+  
+  createdAt: string;
+  completedAt?: string;
 }
 
-export const rechargesApi = {
-  getProducts: () =>
-    apiFetch<{ data: RechargeProduct[] }>('/recharges/products'),
+export interface PurchaseTopupRequest {
+  productId: string;
+  accountNumber: string;
+  amount?: number;  // Solo para productos de monto variable
+  currency?: string;
+  metadata?: Record<string, string>;
+}
 
-  create: (data: RechargeRequest) =>
-    apiFetch<{ data: { id: string; status: string }; payment_url?: string }>('/recharges', {
+export interface PurchaseTopupResponse {
+  transactionId: string;
+  status: TopupTransactionStatus;
+  productId: string;
+  productName: string;
+  accountNumber: string;
+  salePrice: number;
+  saleCurrency: string;
+  receiveValue?: number;
+  receiveCurrency?: string;
+  providerId: string;
+  providerTransactionId?: string;
+  message?: string;
+  createdAt: string;
+}
+
+export interface TopupProductFilters {
+  country?: string;
+  operator?: string;
+  productType?: string;
+}
+
+export const topupApi = {
+  // Listar productos activos
+  getProducts: (filters: TopupProductFilters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.country) params.append('country', filters.country);
+    if (filters.operator) params.append('operator', filters.operator);
+    if (filters.productType) params.append('productType', filters.productType);
+    const query = params.toString();
+    return apiFetchPublic<TopupProduct[]>(`/topup/products${query ? `?${query}` : ''}`);
+  },
+
+  // Productos destacados
+  getFeatured: () =>
+    apiFetchPublic<TopupProduct[]>('/topup/products/featured'),
+
+  // Detalle por slug
+  getBySlug: (slug: string) =>
+    apiFetchPublic<TopupProduct>(`/topup/products/${slug}`),
+
+  // Comprar recarga (requiere auth + Idempotency-Key)
+  purchase: (data: PurchaseTopupRequest, idempotencyKey: string) =>
+    apiFetch<PurchaseTopupResponse>('/topup/purchase', {
       method: 'POST',
+      headers: {
+        'Idempotency-Key': idempotencyKey,
+      },
       body: JSON.stringify(data),
     }, true),
 
-  getHistory: (page: number = 1) =>
-    apiFetch<{ data: { id: string; product: RechargeProduct; phone: string; status: string; created_at: string }[] }>(`/recharges/history?page=${page}`, {}, true),
+  // Historial de transacciones
+  getTransactions: (page: number = 0, size: number = 20) =>
+    apiFetch<TopupTransaction[]>(`/topup/transactions?page=${page}&size=${size}`, {}, true),
+
+  // Detalle de transacción
+  getTransaction: (id: string) =>
+    apiFetch<TopupTransaction>(`/topup/transactions/${id}`, {}, true),
 };
+
+// Legacy alias for backward compatibility
+export const rechargesApi = topupApi;
 
 // ============ UNIFIED CHECKOUT API ============
 // Basado en PAYMENT_IMPLEMENTATION.md
