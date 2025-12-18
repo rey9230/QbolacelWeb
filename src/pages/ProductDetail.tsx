@@ -136,7 +136,7 @@ export default function ProductDetail() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
             >
-              <div className="relative aspect-square rounded-2xl overflow-hidden bg-muted mb-4">
+              <div className="relative aspect-square rounded-2xl overflow-hidden bg-white mb-4">
                 <img
                   src={currentImage}
                   alt={product.name}
