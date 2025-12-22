@@ -202,12 +202,14 @@ async function apiFetch<T>(
 export interface LoginRequest {
   email: string;
   password: string;
+  turnstileToken: string;
 }
 
 export interface RegisterRequest {
   userName: string;
   email: string;
   password: string;
+  turnstileToken: string;
 }
 
 export interface AuthTokenResponse {
@@ -263,7 +265,7 @@ async function apiFetchWithToken<T>(
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<{ user: UserProfile; token: string; refreshToken: string }> => {
-    const tokenResponse = await apiFetch<AuthTokenResponse>('/auth/login', {
+    const tokenResponse = await apiFetch<AuthTokenResponse>('/auth/web/login', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -279,7 +281,7 @@ export const authApi = {
   },
 
   register: async (data: RegisterRequest): Promise<{ user: UserProfile; token: string; refreshToken: string }> => {
-    const tokenResponse = await apiFetch<AuthTokenResponse>('/auth/register', {
+    const tokenResponse = await apiFetch<AuthTokenResponse>('/auth/web/signup', {
       method: 'POST',
       body: JSON.stringify(data),
     });

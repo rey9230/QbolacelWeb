@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +18,8 @@ import { useAuthStore } from "@/stores/auth.store";
 import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api";
 
+const TURNSTILE_SITE_KEY = "0x4AAAAAACH8RFaY-5kF9i74";
+
 export function AuthModal() {
   const { 
     isAuthModalOpen, 
@@ -30,6 +33,12 @@ export function AuthModal() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
+  // Turnstile refs and tokens
+  const loginTurnstileRef = useRef<TurnstileInstance>(null);
+  const registerTurnstileRef = useRef<TurnstileInstance>(null);
+  const [loginTurnstileToken, setLoginTurnstileToken] = useState<string | null>(null);
+  const [registerTurnstileToken, setRegisterTurnstileToken] = useState<string | null>(null);
+  
   // Form states
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
@@ -42,12 +51,23 @@ export function AuthModal() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!loginTurnstileToken) {
+      toast({
+        title: "Verificación requerida",
+        description: "Por favor completa la verificación de seguridad",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsLoading(true);
     
     try {
       const { user, token, refreshToken } = await authApi.login({
         email: loginForm.email,
         password: loginForm.password,
+        turnstileToken: loginTurnstileToken,
       });
       
       setUser(
@@ -67,8 +87,14 @@ export function AuthModal() {
       });
       
       setLoginForm({ email: "", password: "" });
+      setLoginTurnstileToken(null);
+      loginTurnstileRef.current?.reset();
       closeAuthModal();
     } catch (error) {
+      // Reset turnstile on error
+      loginTurnstileRef.current?.reset();
+      setLoginTurnstileToken(null);
+      
       toast({
         title: "Error de inicio de sesión",
         description: error instanceof Error ? error.message : "Credenciales incorrectas",
@@ -81,6 +107,15 @@ export function AuthModal() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!registerTurnstileToken) {
+      toast({
+        title: "Verificación requerida",
+        description: "Por favor completa la verificación de seguridad",
+        variant: "destructive",
+      });
+      return;
+    }
     
     if (registerForm.password !== registerForm.confirmPassword) {
       toast({
@@ -116,6 +151,7 @@ export function AuthModal() {
         userName: registerForm.name,
         email: registerForm.email,
         password: registerForm.password,
+        turnstileToken: registerTurnstileToken,
       });
       
       setUser(
@@ -141,8 +177,14 @@ export function AuthModal() {
         confirmPassword: "",
         acceptTerms: false,
       });
+      setRegisterTurnstileToken(null);
+      registerTurnstileRef.current?.reset();
       closeAuthModal();
     } catch (error) {
+      // Reset turnstile on error
+      registerTurnstileRef.current?.reset();
+      setRegisterTurnstileToken(null);
+      
       toast({
         title: "Error al crear cuenta",
         description: error instanceof Error ? error.message : "No se pudo crear la cuenta",
@@ -155,7 +197,7 @@ export function AuthModal() {
 
   return (
     <Dialog open={isAuthModalOpen} onOpenChange={(open) => !open && closeAuthModal()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader className="text-center">
           <DialogTitle className="text-2xl font-bold">
             {authModalTab === "login" ? "Bienvenido de vuelta" : "Crear cuenta"}
@@ -239,12 +281,27 @@ export function AuthModal() {
                 </Button>
               </div>
 
+              {/* Turnstile widget for login */}
+              <div className="flex justify-center">
+                <Turnstile
+                  ref={loginTurnstileRef}
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onSuccess={setLoginTurnstileToken}
+                  onError={() => setLoginTurnstileToken(null)}
+                  onExpire={() => setLoginTurnstileToken(null)}
+                  options={{
+                    theme: "light",
+                    size: "normal",
+                  }}
+                />
+              </div>
+
               <Button 
                 type="submit" 
                 variant="gradient" 
                 className="w-full" 
                 size="lg"
-                disabled={isLoading}
+                disabled={isLoading || !loginTurnstileToken}
               >
                 {isLoading ? (
                   <>
@@ -395,12 +452,27 @@ export function AuthModal() {
                 </label>
               </div>
 
+              {/* Turnstile widget for register */}
+              <div className="flex justify-center">
+                <Turnstile
+                  ref={registerTurnstileRef}
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onSuccess={setRegisterTurnstileToken}
+                  onError={() => setRegisterTurnstileToken(null)}
+                  onExpire={() => setRegisterTurnstileToken(null)}
+                  options={{
+                    theme: "light",
+                    size: "normal",
+                  }}
+                />
+              </div>
+
               <Button 
                 type="submit" 
                 variant="gradient" 
                 className="w-full" 
                 size="lg"
-                disabled={isLoading}
+                disabled={isLoading || !registerTurnstileToken}
               >
                 {isLoading ? (
                   <>
