@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ShoppingCart, Eye, Loader2, Star, MessageSquare, Truck } from "lucide-react";
+import { ShoppingCart, Eye, Loader2, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -113,55 +113,17 @@ export function ProductCard({ product }: ProductCardProps) {
           </div>
 
           {/* Content */}
-          <div className="p-4 flex flex-col flex-1">
-            {/* Tags row */}
-            <div className="flex flex-wrap gap-1 mb-2 min-h-[1.25rem]">
-              {product.tags.slice(0, 2).map((tag, i) => (
-                <span 
-                  key={i} 
-                  className="text-[10px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground uppercase tracking-wide"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-
+          <div className="p-3 flex flex-col flex-1">
             {/* Name - Fixed 2 lines */}
-            <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
+            <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 min-h-[2.25rem] group-hover:text-primary transition-colors">
               {product.name}
             </h3>
 
-            {/* Description snippet */}
-            {product.description && (
-              <p className="text-xs text-muted-foreground line-clamp-2 mt-1.5 min-h-[2rem]">
-                {product.description}
-              </p>
-            )}
-            {!product.description && <div className="min-h-[2rem] mt-1.5" />}
-
-            {/* Rating & Reviews row */}
-            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
-              {product.rating > 0 && (
-                <div className="flex items-center gap-1">
-                  <Star className="h-3 w-3 text-warning fill-warning" />
-                  <span className="font-medium text-foreground">{product.rating.toFixed(1)}</span>
-                </div>
-              )}
-              {product.reviewsCount > 0 && (
-                <div className="flex items-center gap-1">
-                  <MessageSquare className="h-3 w-3" />
-                  <span>{product.reviewsCount}</span>
-                </div>
-              )}
-              {product.salesCount > 0 && (
-                <span>{product.salesCount} vendidos</span>
-              )}
-            </div>
-
-            {/* Shipping indicator */}
-            <div className="flex items-center gap-1 mt-2 text-[10px] text-success">
-              <Truck className="h-3 w-3" />
-              <span>Envío a Cuba</span>
+            {/* 5 Stars Rating */}
+            <div className="flex items-center gap-0.5 mt-1.5">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star key={star} className="h-3 w-3 text-warning fill-warning" />
+              ))}
             </div>
 
             {/* Price and Cart */}
