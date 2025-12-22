@@ -49,6 +49,32 @@ export function AuthModal() {
     acceptTerms: false,
   });
 
+  const reportTurnstileContext = (scope: "login" | "register", error?: unknown) => {
+    const iframeHostname = window.location.hostname;
+    const iframeOrigin = window.location.origin;
+
+    let topHostname: string | null = null;
+    try {
+      topHostname = window.top?.location.hostname ?? null;
+    } catch {
+      // cross-origin: ignore
+    }
+
+    console.warn(`[Turnstile:${scope}] error`, {
+      error,
+      iframeHostname,
+      iframeOrigin,
+      topHostname,
+      siteKey: TURNSTILE_SITE_KEY,
+    });
+
+    toast({
+      title: "Turnstile no autorizado",
+      description: `Hostname actual: ${iframeHostname}${topHostname ? ` (top: ${topHostname})` : ""}`,
+      variant: "destructive",
+    });
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -287,7 +313,10 @@ export function AuthModal() {
                   ref={loginTurnstileRef}
                   siteKey={TURNSTILE_SITE_KEY}
                   onSuccess={setLoginTurnstileToken}
-                  onError={() => setLoginTurnstileToken(null)}
+                  onError={(err) => {
+                    setLoginTurnstileToken(null);
+                    reportTurnstileContext("login", err);
+                  }}
                   onExpire={() => setLoginTurnstileToken(null)}
                   options={{
                     theme: "light",
@@ -426,7 +455,10 @@ export function AuthModal() {
                   ref={registerTurnstileRef}
                   siteKey={TURNSTILE_SITE_KEY}
                   onSuccess={setRegisterTurnstileToken}
-                  onError={() => setRegisterTurnstileToken(null)}
+                  onError={(err) => {
+                    setRegisterTurnstileToken(null);
+                    reportTurnstileContext("register", err);
+                  }}
                   onExpire={() => setRegisterTurnstileToken(null)}
                   options={{
                     theme: "light",
