@@ -93,10 +93,10 @@ const Recargas = () => {
     setSelectedProductId(null); // Reset selection when switching type
   };
 
-  // Helper to calculate bonus from receiveValue
+  // Helper to get bonus - only show if originalPrice exists (indicates a promotion)
   const getBonus = (product: TopupProduct) => {
-    if (product.receiveValue && product.salePrice && product.receiveValue > product.salePrice) {
-      return product.receiveValue - product.salePrice;
+    if (product.originalPrice && product.salePrice && product.originalPrice > product.salePrice) {
+      return (product.originalPrice - product.salePrice).toFixed(2);
     }
     return null;
   };
@@ -208,7 +208,9 @@ const Recargas = () => {
                     </h3>
                     <div className={cn(
                       "grid gap-3",
-                      products.length <= 4 ? "grid-cols-2 md:grid-cols-4" : "grid-cols-3 md:grid-cols-6"
+                      products.length <= 4 ? "grid-cols-2 md:grid-cols-4" 
+                        : products.length <= 6 ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-6"
+                        : "grid-cols-2 md:grid-cols-4 lg:grid-cols-5"
                     )}>
                       {products.map((product, i) => {
                         const bonus = getBonus(product);

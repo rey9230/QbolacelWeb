@@ -54,10 +54,10 @@ export function UnifiedRechargeSection() {
     setSelectedProductId(null);
   };
 
-  // Helper to calculate bonus
+  // Helper to get bonus - only show if originalPrice exists (indicates a promotion)
   const getBonus = (product: TopupProduct) => {
-    if (product.receiveValue && product.salePrice && product.receiveValue > product.salePrice) {
-      return product.receiveValue - product.salePrice;
+    if (product.originalPrice && product.salePrice && product.originalPrice > product.salePrice) {
+      return (product.originalPrice - product.salePrice).toFixed(2);
     }
     return null;
   };
@@ -131,7 +131,9 @@ export function UnifiedRechargeSection() {
               viewport={{ once: true }}
               className={cn(
                 "grid gap-3 mb-8",
-                products.length <= 4 ? "grid-cols-2 md:grid-cols-4" : "grid-cols-3 md:grid-cols-6"
+                products.length <= 4 ? "grid-cols-2 md:grid-cols-4" 
+                  : products.length <= 6 ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-6"
+                  : "grid-cols-2 md:grid-cols-4 lg:grid-cols-5"
               )}
             >
               {products.map((product, i) => {
@@ -154,10 +156,7 @@ export function UnifiedRechargeSection() {
                         ? rechargeType === "mobile"
                           ? "border-primary bg-primary/5 shadow-lg shadow-primary/20"
                           : "border-indigo-500 bg-indigo-500/5 shadow-lg shadow-indigo-500/20"
-                        : "border-border bg-card hover:border-muted-foreground/50",
-                      product.isFeatured && "ring-2 ring-offset-2",
-                      product.isFeatured && rechargeType === "mobile" && "ring-primary",
-                      product.isFeatured && rechargeType === "nauta" && "ring-indigo-500"
+                        : "border-border bg-card hover:border-muted-foreground/50"
                     )}
                   >
                     {product.isFeatured && (
