@@ -109,7 +109,18 @@ export default function ProductDetail() {
     );
   }
 
-  const images = product.pictures.length > 0 ? product.pictures : [product.primaryImage || '/placeholder.svg'];
+  // Build images array with primaryImage first, then other pictures (excluding duplicates)
+  const buildImageList = () => {
+    const primary = product.primaryImage;
+    const others = product.pictures.filter(pic => pic !== primary);
+    
+    if (primary) {
+      return [primary, ...others];
+    }
+    return others.length > 0 ? others : ['/placeholder.svg'];
+  };
+  
+  const images = buildImageList();
   const currentImage = images[selectedImage] || images[0];
 
   return (
