@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Smartphone, Wifi, Zap, Gift, Shield, Clock, ArrowRight, Loader2 } from "lucide-react";
+import { Smartphone, Wifi, Zap, Shield, Clock, ArrowRight, Loader2, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useTopupProducts, type TopupProduct } from "@/hooks/useTopup";
@@ -54,13 +54,6 @@ export function UnifiedRechargeSection() {
     setSelectedProductId(null);
   };
 
-  // Helper to get bonus - only show if originalPrice exists (indicates a promotion)
-  const getBonus = (product: TopupProduct) => {
-    if (product.originalPrice && product.salePrice && product.originalPrice > product.salePrice) {
-      return (product.originalPrice - product.salePrice).toFixed(2);
-    }
-    return null;
-  };
 
   return (
     <section className="py-16 bg-gradient-to-b from-background via-muted/20 to-background">
@@ -137,7 +130,10 @@ export function UnifiedRechargeSection() {
               )}
             >
               {products.map((product, i) => {
-                const bonus = getBonus(product);
+                const hasDiscount = product.originalPrice && product.originalPrice > product.salePrice;
+                const discountPercent = hasDiscount 
+                  ? Math.round(((product.originalPrice! - product.salePrice) / product.originalPrice!) * 100)
+                  : null;
                 const isSelected = selectedProductId === product.id;
                 
                 return (
@@ -151,7 +147,7 @@ export function UnifiedRechargeSection() {
                     whileTap={{ scale: 0.98 }}
                     onClick={() => setSelectedProductId(product.id)}
                     className={cn(
-                      "relative p-4 rounded-2xl border-2 transition-all text-center",
+                      "relative p-3 rounded-2xl border-2 transition-all text-left",
                       isSelected
                         ? rechargeType === "mobile"
                           ? "border-primary bg-primary/5 shadow-lg shadow-primary/20"
@@ -159,39 +155,48 @@ export function UnifiedRechargeSection() {
                         : "border-border bg-card hover:border-muted-foreground/50"
                     )}
                   >
-                    {product.isFeatured && (
-                      <Badge 
-                        className={cn(
-                          "absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2",
-                          rechargeType === "mobile" ? "bg-primary" : "bg-indigo-500"
-                        )}
-                      >
-                        POPULAR
-                      </Badge>
-                    )}
-                    {product.isPromotion && product.promotionLabel && (
-                      <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2 bg-warning text-warning-foreground">
-                        {product.promotionLabel}
-                      </Badge>
-                    )}
-
-                    <div className="text-2xl font-bold text-foreground">
-                      ${product.salePrice}
+                    {/* Badges */}
+                    <div className="absolute -top-2.5 left-2 right-2 flex justify-center gap-1">
+                      {product.isFeatured && (
+                        <Badge 
+                          className={cn(
+                            "text-[9px] px-1.5",
+                            rechargeType === "mobile" ? "bg-primary" : "bg-indigo-500"
+                          )}
+                        >
+                          POPULAR
+                        </Badge>
+                      )}
+                      {discountPercent && (
+                        <Badge className="text-[9px] px-1.5 bg-success">
+                          -{discountPercent}%
+                        </Badge>
+                      )}
                     </div>
-                    
-                    {product.validity && (
-                      <div className="text-sm text-muted-foreground">
-                        {product.validity}
-                      </div>
+
+                    {/* Price */}
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span className="text-xl font-bold text-foreground">
+                        ${product.salePrice}
+                      </span>
+                      {hasDiscount && (
+                        <span className="text-xs text-muted-foreground line-through">
+                          ${product.originalPrice}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Short Description */}
+                    {product.shortDescription && (
+                      <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2 leading-tight">
+                        {product.shortDescription}
+                      </p>
                     )}
 
-                    {bonus && (
-                      <div className={cn(
-                        "flex items-center justify-center gap-1 mt-1 text-xs font-medium",
-                        rechargeType === "mobile" ? "text-success" : "text-indigo-500"
-                      )}>
-                        <Gift className="h-3 w-3" />
-                        +${bonus}
+                    {/* Receive Value */}
+                    {product.receiveValue && (
+                      <div className="text-[10px] font-medium text-success mt-1.5">
+                        Recibe: {product.receiveValue} {product.receiveCurrency}
                       </div>
                     )}
                   </motion.button>
@@ -230,12 +235,17 @@ export function UnifiedRechargeSection() {
                     </p>
                     <p className="text-2xl font-bold">
                       ${selectedProduct.salePrice}
-                      {getBonus(selectedProduct) && (
-                        <span className="text-success ml-2 text-lg">
-                          +${getBonus(selectedProduct)} bonus
+                      {selectedProduct.originalPrice && selectedProduct.originalPrice > selectedProduct.salePrice && (
+                        <span className="text-success ml-2 text-sm">
+                          Ahorras ${(selectedProduct.originalPrice - selectedProduct.salePrice).toFixed(2)}
                         </span>
                       )}
                     </p>
+                    {selectedProduct.shortDescription && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {selectedProduct.shortDescription}
+                      </p>
+                    )}
                   </div>
                 </div>
 

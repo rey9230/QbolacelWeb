@@ -93,13 +93,6 @@ const Recargas = () => {
     setSelectedProductId(null); // Reset selection when switching type
   };
 
-  // Helper to get bonus - only show if originalPrice exists (indicates a promotion)
-  const getBonus = (product: TopupProduct) => {
-    if (product.originalPrice && product.salePrice && product.originalPrice > product.salePrice) {
-      return (product.originalPrice - product.salePrice).toFixed(2);
-    }
-    return null;
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -213,7 +206,10 @@ const Recargas = () => {
                         : "grid-cols-2 md:grid-cols-4 lg:grid-cols-5"
                     )}>
                       {products.map((product, i) => {
-                        const bonus = getBonus(product);
+                        const hasDiscount = product.originalPrice && product.originalPrice > product.salePrice;
+                        const discountPercent = hasDiscount 
+                          ? Math.round(((product.originalPrice! - product.salePrice) / product.originalPrice!) * 100)
+                          : null;
                         const isSelected = selectedProductId === product.id;
                         
                         return (
@@ -226,7 +222,7 @@ const Recargas = () => {
                             whileTap={{ scale: 0.98 }}
                             onClick={() => setSelectedProductId(product.id)}
                             className={cn(
-                              "relative p-4 rounded-2xl border-2 transition-all text-center",
+                              "relative p-3 rounded-2xl border-2 transition-all text-left",
                               isSelected
                                 ? rechargeType === "mobile"
                                   ? "border-primary bg-primary/5 shadow-lg"
@@ -234,41 +230,47 @@ const Recargas = () => {
                                 : "border-border bg-card hover:border-muted-foreground/50"
                             )}
                           >
-                            {product.isFeatured && (
-                              <Badge 
-                                className={cn(
-                                  "absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2",
-                                  rechargeType === "mobile" ? "bg-primary" : "bg-indigo-500"
-                                )}
-                              >
-                                POPULAR
-                              </Badge>
-                            )}
-                            {product.isPromotion && product.promotionLabel && (
-                              <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 text-[10px] px-2 bg-warning text-warning-foreground">
-                                {product.promotionLabel}
-                              </Badge>
-                            )}
-
-                            <div className="text-2xl font-bold text-foreground">
-                              ${product.salePrice}
+                            {/* Badges */}
+                            <div className="absolute -top-2.5 left-2 right-2 flex justify-center gap-1">
+                              {product.isFeatured && (
+                                <Badge 
+                                  className={cn(
+                                    "text-[9px] px-1.5",
+                                    rechargeType === "mobile" ? "bg-primary" : "bg-indigo-500"
+                                  )}
+                                >
+                                  POPULAR
+                                </Badge>
+                              )}
+                              {discountPercent && (
+                                <Badge className="text-[9px] px-1.5 bg-success">
+                                  -{discountPercent}%
+                                </Badge>
+                              )}
                             </div>
-                            
-                            {product.validity && (
-                              <div className="text-sm text-muted-foreground">
-                                {product.validity}
-                              </div>
+
+                            {/* Price */}
+                            <div className="flex items-baseline gap-1 mt-1">
+                              <span className="text-xl font-bold text-foreground">
+                                ${product.salePrice}
+                              </span>
+                              {hasDiscount && (
+                                <span className="text-xs text-muted-foreground line-through">
+                                  ${product.originalPrice}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Short Description */}
+                            {product.shortDescription && (
+                              <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2 leading-tight">
+                                {product.shortDescription}
+                              </p>
                             )}
 
-                            {bonus && (
-                              <div className="flex items-center justify-center gap-1 mt-1 text-xs font-medium text-success">
-                                <Gift className="h-3 w-3" />
-                                +${bonus} bonus
-                              </div>
-                            )}
-
-                            {product.receiveValue && product.receiveCurrency && (
-                              <div className="text-xs text-muted-foreground mt-1">
+                            {/* Receive Value */}
+                            {product.receiveValue && (
+                              <div className="text-[10px] font-medium text-success mt-1.5">
                                 Recibe: {product.receiveValue} {product.receiveCurrency}
                               </div>
                             )}
@@ -313,12 +315,17 @@ const Recargas = () => {
                           <p className="text-sm text-muted-foreground">Total a pagar</p>
                           <p className="text-2xl font-bold">
                             ${selectedProduct.salePrice} {selectedProduct.saleCurrency}
-                            {getBonus(selectedProduct) && (
-                              <span className="text-success ml-2 text-lg">
-                                +${getBonus(selectedProduct)} bonus
+                            {selectedProduct.originalPrice && selectedProduct.originalPrice > selectedProduct.salePrice && (
+                              <span className="text-success ml-2 text-sm">
+                                Ahorras ${(selectedProduct.originalPrice - selectedProduct.salePrice).toFixed(2)}
                               </span>
                             )}
                           </p>
+                          {selectedProduct.shortDescription && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {selectedProduct.shortDescription}
+                            </p>
+                          )}
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-muted-foreground">Recibe en Cuba</p>
