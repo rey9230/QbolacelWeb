@@ -73,9 +73,9 @@ export function ProductCard({ product }: ProductCardProps) {
       className="group relative"
     >
       <Link to={`/productos/${product.id}`}>
-        <div className="card-elevated hover-lift overflow-hidden">
-          {/* Image Container */}
-          <div className="relative aspect-square overflow-hidden bg-white">
+        <div className="card-elevated hover-lift overflow-hidden h-full flex flex-col">
+          {/* Image Container - Fixed height */}
+          <div className="relative aspect-square overflow-hidden bg-white flex-shrink-0">
             <img
               src={imageUrl}
               alt={product.name}
@@ -113,29 +113,33 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
 
-          {/* Content */}
-          <div className="p-4">
-            {/* Tags as category */}
-            {product.tags.length > 0 && (
-              <span className="text-xs text-muted-foreground uppercase tracking-wide">
-                {product.tags[0]}
-              </span>
-            )}
+          {/* Content - Fixed structure for uniform height */}
+          <div className="p-4 flex flex-col flex-1">
+            {/* Tags as category - Fixed height */}
+            <div className="h-4 mb-1">
+              {product.tags.length > 0 && (
+                <span className="text-xs text-muted-foreground uppercase tracking-wide line-clamp-1">
+                  {product.tags[0]}
+                </span>
+              )}
+            </div>
 
-            {/* Name */}
-            <h3 className="font-semibold text-foreground mt-1 line-clamp-2 group-hover:text-primary transition-colors">
+            {/* Name - Fixed 2 lines height */}
+            <h3 className="font-semibold text-foreground line-clamp-2 min-h-[2.75rem] group-hover:text-primary transition-colors">
               {product.name}
             </h3>
 
-            {/* Sales count */}
-            {product.salesCount > 0 && (
-              <p className="text-sm text-muted-foreground mt-1">
-                {product.salesCount} vendidos
-              </p>
-            )}
+            {/* Sales count - Fixed height */}
+            <div className="h-5 mt-1">
+              {product.salesCount > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  {product.salesCount} vendidos
+                </p>
+              )}
+            </div>
 
-            {/* Price and Cart */}
-            <div className="flex items-center justify-between mt-3">
+            {/* Price and Cart - Push to bottom */}
+            <div className="flex items-center justify-between mt-auto pt-3">
               <div>
                 <span className="text-lg font-bold text-primary">
                   ${product.price.amount.toFixed(2)}
@@ -159,17 +163,19 @@ export function ProductCard({ product }: ProductCardProps) {
               </Button>
             </div>
 
-            {/* Stock Status */}
-            {isLowStock && (
-              <p className="text-xs text-warning mt-2">
-                ¡Solo quedan {product.stock}!
-              </p>
-            )}
-            {isOutOfStock && (
-              <p className="text-xs text-destructive mt-2">
-                Agotado
-              </p>
-            )}
+            {/* Stock Status - Fixed height at bottom */}
+            <div className="h-5 mt-2">
+              {isLowStock && (
+                <p className="text-xs text-warning">
+                  ¡Solo quedan {product.stock}!
+                </p>
+              )}
+              {isOutOfStock && (
+                <p className="text-xs text-destructive">
+                  Agotado
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </Link>
