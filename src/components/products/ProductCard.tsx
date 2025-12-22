@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ShoppingCart, Eye, Loader2, Star } from "lucide-react";
+import { ShoppingCart, Eye, Loader2, Star, MessageSquare, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,11 +90,10 @@ export function ProductCard({ product }: ProductCardProps) {
               )}
             </div>
 
-            {/* Rating badge */}
-            {product.rating > 0 && (
-              <div className="absolute top-3 right-3 flex items-center gap-1 bg-background/80 backdrop-blur-sm px-2 py-1 rounded-full text-xs">
-                <Star className="h-3 w-3 text-warning fill-warning" />
-                <span className="font-medium">{product.rating.toFixed(1)}</span>
+            {/* Stock badge on image */}
+            {isOutOfStock && (
+              <div className="absolute top-3 right-3 bg-destructive/90 backdrop-blur-sm px-2 py-1 rounded-full">
+                <span className="text-[10px] font-medium text-destructive-foreground">Agotado</span>
               </div>
             )}
 
@@ -113,38 +112,65 @@ export function ProductCard({ product }: ProductCardProps) {
             </div>
           </div>
 
-          {/* Content - Fixed structure for uniform height */}
+          {/* Content */}
           <div className="p-4 flex flex-col flex-1">
-            {/* Tags as category - Fixed height */}
-            <div className="h-4 mb-1">
-              {product.tags.length > 0 && (
-                <span className="text-xs text-muted-foreground uppercase tracking-wide line-clamp-1">
-                  {product.tags[0]}
+            {/* Tags row */}
+            <div className="flex flex-wrap gap-1 mb-2 min-h-[1.25rem]">
+              {product.tags.slice(0, 2).map((tag, i) => (
+                <span 
+                  key={i} 
+                  className="text-[10px] px-1.5 py-0.5 bg-muted rounded text-muted-foreground uppercase tracking-wide"
+                >
+                  {tag}
                 </span>
-              )}
+              ))}
             </div>
 
-            {/* Name - Fixed 2 lines height */}
-            <h3 className="font-semibold text-foreground line-clamp-2 min-h-[2.75rem] group-hover:text-primary transition-colors">
+            {/* Name - Fixed 2 lines */}
+            <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 min-h-[2.5rem] group-hover:text-primary transition-colors">
               {product.name}
             </h3>
 
-            {/* Sales count - Fixed height */}
-            <div className="h-5 mt-1">
+            {/* Description snippet */}
+            {product.description && (
+              <p className="text-xs text-muted-foreground line-clamp-2 mt-1.5 min-h-[2rem]">
+                {product.description}
+              </p>
+            )}
+            {!product.description && <div className="min-h-[2rem] mt-1.5" />}
+
+            {/* Rating & Reviews row */}
+            <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+              {product.rating > 0 && (
+                <div className="flex items-center gap-1">
+                  <Star className="h-3 w-3 text-warning fill-warning" />
+                  <span className="font-medium text-foreground">{product.rating.toFixed(1)}</span>
+                </div>
+              )}
+              {product.reviewsCount > 0 && (
+                <div className="flex items-center gap-1">
+                  <MessageSquare className="h-3 w-3" />
+                  <span>{product.reviewsCount}</span>
+                </div>
+              )}
               {product.salesCount > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  {product.salesCount} vendidos
-                </p>
+                <span>{product.salesCount} vendidos</span>
               )}
             </div>
 
-            {/* Price and Cart - Push to bottom */}
-            <div className="flex items-center justify-between mt-auto pt-3">
-              <div>
-                <span className="text-lg font-bold text-primary">
+            {/* Shipping indicator */}
+            <div className="flex items-center gap-1 mt-2 text-[10px] text-success">
+              <Truck className="h-3 w-3" />
+              <span>Envío a Cuba</span>
+            </div>
+
+            {/* Price and Cart */}
+            <div className="flex items-center justify-between mt-auto pt-3 border-t border-border/50">
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-primary leading-none">
                   ${product.price.amount.toFixed(2)}
                 </span>
-                <span className="text-sm text-muted-foreground ml-1">
+                <span className="text-[10px] text-muted-foreground">
                   {product.price.currency}
                 </span>
               </div>
@@ -154,6 +180,7 @@ export function ProductCard({ product }: ProductCardProps) {
                 size="icon-sm"
                 onClick={handleAddToCart}
                 disabled={isOutOfStock || isAdding}
+                className="shrink-0"
               >
                 {isAdding ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
@@ -163,15 +190,15 @@ export function ProductCard({ product }: ProductCardProps) {
               </Button>
             </div>
 
-            {/* Stock Status - Fixed height at bottom */}
-            <div className="h-5 mt-2">
+            {/* Stock Status */}
+            <div className="h-4 mt-1.5">
               {isLowStock && (
-                <p className="text-xs text-warning">
-                  ¡Solo quedan {product.stock}!
+                <p className="text-[10px] text-warning font-medium">
+                  ¡Últimas {product.stock} unidades!
                 </p>
               )}
               {isOutOfStock && (
-                <p className="text-xs text-destructive">
+                <p className="text-[10px] text-destructive font-medium">
                   Agotado
                 </p>
               )}
