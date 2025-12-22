@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { ShoppingCart, Eye, Loader2, Star } from "lucide-react";
+import { ShoppingCart, Loader2, Star } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -97,19 +97,8 @@ export function ProductCard({ product }: ProductCardProps) {
               </div>
             )}
 
-            {/* Quick Actions Overlay */}
-            <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/20 transition-colors duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
-              <Button 
-                variant="secondary" 
-                size="icon"
-                className="m-1"
-                onClick={(e) => {
-                  e.preventDefault();
-                }}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-            </div>
+            {/* Hover Overlay */}
+            <div className="absolute inset-0 bg-foreground/0 group-hover:bg-foreground/10 transition-colors duration-300" />
           </div>
 
           {/* Content */}
