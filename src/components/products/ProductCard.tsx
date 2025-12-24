@@ -72,7 +72,7 @@ export function ProductCard({ product }: ProductCardProps) {
       animate={{ opacity: 1, y: 0 }}
       className="group relative"
     >
-      <Link to={`/productos/${product.id}`}>
+      <Link to={`/productos/${product.slug}`}>
         <div className="card-elevated hover-lift overflow-hidden h-full flex flex-col">
           {/* Image Container - Fixed height */}
           <div className="relative aspect-square overflow-hidden bg-white flex-shrink-0">

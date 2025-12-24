@@ -21,16 +21,16 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { useCartStore } from "@/stores/cart.store";
 import { toast } from "sonner";
-import { useProduct } from "@/hooks/useProducts";
+import { useProductBySlug } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/products/ProductCard";
 
 export default function ProductDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { slug } = useParams<{ slug: string }>();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const { addItem, openCart } = useCartStore();
 
-  const { data, isLoading, error } = useProduct(id || '');
+  const { data, isLoading, error } = useProductBySlug(slug || '');
   
   const product = data?.product;
   const similarProducts = data?.similar || [];

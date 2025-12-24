@@ -468,8 +468,13 @@ export const productsApi = {
     return apiFetch<CursorPageResponse<Product>>(`/products/cursor?${params.toString()}`);
   },
 
+  // Get product by ID (for internal use)
   getById: (id: string, similarLimit = 4) =>
     apiFetch<ProductDetailResponse>(`/products/${id}?similarLimit=${similarLimit}`),
+
+  // Get product by slug (for SEO-friendly URLs)
+  getBySlug: (slug: string, similarLimit = 4) =>
+    apiFetch<ProductDetailResponse>(`/products/slug/${slug}?similarLimit=${similarLimit}`),
 };
 
 // ============ CATEGORIES API ============
