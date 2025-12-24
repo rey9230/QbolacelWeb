@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { 
   ShoppingCart, 
   Heart, 
@@ -365,65 +365,57 @@ export default function ProductDetail() {
                   </Badge>
                 </div>
               )}
+
+              {/* Description with Fade Effect */}
+              {product.description && (
+                <div className="bg-card border border-border rounded-xl p-5">
+                  <h3 className="font-semibold text-lg mb-4">Descripción del Producto</h3>
+                  
+                  <div className="relative">
+                    <div
+                      className={`space-y-3 text-muted-foreground leading-relaxed ${
+                        !descriptionExpanded ? 'max-h-28 overflow-hidden' : ''
+                      }`}
+                    >
+                      {product.description.split('\n\n').map((paragraph, index) => (
+                        <p key={index} className="whitespace-pre-line text-sm">
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                    
+                    {/* Fade overlay when collapsed */}
+                    {!descriptionExpanded && (
+                      <div 
+                        className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
+                        style={{
+                          background: 'linear-gradient(to bottom, transparent 0%, hsl(var(--card)) 100%)'
+                        }}
+                      />
+                    )}
+                  </div>
+                  
+                  {/* Ver más / Ver menos button */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-3 gap-1.5 text-primary hover:text-primary/80 px-0"
+                    onClick={() => setDescriptionExpanded(!descriptionExpanded)}
+                  >
+                    {descriptionExpanded ? 'Ver menos' : 'Ver más'}
+                    <motion.div
+                      animate={{ rotate: descriptionExpanded ? 180 : 0 }}
+                      transition={{ duration: 0.2 }}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </motion.div>
+                  </Button>
+                </div>
+              )}
             </motion.div>
           </div>
         </div>
       </section>
-
-      {/* Description Section with Fade Effect */}
-      {product.description && (
-        <section className="py-8">
-          <div className="container mx-auto px-4">
-            <div className="bg-card border border-border rounded-2xl p-6 md:p-8">
-              <h2 className="text-2xl font-bold mb-5">Descripción del Producto</h2>
-              
-              <div className="relative">
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={descriptionExpanded ? 'expanded' : 'collapsed'}
-                    initial={{ opacity: 0.8 }}
-                    animate={{ opacity: 1 }}
-                    className={`space-y-4 text-muted-foreground leading-relaxed ${
-                      !descriptionExpanded ? 'max-h-32 overflow-hidden' : ''
-                    }`}
-                  >
-                    {product.description.split('\n\n').map((paragraph, index) => (
-                      <p key={index} className="whitespace-pre-line text-base">
-                        {paragraph}
-                      </p>
-                    ))}
-                  </motion.div>
-                </AnimatePresence>
-                
-                {/* Fade overlay when collapsed */}
-                {!descriptionExpanded && (
-                  <div 
-                    className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
-                    style={{
-                      background: 'linear-gradient(to bottom, transparent 0%, hsl(var(--card)) 100%)'
-                    }}
-                  />
-                )}
-              </div>
-              
-              {/* Ver más / Ver menos button */}
-              <Button
-                variant="ghost"
-                className="mt-4 gap-2 text-primary hover:text-primary/80"
-                onClick={() => setDescriptionExpanded(!descriptionExpanded)}
-              >
-                {descriptionExpanded ? 'Ver menos' : 'Ver más'}
-                <motion.div
-                  animate={{ rotate: descriptionExpanded ? 180 : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <ChevronDown className="h-4 w-4" />
-                </motion.div>
-              </Button>
-            </div>
-          </div>
-        </section>
-      )}
 
       {/* Product Attributes */}
       {Object.keys(product.attributes).length > 0 && (
