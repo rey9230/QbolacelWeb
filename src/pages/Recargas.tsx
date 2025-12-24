@@ -20,6 +20,7 @@ import { Footer } from "@/components/layout/Footer";
 import { RechargeCheckoutModal } from "@/components/recharge/RechargeCheckoutModal";
 import { useTopupProducts, type TopupProduct } from "@/hooks/useTopup";
 import { cn } from "@/lib/utils";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 type RechargeType = "mobile" | "nauta";
 
@@ -37,6 +38,11 @@ interface LocationState {
 }
 
 const Recargas = () => {
+  useDocumentMeta({
+    title: 'Recargas Cubacel y Nauta',
+    description: 'Envía recargas a Cuba al instante. Saldo Cubacel y Nauta con bonos exclusivos. Entrega inmediata, 24/7 disponible y 100% seguro.',
+    ogType: 'website',
+  });
   const location = useLocation();
   const state = location.state as LocationState | null;
 

@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { toast } from "sonner";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { LocalBusinessSchema } from "@/components/seo/JsonLd";
 
 const contactInfo = [
   {
@@ -37,6 +39,11 @@ const contactInfo = [
 ];
 
 export default function Contact() {
+  useDocumentMeta({
+    title: 'Contacto',
+    description: 'Contáctanos por email, teléfono o chat en vivo. Estamos disponibles para ayudarte con recargas a Cuba, envíos y cualquier consulta.',
+    ogType: 'website',
+  });
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -59,6 +66,7 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-background">
+      <LocalBusinessSchema />
       <Navbar />
 
       {/* Hero */}

@@ -2,8 +2,15 @@ import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 export default function Privacy() {
+  useDocumentMeta({
+    title: 'Política de Privacidad',
+    description: 'Conoce cómo Qbolacel protege tu privacidad y maneja tus datos personales. Información sobre cookies, seguridad y tus derechos.',
+    noIndex: false,
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

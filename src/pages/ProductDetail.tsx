@@ -24,6 +24,8 @@ import { useCartStore } from "@/stores/cart.store";
 import { toast } from "sonner";
 import { useProductBySlug } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/products/ProductCard";
+import { useDocumentMeta, BASE_URL } from "@/hooks/useDocumentMeta";
+import { ProductSchema, BreadcrumbSchema } from "@/components/seo/JsonLd";
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -36,6 +38,25 @@ export default function ProductDetail() {
   
   const product = data?.product;
   const similarProducts = data?.similar || [];
+
+  // SEO Meta tags
+  useDocumentMeta({
+    title: product?.metaTitle || product?.name || 'Producto',
+    description: product?.metaDescription || product?.description?.slice(0, 160) || 'Compra este producto en Qbolacel con entrega a Cuba.',
+    ogTitle: product?.name,
+    ogDescription: product?.metaDescription || product?.description?.slice(0, 160),
+    ogImage: product?.primaryImage || product?.pictures?.[0],
+    ogType: 'product',
+    canonical: product?.slug ? `${BASE_URL}/productos/${product.slug}` : undefined,
+  });
+
+  // Map stock status for schema
+  const getSchemaAvailability = () => {
+    if (!product) return 'OutOfStock';
+    if (product.stockStatus === 'OUT_OF_STOCK') return 'OutOfStock';
+    if (product.stockStatus === 'BACKORDER') return 'BackOrder';
+    return 'InStock';
+  };
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -139,6 +160,27 @@ export default function ProductDetail() {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* SEO Schemas */}
+      <ProductSchema
+        name={product.name}
+        description={product.description || ''}
+        image={product.primaryImage || product.pictures[0] || ''}
+        price={product.price.amount}
+        currency={product.price.currency}
+        availability={getSchemaAvailability()}
+        sku={product.sku}
+        rating={product.rating > 0 ? product.rating : undefined}
+        reviewCount={product.reviewsCount > 0 ? product.reviewsCount : undefined}
+        url={`${BASE_URL}/productos/${product.slug}`}
+      />
+      <BreadcrumbSchema
+        items={[
+          { name: 'Inicio', url: BASE_URL },
+          { name: 'Marketplace', url: `${BASE_URL}/marketplace` },
+          { name: product.name, url: `${BASE_URL}/productos/${product.slug}` },
+        ]}
+      />
+      
       <Navbar />
       
       {/* Breadcrumb */}

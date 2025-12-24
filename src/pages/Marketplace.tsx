@@ -22,8 +22,14 @@ import { LocationSelectorModal } from "@/components/location/LocationSelectorMod
 import { LocationContactSelector } from "@/components/checkout/LocationContactSelector";
 import { ContactDto, useContacts } from "@/hooks/useContacts";
 import { useProducts, useCategories } from "@/hooks/useProducts";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 const Marketplace = () => {
+  useDocumentMeta({
+    title: 'Marketplace - Productos para Cuba',
+    description: 'Compra electrodomésticos, tecnología, alimentos y más con entrega a domicilio en toda Cuba. Productos de calidad a los mejores precios.',
+    ogType: 'website',
+  });
   const { isAuthenticated } = useAuthStore();
   const { municipality, province, hasLocation } = useLocationStore();
   const { data: profile } = useProfile();
