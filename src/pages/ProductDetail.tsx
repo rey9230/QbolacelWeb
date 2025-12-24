@@ -258,10 +258,15 @@ export default function ProductDetail() {
 
               {/* Description */}
               {product.description && (
-                <div className="prose prose-sm max-w-none">
-                  <p className="text-muted-foreground leading-relaxed">
-                    {product.description}
-                  </p>
+                <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+                  <h3 className="font-semibold text-lg">Descripción</h3>
+                  <div className="space-y-3 text-muted-foreground leading-relaxed">
+                    {product.description.split('\n\n').map((paragraph, index) => (
+                      <p key={index} className="whitespace-pre-line">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               )}
 
