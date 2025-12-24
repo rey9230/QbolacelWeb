@@ -12,11 +12,22 @@ export function useProducts(filters: Omit<ProductFilters, 'cursor'> = {}) {
   });
 }
 
+// Get product by ID (for internal use)
 export function useProduct(id: string, similarLimit = 4) {
   return useQuery({
     queryKey: ["product", id, similarLimit],
     queryFn: () => productsApi.getById(id, similarLimit),
     enabled: !!id,
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
+}
+
+// Get product by slug (for SEO-friendly URLs)
+export function useProductBySlug(slug: string, similarLimit = 4) {
+  return useQuery({
+    queryKey: ["product", "slug", slug, similarLimit],
+    queryFn: () => productsApi.getBySlug(slug, similarLimit),
+    enabled: !!slug,
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
 }

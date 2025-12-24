@@ -44,7 +44,7 @@ const App = () => {
             <Route path="/recargas/success" element={<RechargeSuccess />} />
             <Route path="/recargas/cancel" element={<RechargeCancel />} />
             <Route path="/marketplace" element={<Marketplace />} />
-            <Route path="/productos/:id" element={<ProductDetail />} />
+            <Route path="/productos/:slug" element={<ProductDetail />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/checkout/success" element={<CheckoutSuccess />} />
             <Route path="/checkout/cancel" element={<CheckoutCancel />} />
