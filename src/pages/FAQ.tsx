@@ -1,12 +1,14 @@
 import { motion } from "framer-motion";
 import { Search, HelpCircle, MessageSquare } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { Link } from "react-router-dom";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { FAQSchema } from "@/components/seo/JsonLd";
 
 const faqCategories = [
   {
@@ -113,6 +115,18 @@ const faqCategories = [
 export default function FAQ() {
   const [searchQuery, setSearchQuery] = useState("");
 
+  useDocumentMeta({
+    title: 'Preguntas Frecuentes',
+    description: 'Encuentra respuestas a las preguntas más comunes sobre recargas a Cuba, envíos, pagos y nuestra plataforma Qbolacel.',
+    ogType: 'website',
+  });
+
+  // Flatten all FAQs for schema
+  const allFaqs = useMemo(() => 
+    faqCategories.flatMap(cat => cat.questions),
+    []
+  );
+
   const filteredCategories = faqCategories
     .map((category) => ({
       ...category,
@@ -126,6 +140,7 @@ export default function FAQ() {
 
   return (
     <div className="min-h-screen bg-background">
+      <FAQSchema items={allFaqs} />
       <Navbar />
 
       {/* Hero */}

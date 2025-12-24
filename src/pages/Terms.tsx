@@ -2,8 +2,15 @@ import { motion } from "framer-motion";
 import { FileText } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 export default function Terms() {
+  useDocumentMeta({
+    title: 'Términos y Condiciones',
+    description: 'Lee los términos y condiciones de uso de Qbolacel. Información sobre servicios, pagos, recargas, marketplace y políticas de la plataforma.',
+    noIndex: false,
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />

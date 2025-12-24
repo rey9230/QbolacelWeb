@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Users, Heart, Target, Shield, Zap, Globe } from "lucide-react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 const values = [
   {
@@ -55,6 +56,12 @@ const timeline = [
 ];
 
 export default function About() {
+  useDocumentMeta({
+    title: 'Sobre Nosotros',
+    description: 'Conoce la historia de Qbolacel, el puente que conecta a miles de familias cubanas con sus seres queridos en la isla. Nuestra misión, visión y valores.',
+    ogType: 'website',
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
