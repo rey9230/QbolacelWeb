@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   ShoppingCart, 
   Heart, 
@@ -13,7 +13,8 @@ import {
   ChevronLeft,
   ChevronRight,
   Store,
-  Loader2
+  Loader2,
+  ChevronDown
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,6 +29,7 @@ export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const { addItem, openCart } = useCartStore();
 
   const { data, isLoading, error } = useProductBySlug(slug || '');
@@ -55,6 +57,18 @@ export default function ProductDetail() {
       openCart();
     } catch {
       toast.error('Error al añadir al carrito');
+    }
+  };
+
+  const handleShare = async () => {
+    try {
+      await navigator.share({
+        title: product?.name,
+        url: window.location.href,
+      });
+    } catch {
+      navigator.clipboard.writeText(window.location.href);
+      toast.success('Enlace copiado al portapapeles');
     }
   };
 
@@ -206,7 +220,7 @@ export default function ProductDetail() {
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="space-y-6"
+              className="space-y-5"
             >
               {/* Category & Tags */}
               <div className="flex items-center gap-2 flex-wrap">
@@ -256,38 +270,6 @@ export default function ProductDetail() {
                 )}
               </div>
 
-              {/* Description */}
-              {product.description && (
-                <div className="bg-card border border-border rounded-xl p-5 space-y-4">
-                  <h3 className="font-semibold text-lg">Descripción</h3>
-                  <div className="space-y-3 text-muted-foreground leading-relaxed">
-                    {product.description.split('\n\n').map((paragraph, index) => (
-                      <p key={index} className="whitespace-pre-line">
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Vendor/Agency Card */}
-              {product.agencyId && (
-                <div className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl shadow-sm">
-                  <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10">
-                    <Store className="h-6 w-6 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold">Vendedor Verificado</p>
-                    <p className="text-xs text-muted-foreground">
-                      Tienda #{product.agencyId.slice(0, 8)}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="text-success border-success/30 bg-success/5">
-                    ✓ Verificado
-                  </Badge>
-                </div>
-              )}
-
               {/* Quantity Selector */}
               <div className="flex items-center gap-4">
                 <span className="font-medium">Cantidad:</span>
@@ -325,7 +307,7 @@ export default function ProductDetail() {
                 <p className="text-warning font-medium">Disponible bajo pedido</p>
               )}
 
-              {/* Actions */}
+              {/* CTA Actions */}
               <div className="flex gap-3">
                 <Button 
                   size="xl" 
@@ -336,16 +318,16 @@ export default function ProductDetail() {
                   <ShoppingCart className="h-5 w-5" />
                   Añadir al Carrito
                 </Button>
-                <Button variant="outline" size="xl">
+                <Button variant="outline" size="xl" className="hover:text-destructive hover:border-destructive">
                   <Heart className="h-5 w-5" />
                 </Button>
-                <Button variant="outline" size="xl">
+                <Button variant="outline" size="xl" onClick={handleShare}>
                   <Share2 className="h-5 w-5" />
                 </Button>
               </div>
 
               {/* Trust Badges */}
-              <div className="grid grid-cols-2 gap-3 pt-6 border-t border-border">
+              <div className="grid grid-cols-2 gap-3 pt-4">
                 <div className="flex items-center gap-3 p-3 bg-success/5 rounded-xl border border-success/10">
                   <div className="p-2 rounded-lg bg-success/10">
                     <Truck className="h-5 w-5 text-success" />
@@ -365,22 +347,95 @@ export default function ProductDetail() {
                   </div>
                 </div>
               </div>
+
+              {/* Vendor/Agency Card */}
+              {product.agencyId && (
+                <div className="flex items-center gap-4 p-4 bg-card border border-border rounded-xl shadow-sm">
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-primary/10 to-accent/10">
+                    <Store className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-semibold">Vendedor Verificado</p>
+                    <p className="text-xs text-muted-foreground">
+                      Tienda #{product.agencyId.slice(0, 8)}
+                    </p>
+                  </div>
+                  <Badge variant="outline" className="text-success border-success/30 bg-success/5">
+                    ✓ Verificado
+                  </Badge>
+                </div>
+              )}
             </motion.div>
           </div>
         </div>
       </section>
 
+      {/* Description Section with Fade Effect */}
+      {product.description && (
+        <section className="py-8">
+          <div className="container mx-auto px-4">
+            <div className="bg-card border border-border rounded-2xl p-6 md:p-8">
+              <h2 className="text-2xl font-bold mb-5">Descripción del Producto</h2>
+              
+              <div className="relative">
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={descriptionExpanded ? 'expanded' : 'collapsed'}
+                    initial={{ opacity: 0.8 }}
+                    animate={{ opacity: 1 }}
+                    className={`space-y-4 text-muted-foreground leading-relaxed ${
+                      !descriptionExpanded ? 'max-h-32 overflow-hidden' : ''
+                    }`}
+                  >
+                    {product.description.split('\n\n').map((paragraph, index) => (
+                      <p key={index} className="whitespace-pre-line text-base">
+                        {paragraph}
+                      </p>
+                    ))}
+                  </motion.div>
+                </AnimatePresence>
+                
+                {/* Fade overlay when collapsed */}
+                {!descriptionExpanded && (
+                  <div 
+                    className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
+                    style={{
+                      background: 'linear-gradient(to bottom, transparent 0%, hsl(var(--card)) 100%)'
+                    }}
+                  />
+                )}
+              </div>
+              
+              {/* Ver más / Ver menos button */}
+              <Button
+                variant="ghost"
+                className="mt-4 gap-2 text-primary hover:text-primary/80"
+                onClick={() => setDescriptionExpanded(!descriptionExpanded)}
+              >
+                {descriptionExpanded ? 'Ver menos' : 'Ver más'}
+                <motion.div
+                  animate={{ rotate: descriptionExpanded ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="h-4 w-4" />
+                </motion.div>
+              </Button>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Product Attributes */}
       {Object.keys(product.attributes).length > 0 && (
-        <section className="py-12 bg-muted/30">
+        <section className="py-8">
           <div className="container mx-auto px-4">
-            <h2 className="text-2xl font-bold mb-6">Características del Producto</h2>
-            <div className="bg-card border border-border rounded-2xl p-6">
+            <div className="bg-card border border-border rounded-2xl p-6 md:p-8">
+              <h2 className="text-2xl font-bold mb-6">Características del Producto</h2>
               <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {Object.entries(product.attributes).map(([key, value]) => (
-                  <div key={key} className="flex gap-2">
+                  <div key={key} className="flex gap-2 p-3 bg-muted/50 rounded-lg">
                     <dt className="font-medium text-muted-foreground">{key}:</dt>
-                    <dd>{value}</dd>
+                    <dd className="font-medium">{value}</dd>
                   </div>
                 ))}
               </dl>
@@ -391,7 +446,7 @@ export default function ProductDetail() {
 
       {/* Similar Products */}
       {similarProducts.length > 0 && (
-        <section className="py-12">
+        <section className="py-12 bg-muted/30">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl font-bold mb-6">Productos Similares</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
