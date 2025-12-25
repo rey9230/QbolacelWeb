@@ -44,10 +44,20 @@ export const ContactDtoSchema = z.object({
   street: z.string(),
   betweenStreets: z.string().nullish(),
   municipality: z.string(),
-  province: z.string(),
+  // Some backends may return null while computing province server-side; normalize to "".
+  province: z
+    .string()
+    .nullish()
+    .transform((v) => v ?? ""),
   isDefault: z.boolean(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
+  createdAt: z
+    .string()
+    .nullish()
+    .transform((v) => v ?? ""),
+  updatedAt: z
+    .string()
+    .nullish()
+    .transform((v) => v ?? ""),
 });
 
 export const ContactListResponseSchema = z.object({
@@ -108,9 +118,15 @@ export const CategorySchema = z.object({
   description: z.string().nullish(),
   hasChild: z.boolean(),
   iconUrl: z.string().nullish(),
-  pictures: z.array(z.string()),
+  pictures: z
+    .array(z.string())
+    .nullish()
+    .transform((v) => v ?? []),
   parentId: z.string().nullish(),
-  order: z.number(),
+  order: z
+    .number()
+    .nullish()
+    .transform((v) => v ?? 0),
   isActive: z.boolean(),
 });
 

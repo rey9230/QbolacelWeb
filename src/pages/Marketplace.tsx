@@ -28,7 +28,7 @@ import { LocationContactSelector } from "@/components/checkout/LocationContactSe
 import { ContactDto, useContacts } from "@/hooks/useContacts";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
-import { capitalizeWords } from "@/lib/utils";
+import { capitalizeWords, cn } from "@/lib/utils";
 
 const Marketplace = () => {
   useDocumentMeta({
@@ -37,7 +37,7 @@ const Marketplace = () => {
     ogType: 'website',
   });
   const { isAuthenticated } = useAuthStore();
-  const { municipality, province, hasLocation } = useLocationStore();
+  const { municipality, province, hasLocation, setLocation } = useLocationStore();
   const { data: profile } = useProfile();
   const { data: contactsData } = useContacts();
   
@@ -158,13 +158,13 @@ const Marketplace = () => {
     if (isAuthenticated && selectedContact) {
       return {
         municipality: capitalizeWords(selectedContact.municipality),
-        province: selectedContact.province,
+        province: selectedContact.province || profile?.province || province,
       };
     }
     if (isAuthenticated && profile?.municipality) {
       return {
         municipality: capitalizeWords(profile.municipality),
-        province: profile.province,
+        province: profile.province || province,
       };
     }
     return {
@@ -173,7 +173,7 @@ const Marketplace = () => {
     };
   })();
 
-  const hasLocationData = locationDisplay.municipality && locationDisplay.province;
+  const hasLocationData = !!(locationDisplay.municipality && locationDisplay.province);
 
   // Flatten paginated data
   const products = productsData?.pages.flatMap(page => page.data) || [];
@@ -238,19 +238,48 @@ const Marketplace = () => {
               
               {/* Location Badge */}
               {hasLocationData && (
-                <motion.button
+                <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
-                  onClick={() => isAuthenticated ? setShowContactSelector(true) : setShowLocationModal(true)}
-                  className="mt-6 inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-white hover:bg-white/25 transition-colors"
+                  className="mt-6 inline-flex flex-col items-start gap-2"
                 >
-                  <MapPin className="h-4 w-4" />
-                  <span className="text-sm">
-                    Entregas en <span className="font-semibold">{locationDisplay.municipality}, {locationDisplay.province}</span>
-                  </span>
-                  <span className="text-white/70 text-sm underline">Cambiar</span>
-                </motion.button>
+                  <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-white">
+                    <MapPin className="h-4 w-4" />
+                    <span className="text-sm">
+                      Entregas en <span className="font-semibold">{locationDisplay.municipality}, {locationDisplay.province}</span>
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3 pl-2">
+                    {isAuthenticated ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setShowContactSelector(true)}
+                          className="text-white/85 text-sm underline hover:text-white"
+                        >
+                          Cambiar dirección
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowLocationModal(true)}
+                          className="text-white/85 text-sm underline hover:text-white"
+                        >
+                          Cambiar zona
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowLocationModal(true)}
+                        className="text-white/85 text-sm underline hover:text-white"
+                      >
+                        Cambiar
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
               )}
             </div>
 
@@ -283,23 +312,22 @@ const Marketplace = () => {
 
       {/* Filters Section */}
       <section className="sticky top-16 z-30 bg-background border-b border-border shadow-sm">
-        <div className="container mx-auto px-4 py-4 space-y-4">
-          
+        <div className="container mx-auto px-4 py-3 space-y-3">
           {/* Row 1: Search + Sort + Clear */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar productos..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-10"
+                className="pl-10 h-9"
               />
             </div>
-            
+
             <div className="flex items-center gap-2">
               <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[160px] h-10">
+                <SelectTrigger className="w-[160px] h-9">
                   <SlidersHorizontal className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="Ordenar" />
                 </SelectTrigger>
@@ -316,27 +344,27 @@ const Marketplace = () => {
                   variant="outline"
                   size="sm"
                   onClick={clearAllFilters}
-                  className="h-10 text-destructive border-destructive/30 hover:bg-destructive/10"
+                  className="h-9 text-destructive border-destructive/30 hover:bg-destructive/10"
                 >
                   <X className="h-4 w-4 mr-1" />
-                  Limpiar filtros
+                  Limpiar
                 </Button>
               )}
             </div>
           </div>
 
-          {/* Row 2: Categories */}
-          <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
+          {/* Row 2: Categories (always visible, horizontal scroll) */}
+          <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
             <div className="flex items-center gap-2 mb-2">
               <Filter className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm font-medium text-foreground">Categorías</span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <Button
                 variant={selectedCategory === 'all' ? "default" : "outline"}
                 size="sm"
                 onClick={() => handleCategoryClick('all')}
-                className="h-8"
+                className="h-7 text-xs"
               >
                 Todas
               </Button>
@@ -346,7 +374,7 @@ const Marketplace = () => {
                   variant={selectedCategory === category.id ? "default" : "outline"}
                   size="sm"
                   onClick={() => handleCategoryClick(category.id)}
-                  className="h-8"
+                  className="h-7 text-xs whitespace-nowrap"
                 >
                   {category.name}
                 </Button>
@@ -357,11 +385,21 @@ const Marketplace = () => {
           {/* Row 3: Price Range + Tags */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {/* Price Range */}
-            <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+              <div className="flex items-center justify-between gap-2 mb-2">
                 <span className="text-sm font-medium text-foreground">Precio (USD)</span>
+                {appliedPriceRange && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearPriceFilter}
+                    className="h-7 px-2 text-muted-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <Slider
                   value={priceRange}
                   onValueChange={(value) => setPriceRange(value as [number, number])}
@@ -371,31 +409,28 @@ const Marketplace = () => {
                   className="w-full"
                 />
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1 flex-1">
-                    <span className="text-xs text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      value={priceRange[0]}
-                      onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-                      className="h-8 text-sm"
-                      min={0}
-                    />
-                  </div>
-                  <span className="text-muted-foreground">—</span>
-                  <div className="flex items-center gap-1 flex-1">
-                    <span className="text-xs text-muted-foreground">$</span>
-                    <Input
-                      type="number"
-                      value={priceRange[1]}
-                      onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                  <Button 
-                    size="sm" 
-                    onClick={handleApplyPriceFilter} 
-                    className="h-8 px-4"
-                    disabled={appliedPriceRange?.[0] === priceRange[0] && appliedPriceRange?.[1] === priceRange[1]}
+                  <Input
+                    type="number"
+                    value={priceRange[0]}
+                    onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                    className="h-7 text-xs"
+                    min={0}
+                  />
+                  <span className="text-muted-foreground text-xs">—</span>
+                  <Input
+                    type="number"
+                    value={priceRange[1]}
+                    onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                    className="h-7 text-xs"
+                  />
+                  <Button
+                    size="sm"
+                    onClick={handleApplyPriceFilter}
+                    className="h-7 px-3"
+                    disabled={
+                      appliedPriceRange?.[0] === priceRange[0] &&
+                      appliedPriceRange?.[1] === priceRange[1]
+                    }
                   >
                     Aplicar
                   </Button>
@@ -404,8 +439,8 @@ const Marketplace = () => {
             </div>
 
             {/* Tags */}
-            <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
-              <div className="flex items-center gap-2 mb-3">
+            <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
+              <div className="flex items-center gap-2 mb-2">
                 <Tag className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium text-foreground">Etiquetas</span>
               </div>
@@ -414,11 +449,12 @@ const Marketplace = () => {
                   <Badge
                     key={tag}
                     variant={selectedTag === tag ? "default" : "outline"}
-                    className={`cursor-pointer capitalize h-8 px-3 text-sm ${
-                      selectedTag === tag 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'hover:bg-muted'
-                    }`}
+                    className={cn(
+                      "cursor-pointer capitalize h-7 px-2 text-xs",
+                      selectedTag === tag
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                    )}
                     onClick={() => handleTagClick(tag)}
                   >
                     {tag}
@@ -537,6 +573,10 @@ const Marketplace = () => {
         onOpenChange={setShowContactSelector}
         onSelect={(contact) => {
           setSelectedContact(contact);
+          // Keep "location" in sync too (used for marketplace headers/context).
+          if (contact.municipality && contact.province) {
+            setLocation(contact.municipality, contact.province);
+          }
           setShowContactSelector(false);
         }}
         selectedContactId={selectedContact?.id}
