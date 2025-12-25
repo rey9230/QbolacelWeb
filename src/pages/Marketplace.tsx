@@ -283,27 +283,27 @@ const Marketplace = () => {
 
       {/* Filters Section */}
       <section className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
-        <div className="container mx-auto px-4 py-4">
-          {/* Main Filter Row */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <div className="container mx-auto px-4 py-3">
+          {/* Main Filter Row - All filters visible */}
+          <div className="flex flex-wrap items-center gap-2 lg:gap-3">
+            {/* Search - Compact */}
+            <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar productos..."
+                placeholder="Buscar..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-8 h-9 text-sm"
               />
             </div>
 
             {/* Category Select */}
             <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-full sm:w-48">
+              <SelectTrigger className="w-auto min-w-[140px] h-9 text-sm">
                 <SelectValue placeholder="Categoría" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">Todas las categorías</SelectItem>
+                <SelectItem value="all">Todas</SelectItem>
                 {categories?.map((category) => (
                   <SelectItem key={category.id} value={category.id}>
                     {category.name}
@@ -314,126 +314,69 @@ const Marketplace = () => {
 
             {/* Sort */}
             <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full sm:w-44">
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-auto min-w-[130px] h-9 text-sm">
+                <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5" />
                 <SelectValue placeholder="Ordenar" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="popular">Más populares</SelectItem>
                 <SelectItem value="newest">Más recientes</SelectItem>
-                <SelectItem value="price-asc">Precio: menor a mayor</SelectItem>
-                <SelectItem value="price-desc">Precio: mayor a menor</SelectItem>
+                <SelectItem value="price-asc">Precio ↑</SelectItem>
+                <SelectItem value="price-desc">Precio ↓</SelectItem>
               </SelectContent>
             </Select>
 
-            {/* Advanced Filters Toggle */}
-            <Button
-              variant="outline"
-              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-              className="gap-2"
-            >
-              <Filter className="h-4 w-4" />
-              <span className="hidden sm:inline">Más filtros</span>
-              <ChevronDown className={`h-4 w-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
-              {hasActiveFilters && (
-                <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
-                  !
+            {/* Price Range - Inline */}
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground hidden sm:inline">$</span>
+              <Input
+                type="number"
+                value={priceRange[0]}
+                onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                className="h-9 w-16 text-sm px-2"
+                placeholder="Min"
+                min={0}
+              />
+              <span className="text-muted-foreground text-sm">-</span>
+              <Input
+                type="number"
+                value={priceRange[1]}
+                onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                className="h-9 w-16 text-sm px-2"
+                placeholder="Max"
+              />
+              <Button size="sm" onClick={handleApplyPriceFilter} className="h-9 px-2 text-xs">
+                OK
+              </Button>
+            </div>
+
+            {/* Tags - Inline badges */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {availableTags.map((tag) => (
+                <Badge
+                  key={tag}
+                  variant={selectedTag === tag ? "default" : "outline"}
+                  className="cursor-pointer capitalize text-xs h-7 px-2"
+                  onClick={() => handleTagClick(tag)}
+                >
+                  {tag}
                 </Badge>
-              )}
-            </Button>
-          </div>
+              ))}
+            </div>
 
-          {/* Advanced Filters Panel */}
-          <Collapsible open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
-            <CollapsibleContent>
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-4 pt-4 border-t border-border"
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearAllFilters}
+                className="h-9 text-xs text-destructive hover:text-destructive"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Price Range */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium flex items-center gap-2">
-                      Rango de Precio (USD)
-                    </label>
-                    <Slider
-                      value={priceRange}
-                      onValueChange={(value) => setPriceRange(value as [number, number])}
-                      min={0}
-                      max={500}
-                      step={5}
-                      className="w-full"
-                    />
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="number"
-                        value={priceRange[0]}
-                        onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-                        className="h-8 text-sm"
-                        min={0}
-                      />
-                      <span className="text-muted-foreground">-</span>
-                      <Input
-                        type="number"
-                        value={priceRange[1]}
-                        onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-                        className="h-8 text-sm"
-                      />
-                      <Button size="sm" onClick={handleApplyPriceFilter} className="h-8">
-                        Aplicar
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Tags */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium flex items-center gap-2">
-                      <Tag className="h-4 w-4" />
-                      Etiquetas
-                    </label>
-                    <div className="flex flex-wrap gap-2">
-                      {availableTags.map((tag) => (
-                        <Badge
-                          key={tag}
-                          variant={selectedTag === tag ? "default" : "outline"}
-                          className="cursor-pointer capitalize"
-                          onClick={() => handleTagClick(tag)}
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Categories (for quick selection) */}
-                  <div className="space-y-3">
-                    <label className="text-sm font-medium">Categorías rápidas</label>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge
-                        variant={selectedCategory === 'all' ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => handleCategoryClick('all')}
-                      >
-                        Todos
-                      </Badge>
-                      {categories?.slice(0, 5).map((category) => (
-                        <Badge
-                          key={category.id}
-                          variant={selectedCategory === category.id ? "default" : "outline"}
-                          className="cursor-pointer"
-                          onClick={() => handleCategoryClick(category.id)}
-                        >
-                          {category.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </CollapsibleContent>
-          </Collapsible>
+                <X className="h-3.5 w-3.5 mr-1" />
+                Limpiar
+              </Button>
+            )}
+          </div>
         </div>
       </section>
 
