@@ -1,3 +1,29 @@
+import { z } from 'zod';
+import {
+  AuthTokenResponseSchema,
+  UserProfileSchema,
+  ContactDtoSchema,
+  ContactListResponseSchema,
+  ProductSchema,
+  ProductDetailResponseSchema,
+  CursorPageResponseSchema,
+  CategorySchema,
+  CartDtoSchema,
+  OrderSummarySchema,
+  OrderSchema,
+  ProvinceListResponseSchema,
+  MunicipalityListResponseSchema,
+  ProvinceOfMunicipalityResponseSchema,
+  TopupProductSchema,
+  TopupTransactionSchema,
+  PurchaseTopupResponseSchema,
+  CheckoutResponseSchema,
+  TransactionStatusResponseSchema,
+  SavedPaymentMethodSchema,
+  MessageResponseSchema,
+  validateApiResponse,
+} from './api-schemas';
+
 const API_BASE_URL = 'https://api.qbolacel.com/api/v1';
 
 // Flag to prevent multiple simultaneous refresh attempts
@@ -78,9 +104,10 @@ async function refreshAccessToken(): Promise<string | null> {
       return null;
     }
 
-    const data: AuthTokenResponse = await response.json();
-    updateAuthTokens(data.accessToken, data.refreshToken);
-    return data.accessToken;
+    const data = await response.json();
+    const validated = validateApiResponse(AuthTokenResponseSchema, data, 'refreshAccessToken');
+    updateAuthTokens(validated.accessToken, validated.refreshToken);
+    return validated.accessToken;
   } catch {
     clearAuthState();
     return null;
@@ -109,32 +136,10 @@ const getLocationState = (): { municipality: string | null } => {
   return { municipality: null };
 };
 
-// Public fetch wrapper without authentication
-async function apiFetchPublic<T>(
+// Generic fetch wrapper with optional schema validation
+async function apiFetchWithValidation<T>(
   endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Error de conexión' }));
-    throw new Error(error.message || `Error ${response.status}`);
-  }
-
-  return response.json();
-}
-
-// Base fetch wrapper with auth handling and automatic token refresh
-async function apiFetch<T>(
-  endpoint: string,
+  schema: z.ZodSchema<T> | null,
   options: RequestInit = {},
   requiresAuth = false
 ): Promise<T> {
@@ -142,17 +147,6 @@ async function apiFetch<T>(
     'Content-Type': 'application/json',
     ...options.headers,
   };
-
-  // TODO: Re-enable when backend CORS allows X-Municipality header
-  // const isMarketplaceEndpoint = endpoint.startsWith('/products') || 
-  //                                endpoint.startsWith('/categories') || 
-  //                                endpoint.startsWith('/carts');
-  // if (isMarketplaceEndpoint) {
-  //   const { municipality } = getLocationState();
-  //   if (municipality) {
-  //     (headers as Record<string, string>)['X-Municipality'] = municipality;
-  //   }
-  // }
 
   let { token } = getAuthState();
   if (requiresAuth || token) {
@@ -195,8 +189,56 @@ async function apiFetch<T>(
     throw new Error(error.message || `Error ${response.status}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  
+  // Validate response if schema provided
+  if (schema) {
+    return validateApiResponse(schema, data, endpoint);
+  }
+  
+  return data as T;
 }
+
+// Public fetch wrapper without authentication
+async function apiFetchPublic<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  schema?: z.ZodSchema<T>
+): Promise<T> {
+  const headers: HeadersInit = {
+    'Content-Type': 'application/json',
+    ...options.headers,
+  };
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ message: 'Error de conexión' }));
+    throw new Error(error.message || `Error ${response.status}`);
+  }
+
+  const data = await response.json();
+  
+  // Validate response if schema provided
+  if (schema) {
+    return validateApiResponse(schema, data, endpoint);
+  }
+  
+  return data as T;
+}
+
+// Base fetch wrapper with auth handling and automatic token refresh (legacy, for backwards compatibility)
+async function apiFetch<T>(
+  endpoint: string,
+  options: RequestInit = {},
+  requiresAuth = false
+): Promise<T> {
+  return apiFetchWithValidation<T>(endpoint, null, options, requiresAuth);
+}
+
 
 // ============ AUTH API ============
 export interface LoginRequest {
@@ -242,7 +284,8 @@ export interface UpdateProfileRequest {
 async function apiFetchWithToken<T>(
   endpoint: string,
   token: string,
-  options: RequestInit = {}
+  options: RequestInit = {},
+  schema?: z.ZodSchema<T>
 ): Promise<T> {
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
@@ -260,58 +303,62 @@ async function apiFetchWithToken<T>(
     throw new Error(error.message || `Error ${response.status}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  
+  if (schema) {
+    return validateApiResponse(schema, data, endpoint);
+  }
+  
+  return data as T;
 }
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<{ user: UserProfile; token: string; refreshToken: string }> => {
-    const tokenResponse = await apiFetch<AuthTokenResponse>('/auth/web/login', {
+    const tokenResponse = await apiFetchWithValidation('/auth/web/login', AuthTokenResponseSchema, {
       method: 'POST',
       body: JSON.stringify(data),
     });
     
     // Fetch user profile with the new token
-    const userResponse = await apiFetchWithToken<UserProfile>('/auth/me', tokenResponse.accessToken);
+    const userResponse = await apiFetchWithToken('/auth/me', tokenResponse.accessToken, {}, UserProfileSchema);
     
     return {
-      user: userResponse,
+      user: userResponse as UserProfile,
       token: tokenResponse.accessToken,
       refreshToken: tokenResponse.refreshToken,
     };
   },
 
   register: async (data: RegisterRequest): Promise<{ user: UserProfile; token: string; refreshToken: string }> => {
-    const tokenResponse = await apiFetch<AuthTokenResponse>('/auth/web/signup', {
+    const tokenResponse = await apiFetchWithValidation('/auth/web/signup', AuthTokenResponseSchema, {
       method: 'POST',
       body: JSON.stringify(data),
     });
     
     // Fetch user profile with the new token
-    const userResponse = await apiFetchWithToken<UserProfile>('/auth/me', tokenResponse.accessToken);
+    const userResponse = await apiFetchWithToken('/auth/me', tokenResponse.accessToken, {}, UserProfileSchema);
     
     return {
-      user: userResponse,
+      user: userResponse as UserProfile,
       token: tokenResponse.accessToken,
       refreshToken: tokenResponse.refreshToken,
     };
   },
 
   logout: () =>
-    apiFetch<{ message: string }>('/auth/logout', {
+    apiFetchWithValidation('/auth/logout', MessageResponseSchema, {
       method: 'POST',
     }, true),
 
   me: () =>
-    apiFetch<UserProfile>('/auth/me', {}, true),
+    apiFetchWithValidation('/auth/me', UserProfileSchema, {}, true) as Promise<UserProfile>,
 
   updateProfile: (data: UpdateProfileRequest) =>
-    apiFetch<UserProfile>('/auth/profile', {
+    apiFetchWithValidation('/auth/profile', UserProfileSchema, {
       method: 'PUT',
       body: JSON.stringify(data),
-    }, true),
+    }, true) as Promise<UserProfile>,
 };
-
-// ============ CONTACTS API ============
 export interface ContactDto {
   id: string;
   fullName: string;
@@ -350,22 +397,22 @@ export interface ContactListResponse {
 
 export const contactsApi = {
   getAll: () =>
-    apiFetch<ContactListResponse>('/contacts', {}, true),
+    apiFetchWithValidation('/contacts', ContactListResponseSchema, {}, true) as Promise<ContactListResponse>,
 
   getById: (id: string) =>
-    apiFetch<ContactDto>(`/contacts/${id}`, {}, true),
+    apiFetchWithValidation(`/contacts/${id}`, ContactDtoSchema, {}, true) as Promise<ContactDto>,
 
   create: (data: CreateContactRequest) =>
-    apiFetch<ContactDto>('/contacts', {
+    apiFetchWithValidation('/contacts', ContactDtoSchema, {
       method: 'POST',
       body: JSON.stringify(data),
-    }, true),
+    }, true) as Promise<ContactDto>,
 
   update: (id: string, data: UpdateContactRequest) =>
-    apiFetch<ContactDto>(`/contacts/${id}`, {
+    apiFetchWithValidation(`/contacts/${id}`, ContactDtoSchema, {
       method: 'PUT',
       body: JSON.stringify(data),
-    }, true),
+    }, true) as Promise<ContactDto>,
 
   delete: (id: string) =>
     apiFetch<void>(`/contacts/${id}`, {
@@ -373,9 +420,9 @@ export const contactsApi = {
     }, true),
 
   setDefault: (id: string) =>
-    apiFetch<ContactDto>(`/contacts/${id}/set-default`, {
+    apiFetchWithValidation(`/contacts/${id}/set-default`, ContactDtoSchema, {
       method: 'PUT',
-    }, true),
+    }, true) as Promise<ContactDto>,
 };
 
 // ============ PRODUCTS API ============
@@ -465,16 +512,28 @@ export const productsApi = {
     if (filters.tag) params.append('tag', filters.tag);
     if (filters.sort) params.append('sort', filters.sort);
     
-    return apiFetch<CursorPageResponse<Product>>(`/products/cursor?${params.toString()}`);
+    return apiFetchWithValidation(
+      `/products/cursor?${params.toString()}`,
+      CursorPageResponseSchema(ProductSchema),
+      {}
+    ) as Promise<CursorPageResponse<Product>>;
   },
 
   // Get product by ID (for internal use)
   getById: (id: string, similarLimit = 4) =>
-    apiFetch<ProductDetailResponse>(`/products/${id}?similarLimit=${similarLimit}`),
+    apiFetchWithValidation(
+      `/products/${id}?similarLimit=${similarLimit}`,
+      ProductDetailResponseSchema,
+      {}
+    ) as Promise<ProductDetailResponse>,
 
   // Get product by slug (for SEO-friendly URLs)
   getBySlug: (slug: string, similarLimit = 4) =>
-    apiFetch<ProductDetailResponse>(`/products/slug/${slug}?similarLimit=${similarLimit}`),
+    apiFetchWithValidation(
+      `/products/slug/${slug}?similarLimit=${similarLimit}`,
+      ProductDetailResponseSchema,
+      {}
+    ) as Promise<ProductDetailResponse>,
 };
 
 // ============ CATEGORIES API ============
@@ -494,7 +553,7 @@ export interface Category {
 
 export const categoriesApi = {
   getAll: () =>
-    apiFetch<Category[]>('/categories'),
+    apiFetchPublic('/categories', {}, z.array(CategorySchema)) as Promise<Category[]>,
 };
 
 // ============ CART API ============
@@ -544,40 +603,40 @@ export interface CartDto {
 
 export const cartApi = {
   get: () =>
-    apiFetch<CartDto>('/carts/me', {}, true),
+    apiFetchWithValidation('/carts/me', CartDtoSchema, {}, true) as Promise<CartDto>,
 
   addItem: (productId: string, qty: number = 1) =>
-    apiFetch<CartDto>('/carts/me/items', {
+    apiFetchWithValidation('/carts/me/items', CartDtoSchema, {
       method: 'POST',
       body: JSON.stringify({ productId, qty }),
-    }, true),
+    }, true) as Promise<CartDto>,
 
   updateItem: (itemId: string, qty: number) =>
-    apiFetch<CartDto>(`/carts/me/items/${itemId}`, {
+    apiFetchWithValidation(`/carts/me/items/${itemId}`, CartDtoSchema, {
       method: 'PUT',
       body: JSON.stringify({ qty }),
-    }, true),
+    }, true) as Promise<CartDto>,
 
   removeItem: (itemId: string) =>
-    apiFetch<CartDto>(`/carts/me/items/${itemId}`, {
+    apiFetchWithValidation(`/carts/me/items/${itemId}`, CartDtoSchema, {
       method: 'DELETE',
-    }, true),
+    }, true) as Promise<CartDto>,
 
   clear: () =>
-    apiFetch<CartDto>('/carts/me/clear', {
+    apiFetchWithValidation('/carts/me/clear', CartDtoSchema, {
       method: 'DELETE',
-    }, true),
+    }, true) as Promise<CartDto>,
 
   applyCoupon: (code: string) =>
-    apiFetch<CartDto>('/carts/me/apply-coupon', {
+    apiFetchWithValidation('/carts/me/apply-coupon', CartDtoSchema, {
       method: 'POST',
       body: JSON.stringify({ code }),
-    }, true),
+    }, true) as Promise<CartDto>,
 
   removeCoupon: () =>
-    apiFetch<CartDto>('/carts/me/coupon', {
+    apiFetchWithValidation('/carts/me/coupon', CartDtoSchema, {
       method: 'DELETE',
-    }, true),
+    }, true) as Promise<CartDto>,
 };
 
 // ============ ORDERS API ============
