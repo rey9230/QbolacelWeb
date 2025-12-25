@@ -65,7 +65,12 @@ export function LocationContactSelector({
   redirectOnClose,
 }: LocationContactSelectorProps) {
   const navigate = useNavigate();
-  const { data: contactsData, isLoading: isLoadingContacts } = useContacts();
+  const {
+    data: contactsData,
+    isLoading: isLoadingContacts,
+    isError: isContactsError,
+    error: contactsError,
+  } = useContacts();
   const { data: provinces, isLoading: isLoadingProvinces } = useProvinces();
   const createContact = useCreateContact();
 
@@ -135,7 +140,12 @@ export function LocationContactSelector({
     formData.municipality;
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) handleClose();
+      }}
+    >
       <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -166,6 +176,15 @@ export function LocationContactSelector({
                 {isLoadingContacts ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : isContactsError ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">
+                      No se pudieron cargar tus direcciones.
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {(contactsError as Error | undefined)?.message ?? ""}
+                    </p>
                   </div>
                 ) : contacts.length === 0 ? (
                   <div className="text-center py-8">
@@ -223,7 +242,8 @@ export function LocationContactSelector({
                               {contact.betweenStreets && `, ${contact.betweenStreets}`}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {contact.municipality}, {contact.province}
+                              {contact.municipality}
+                              {contact.province ? `, ${contact.province}` : ""}
                             </p>
                             <p className="text-sm text-muted-foreground flex items-center gap-1 mt-1">
                               <Phone className="h-3 w-3" />
