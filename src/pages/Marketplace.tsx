@@ -282,100 +282,150 @@ const Marketplace = () => {
       </section>
 
       {/* Filters Section */}
-      <section className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
-        <div className="container mx-auto px-4 py-3">
-          {/* Main Filter Row - All filters visible */}
-          <div className="flex flex-wrap items-center gap-2 lg:gap-3">
-            {/* Search - Compact */}
-            <div className="relative w-full sm:w-auto sm:flex-1 sm:max-w-xs">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+      <section className="sticky top-16 z-30 bg-background border-b border-border shadow-sm">
+        <div className="container mx-auto px-4 py-4 space-y-4">
+          
+          {/* Row 1: Search + Sort + Clear */}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 max-w-md">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Buscar..."
+                placeholder="Buscar productos..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-8 h-9 text-sm"
+                className="pl-10 h-10"
               />
             </div>
+            
+            <div className="flex items-center gap-2">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[160px] h-10">
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Ordenar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="popular">Más populares</SelectItem>
+                  <SelectItem value="newest">Más recientes</SelectItem>
+                  <SelectItem value="price-asc">Precio: menor a mayor</SelectItem>
+                  <SelectItem value="price-desc">Precio: mayor a menor</SelectItem>
+                </SelectContent>
+              </Select>
 
-            {/* Category Select */}
-            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-              <SelectTrigger className="w-auto min-w-[140px] h-9 text-sm">
-                <SelectValue placeholder="Categoría" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todas</SelectItem>
-                {categories?.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Sort */}
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-auto min-w-[130px] h-9 text-sm">
-                <SlidersHorizontal className="h-3.5 w-3.5 mr-1.5" />
-                <SelectValue placeholder="Ordenar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="popular">Más populares</SelectItem>
-                <SelectItem value="newest">Más recientes</SelectItem>
-                <SelectItem value="price-asc">Precio ↑</SelectItem>
-                <SelectItem value="price-desc">Precio ↓</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Price Range - Inline */}
-            <div className="flex items-center gap-1.5">
-              <span className="text-xs text-muted-foreground hidden sm:inline">$</span>
-              <Input
-                type="number"
-                value={priceRange[0]}
-                onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-                className="h-9 w-16 text-sm px-2"
-                placeholder="Min"
-                min={0}
-              />
-              <span className="text-muted-foreground text-sm">-</span>
-              <Input
-                type="number"
-                value={priceRange[1]}
-                onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-                className="h-9 w-16 text-sm px-2"
-                placeholder="Max"
-              />
-              <Button size="sm" onClick={handleApplyPriceFilter} className="h-9 px-2 text-xs">
-                OK
-              </Button>
-            </div>
-
-            {/* Tags - Inline badges */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {availableTags.map((tag) => (
-                <Badge
-                  key={tag}
-                  variant={selectedTag === tag ? "default" : "outline"}
-                  className="cursor-pointer capitalize text-xs h-7 px-2"
-                  onClick={() => handleTagClick(tag)}
+              {hasActiveFilters && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={clearAllFilters}
+                  className="h-10 text-destructive border-destructive/30 hover:bg-destructive/10"
                 >
-                  {tag}
-                </Badge>
+                  <X className="h-4 w-4 mr-1" />
+                  Limpiar filtros
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Row 2: Categories */}
+          <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
+            <div className="flex items-center gap-2 mb-2">
+              <Filter className="h-4 w-4 text-muted-foreground" />
+              <span className="text-sm font-medium text-foreground">Categorías</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant={selectedCategory === 'all' ? "default" : "outline"}
+                size="sm"
+                onClick={() => handleCategoryClick('all')}
+                className="h-8"
+              >
+                Todas
+              </Button>
+              {categories?.map((category) => (
+                <Button
+                  key={category.id}
+                  variant={selectedCategory === category.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => handleCategoryClick(category.id)}
+                  className="h-8"
+                >
+                  {category.name}
+                </Button>
               ))}
             </div>
+          </div>
 
-            {/* Clear Filters */}
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearAllFilters}
-                className="h-9 text-xs text-destructive hover:text-destructive"
-              >
-                <X className="h-3.5 w-3.5 mr-1" />
-                Limpiar
-              </Button>
-            )}
+          {/* Row 3: Price Range + Tags */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Price Range */}
+            <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-sm font-medium text-foreground">Precio (USD)</span>
+              </div>
+              <div className="space-y-3">
+                <Slider
+                  value={priceRange}
+                  onValueChange={(value) => setPriceRange(value as [number, number])}
+                  min={0}
+                  max={500}
+                  step={5}
+                  className="w-full"
+                />
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 flex-1">
+                    <span className="text-xs text-muted-foreground">$</span>
+                    <Input
+                      type="number"
+                      value={priceRange[0]}
+                      onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                      className="h-8 text-sm"
+                      min={0}
+                    />
+                  </div>
+                  <span className="text-muted-foreground">—</span>
+                  <div className="flex items-center gap-1 flex-1">
+                    <span className="text-xs text-muted-foreground">$</span>
+                    <Input
+                      type="number"
+                      value={priceRange[1]}
+                      onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                      className="h-8 text-sm"
+                    />
+                  </div>
+                  <Button 
+                    size="sm" 
+                    onClick={handleApplyPriceFilter} 
+                    className="h-8 px-4"
+                    disabled={appliedPriceRange?.[0] === priceRange[0] && appliedPriceRange?.[1] === priceRange[1]}
+                  >
+                    Aplicar
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
+              <div className="flex items-center gap-2 mb-3">
+                <Tag className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium text-foreground">Etiquetas</span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {availableTags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant={selectedTag === tag ? "default" : "outline"}
+                    className={`cursor-pointer capitalize h-8 px-3 text-sm ${
+                      selectedTag === tag 
+                        ? 'bg-primary text-primary-foreground' 
+                        : 'hover:bg-muted'
+                    }`}
+                    onClick={() => handleTagClick(tag)}
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
