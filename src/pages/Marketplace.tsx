@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, SlidersHorizontal, X, MapPin, Loader2, Tag } from "lucide-react";
+import { Search, Filter, SlidersHorizontal, X, MapPin, Loader2, Tag, ChevronDown, ShoppingBag, Truck, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ProductGrid } from "@/components/products/ProductGrid";
@@ -23,6 +28,7 @@ import { LocationContactSelector } from "@/components/checkout/LocationContactSe
 import { ContactDto, useContacts } from "@/hooks/useContacts";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { capitalizeWords } from "@/lib/utils";
 
 const Marketplace = () => {
   useDocumentMeta({
@@ -41,6 +47,7 @@ const Marketplace = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState("popular");
   const [showFilters, setShowFilters] = useState(false);
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   
   // Price range filter
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
@@ -146,25 +153,27 @@ const Marketplace = () => {
     return () => observer.disconnect();
   }, [handleObserver]);
 
-  // Current location/contact display info
-  const displayInfo = (() => {
+  // Current location/contact display info - ONLY municipality and province, capitalized
+  const locationDisplay = (() => {
     if (isAuthenticated && selectedContact) {
       return {
-        name: selectedContact.fullName,
-        location: `${selectedContact.municipality}, ${selectedContact.province}`,
+        municipality: capitalizeWords(selectedContact.municipality),
+        province: selectedContact.province,
       };
     }
     if (isAuthenticated && profile?.municipality) {
       return {
-        name: profile.userName,
-        location: `${profile.municipality}, ${profile.province}`,
+        municipality: capitalizeWords(profile.municipality),
+        province: profile.province,
       };
     }
     return {
-      name: null,
-      location: municipality && province ? `${municipality}, ${province}` : null,
+      municipality: capitalizeWords(municipality),
+      province: province,
     };
   })();
+
+  const hasLocationData = locationDisplay.municipality && locationDisplay.province;
 
   // Flatten paginated data
   const products = productsData?.pages.flatMap(page => page.data) || [];
@@ -200,220 +209,155 @@ const Marketplace = () => {
     <div className="min-h-screen bg-background">
       <Navbar />
 
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar - Desktop */}
-          <aside className="hidden lg:block w-64 flex-shrink-0">
-            <div className="sticky top-24 h-[calc(100vh-120px)] overflow-y-auto space-y-4 pr-2 scrollbar-thin">
-              {/* Price Range Filter */}
-              <div className="card-elevated p-4">
-                <h3 className="font-semibold mb-3 text-sm">Precio (USD)</h3>
-                <div className="space-y-3">
-                  <Slider
-                    value={priceRange}
-                    onValueChange={(value) => setPriceRange(value as [number, number])}
-                    min={0}
-                    max={500}
-                    step={5}
-                    className="w-full"
-                  />
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      value={priceRange[0]}
-                      onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-                      className="h-7 text-xs"
-                      min={0}
-                    />
-                    <span className="text-muted-foreground text-xs">-</span>
-                    <Input
-                      type="number"
-                      value={priceRange[1]}
-                      onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-                      className="h-7 text-xs"
-                    />
-                    <Button 
-                      size="sm" 
-                      onClick={handleApplyPriceFilter}
-                      className="h-7 px-2 text-xs"
-                    >
-                      OK
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Tags Filter */}
-              <div className="card-elevated p-4">
-                <h3 className="font-semibold mb-3 text-sm flex items-center gap-2">
-                  <Tag className="h-3.5 w-3.5" />
-                  Etiquetas
-                </h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {availableTags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant={selectedTag === tag ? "default" : "outline"}
-                      className="cursor-pointer capitalize text-xs py-0.5"
-                      onClick={() => handleTagClick(tag)}
-                    >
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Categories */}
-              <div className="card-elevated p-4">
-                <h3 className="font-semibold mb-3 text-sm">Categorías</h3>
-                {categoriesLoading ? (
-                  <div className="flex justify-center py-2">
-                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    <button
-                      onClick={() => handleCategoryClick('all')}
-                      className={`w-full text-left px-2.5 py-1.5 rounded-md text-sm transition-colors ${
-                        selectedCategory === 'all'
-                          ? "bg-primary text-primary-foreground"
-                          : "text-muted-foreground hover:bg-muted"
-                      }`}
-                    >
-                      Todos
-                    </button>
-                    {categories?.map((category) => (
-                      <button
-                        key={category.id}
-                        onClick={() => handleCategoryClick(category.id)}
-                        className={`w-full text-left px-2.5 py-1.5 rounded-md text-sm transition-colors ${
-                          selectedCategory === category.id
-                            ? "bg-primary text-primary-foreground"
-                            : "text-muted-foreground hover:bg-muted"
-                        }`}
-                      >
-                        {category.name}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          </aside>
-
-
-          {/* Main Content */}
-          <main className="flex-1">
-            {/* Search, Location and Filters Bar */}
-            <div className="flex flex-col gap-4 mb-6">
-              {/* Location indicator row */}
-              {displayInfo.location && (
-                <button
-                  onClick={() => isAuthenticated ? setShowContactSelector(true) : setShowLocationModal(true)}
-                  className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors self-start"
-                >
-                  <MapPin className="h-4 w-4 text-primary" />
-                  <span>Entrega en:</span>
-                  {displayInfo.name && (
-                    <>
-                      <span className="font-medium text-foreground">{displayInfo.name}</span>
-                      <span>•</span>
-                    </>
-                  )}
-                  <span className="text-foreground">{displayInfo.location}</span>
-                  <span className="text-primary underline">Cambiar</span>
-                </button>
-              )}
+      {/* Hero Section */}
+      <section className="relative overflow-hidden gradient-primary py-12 lg:py-16">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute top-10 left-10 w-64 h-64 bg-white/20 rounded-full blur-3xl" />
+          <div className="absolute bottom-10 right-10 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
+        </div>
+        
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+            {/* Left Content */}
+            <div className="flex-1 text-center lg:text-left">
+              <motion.h1 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4"
+              >
+                Marketplace Cuba
+              </motion.h1>
+              <motion.p 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="text-white/90 text-lg lg:text-xl max-w-xl"
+              >
+                Electrodomésticos, tecnología, alimentos y más con entrega a domicilio
+              </motion.p>
               
-              {/* Search and filters row */}
-              <div className="flex flex-col sm:flex-row gap-4">
-                {/* Search */}
-                <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Buscar productos..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-
-                {/* Sort */}
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SlidersHorizontal className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Ordenar por" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="popular">Más populares</SelectItem>
-                    <SelectItem value="newest">Más recientes</SelectItem>
-                    <SelectItem value="price-asc">Precio: menor a mayor</SelectItem>
-                    <SelectItem value="price-desc">Precio: mayor a menor</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                {/* Mobile Filter Toggle */}
-                <Button
-                  variant="outline"
-                  className="lg:hidden"
-                  onClick={() => setShowFilters(!showFilters)}
+              {/* Location Badge */}
+              {hasLocationData && (
+                <motion.button
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  onClick={() => isAuthenticated ? setShowContactSelector(true) : setShowLocationModal(true)}
+                  className="mt-6 inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-white hover:bg-white/25 transition-colors"
                 >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros
-                  {hasActiveFilters && (
-                    <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                      !
-                    </Badge>
-                  )}
-                </Button>
-              </div>
+                  <MapPin className="h-4 w-4" />
+                  <span className="text-sm">
+                    Entregas en <span className="font-semibold">{locationDisplay.municipality}, {locationDisplay.province}</span>
+                  </span>
+                  <span className="text-white/70 text-sm underline">Cambiar</span>
+                </motion.button>
+              )}
             </div>
 
-            {/* Mobile Filters */}
-            {showFilters && (
+            {/* Right Stats */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3 }}
+              className="flex gap-4 lg:gap-6"
+            >
+              <div className="flex flex-col items-center bg-white/10 backdrop-blur-sm rounded-xl p-4 lg:p-6 border border-white/20">
+                <ShoppingBag className="h-8 w-8 text-white mb-2" />
+                <span className="text-2xl lg:text-3xl font-bold text-white">500+</span>
+                <span className="text-white/80 text-sm">Productos</span>
+              </div>
+              <div className="flex flex-col items-center bg-white/10 backdrop-blur-sm rounded-xl p-4 lg:p-6 border border-white/20">
+                <Truck className="h-8 w-8 text-white mb-2" />
+                <span className="text-2xl lg:text-3xl font-bold text-white">Cuba</span>
+                <span className="text-white/80 text-sm">Entregas</span>
+              </div>
+              <div className="hidden sm:flex flex-col items-center bg-white/10 backdrop-blur-sm rounded-xl p-4 lg:p-6 border border-white/20">
+                <Package className="h-8 w-8 text-white mb-2" />
+                <span className="text-2xl lg:text-3xl font-bold text-white">24h</span>
+                <span className="text-white/80 text-sm">Envío rápido</span>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* Filters Section */}
+      <section className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border shadow-sm">
+        <div className="container mx-auto px-4 py-4">
+          {/* Main Filter Row */}
+          <div className="flex flex-col sm:flex-row gap-3">
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar productos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Category Select */}
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Categoría" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todas las categorías</SelectItem>
+                {categories?.map((category) => (
+                  <SelectItem key={category.id} value={category.id}>
+                    {category.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Sort */}
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-full sm:w-44">
+                <SlidersHorizontal className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Ordenar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="popular">Más populares</SelectItem>
+                <SelectItem value="newest">Más recientes</SelectItem>
+                <SelectItem value="price-asc">Precio: menor a mayor</SelectItem>
+                <SelectItem value="price-desc">Precio: mayor a menor</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Advanced Filters Toggle */}
+            <Button
+              variant="outline"
+              onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+              className="gap-2"
+            >
+              <Filter className="h-4 w-4" />
+              <span className="hidden sm:inline">Más filtros</span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${showAdvancedFilters ? 'rotate-180' : ''}`} />
+              {hasActiveFilters && (
+                <Badge variant="destructive" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  !
+                </Badge>
+              )}
+            </Button>
+          </div>
+
+          {/* Advanced Filters Panel */}
+          <Collapsible open={showAdvancedFilters} onOpenChange={setShowAdvancedFilters}>
+            <CollapsibleContent>
               <motion.div
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: "auto" }}
                 exit={{ opacity: 0, height: 0 }}
-                className="lg:hidden mb-6 space-y-4"
+                className="mt-4 pt-4 border-t border-border"
               >
-                {/* Categories */}
-                <div className="card-elevated p-4">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-semibold">Categorías</h3>
-                    <Button
-                      variant="ghost"
-                      size="icon-sm"
-                      onClick={() => setShowFilters(false)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge
-                      variant={selectedCategory === 'all' ? "default" : "outline"}
-                      className="cursor-pointer"
-                      onClick={() => handleCategoryClick('all')}
-                    >
-                      Todos
-                    </Badge>
-                    {categories?.map((category) => (
-                      <Badge
-                        key={category.id}
-                        variant={selectedCategory === category.id ? "default" : "outline"}
-                        className="cursor-pointer"
-                        onClick={() => handleCategoryClick(category.id)}
-                      >
-                        {category.name}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Price Range - Mobile */}
-                <div className="card-elevated p-4">
-                  <h3 className="font-semibold mb-4">Rango de Precio</h3>
-                  <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Price Range */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      Rango de Precio (USD)
+                    </label>
                     <Slider
                       value={priceRange}
                       onValueChange={(value) => setPriceRange(value as [number, number])}
@@ -428,7 +372,7 @@ const Marketplace = () => {
                         value={priceRange[0]}
                         onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
                         className="h-8 text-sm"
-                        placeholder="Mín"
+                        min={0}
                       />
                       <span className="text-muted-foreground">-</span>
                       <Input
@@ -436,124 +380,153 @@ const Marketplace = () => {
                         value={priceRange[1]}
                         onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
                         className="h-8 text-sm"
-                        placeholder="Máx"
                       />
-                      <Button size="sm" onClick={handleApplyPriceFilter}>
-                        OK
+                      <Button size="sm" onClick={handleApplyPriceFilter} className="h-8">
+                        Aplicar
                       </Button>
                     </div>
                   </div>
-                </div>
 
-                {/* Tags - Mobile */}
-                <div className="card-elevated p-4">
-                  <h3 className="font-semibold mb-4">Etiquetas</h3>
-                  <div className="flex flex-wrap gap-2">
-                    {availableTags.map((tag) => (
+                  {/* Tags */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium flex items-center gap-2">
+                      <Tag className="h-4 w-4" />
+                      Etiquetas
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {availableTags.map((tag) => (
+                        <Badge
+                          key={tag}
+                          variant={selectedTag === tag ? "default" : "outline"}
+                          className="cursor-pointer capitalize"
+                          onClick={() => handleTagClick(tag)}
+                        >
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Categories (for quick selection) */}
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium">Categorías rápidas</label>
+                    <div className="flex flex-wrap gap-2">
                       <Badge
-                        key={tag}
-                        variant={selectedTag === tag ? "default" : "outline"}
-                        className="cursor-pointer capitalize"
-                        onClick={() => handleTagClick(tag)}
+                        variant={selectedCategory === 'all' ? "default" : "outline"}
+                        className="cursor-pointer"
+                        onClick={() => handleCategoryClick('all')}
                       >
-                        {tag}
+                        Todos
                       </Badge>
-                    ))}
+                      {categories?.slice(0, 5).map((category) => (
+                        <Badge
+                          key={category.id}
+                          variant={selectedCategory === category.id ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => handleCategoryClick(category.id)}
+                        >
+                          {category.name}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </motion.div>
-            )}
-
-            {/* Active Filters */}
-            {hasActiveFilters && (
-              <div className="flex flex-wrap items-center gap-2 mb-6">
-                <span className="text-sm text-muted-foreground">Filtros:</span>
-                {selectedCategory !== 'all' && (
-                  <Badge variant="secondary" className="gap-1">
-                    {categories?.find(c => c.id === selectedCategory)?.name || selectedCategory}
-                    <button onClick={() => setSelectedCategory('all')}>
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                )}
-                {debouncedSearch && (
-                  <Badge variant="secondary" className="gap-1">
-                    "{debouncedSearch}"
-                    <button onClick={() => setSearchQuery("")}>
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                )}
-                {appliedPriceRange && (
-                  <Badge variant="secondary" className="gap-1">
-                    ${appliedPriceRange[0]} - ${appliedPriceRange[1]}
-                    <button onClick={handleClearPriceFilter}>
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                )}
-                {selectedTag && (
-                  <Badge variant="secondary" className="gap-1 capitalize">
-                    {selectedTag}
-                    <button onClick={() => setSelectedTag("")}>
-                      <X className="h-3 w-3" />
-                    </button>
-                  </Badge>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearAllFilters}
-                  className="text-destructive hover:text-destructive"
-                >
-                  Limpiar todo
-                </Button>
-              </div>
-            )}
-
-            {/* Results Info */}
-            <p className="text-sm text-muted-foreground mb-6">
-              {products.length} productos{hasNextPage && '+'}
-            </p>
-
-            {/* Loading State */}
-            {productsLoading ? (
-              <div className="flex justify-center items-center py-20">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-              </div>
-            ) : products.length > 0 ? (
-              <>
-                {/* Product Grid */}
-                <ProductGrid products={products} />
-
-                {/* Infinite Scroll Trigger */}
-                <div ref={loadMoreRef} className="py-8 flex justify-center">
-                  {isFetchingNextPage && (
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  )}
-                  {!hasNextPage && products.length > 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      No hay más productos
-                    </p>
-                  )}
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">
-                  No se encontraron productos
-                </p>
-                <Button
-                  variant="outline"
-                  onClick={clearAllFilters}
-                >
-                  Limpiar filtros
-                </Button>
-              </div>
-            )}
-          </main>
+            </CollapsibleContent>
+          </Collapsible>
         </div>
-      </div>
+      </section>
+
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-6">
+        {/* Active Filters */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-2 mb-6">
+            <span className="text-sm text-muted-foreground">Filtros activos:</span>
+            {selectedCategory !== 'all' && (
+              <Badge variant="secondary" className="gap-1">
+                {categories?.find(c => c.id === selectedCategory)?.name || selectedCategory}
+                <button onClick={() => setSelectedCategory('all')}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {debouncedSearch && (
+              <Badge variant="secondary" className="gap-1">
+                "{debouncedSearch}"
+                <button onClick={() => setSearchQuery("")}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {appliedPriceRange && (
+              <Badge variant="secondary" className="gap-1">
+                ${appliedPriceRange[0]} - ${appliedPriceRange[1]}
+                <button onClick={handleClearPriceFilter}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {selectedTag && (
+              <Badge variant="secondary" className="gap-1 capitalize">
+                {selectedTag}
+                <button onClick={() => setSelectedTag("")}>
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearAllFilters}
+              className="text-destructive hover:text-destructive"
+            >
+              Limpiar todo
+            </Button>
+          </div>
+        )}
+
+        {/* Results Info */}
+        <p className="text-sm text-muted-foreground mb-6">
+          {products.length} productos encontrados{hasNextPage && '+'}
+        </p>
+
+        {/* Loading State */}
+        {productsLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : products.length > 0 ? (
+          <>
+            {/* Product Grid */}
+            <ProductGrid products={products} />
+
+            {/* Infinite Scroll Trigger */}
+            <div ref={loadMoreRef} className="py-8 flex justify-center">
+              {isFetchingNextPage && (
+                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              )}
+              {!hasNextPage && products.length > 0 && (
+                <p className="text-sm text-muted-foreground">
+                  No hay más productos
+                </p>
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground mb-4">
+              No se encontraron productos
+            </p>
+            <Button
+              variant="outline"
+              onClick={clearAllFilters}
+            >
+              Limpiar filtros
+            </Button>
+          </div>
+        )}
+      </main>
 
       <Footer />
 
