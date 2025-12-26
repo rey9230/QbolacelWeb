@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, SlidersHorizontal, X, MapPin, Loader2, Tag, ChevronDown, ShoppingBag, Truck, Package } from "lucide-react";
+import { Search, Filter, SlidersHorizontal, X, MapPin, Loader2, Tag, ShoppingBag, Truck, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
 import {
   Select,
   SelectContent,
@@ -13,10 +12,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { ProductGrid } from "@/components/products/ProductGrid";
@@ -46,9 +47,8 @@ const Marketplace = () => {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState("popular");
-  const [showFilters, setShowFilters] = useState(false);
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
-  
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+
   // Price range filter
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
   const [appliedPriceRange, setAppliedPriceRange] = useState<[number, number] | null>(null);
@@ -277,7 +277,7 @@ const Marketplace = () => {
             </div>
 
             {/* Right Stats */}
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 }}
@@ -304,154 +304,120 @@ const Marketplace = () => {
       </section>
 
       {/* Filters Section */}
-      <section className="sticky top-16 z-30 bg-background border-b border-border shadow-sm">
-        <div className="container mx-auto px-4 py-2 space-y-2">
-          {/* Row 1: Search + Sort + Clear */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-            <div className="relative flex-1 max-w-md">
+      <section className="sticky top-16 z-30 bg-background border-b border-border shadow-sm overflow-hidden">
+        <div className="container mx-auto px-4 pt-4 pb-4 space-y-3">
+          {/* Mobile View - Compact buttons */}
+          <div className="flex lg:hidden items-center gap-2">
+            {/* Filters Button */}
+            <Button
+              variant="outline"
+              onClick={() => setShowMobileFilters(true)}
+              className="flex-1 h-10"
+            >
+              <Filter className="h-4 w-4 mr-2" />
+              Filtros
+              {hasActiveFilters && (
+                <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                  !
+                </Badge>
+              )}
+            </Button>
+
+            {/* Sort Dropdown */}
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="flex-1 h-10">
+                <SlidersHorizontal className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Ordenar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="popular">Más populares</SelectItem>
+                <SelectItem value="newest">Más recientes</SelectItem>
+                <SelectItem value="price-asc">Precio: menor a mayor</SelectItem>
+                <SelectItem value="price-desc">Precio: mayor a menor</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Desktop View - All filters in one line */}
+          <div className="hidden lg:flex items-center gap-3 overflow-x-auto scrollbar-hide pt-2 pb-1 pl-1">
+            {/* Search */}
+            <div className="relative w-72 flex-shrink-0 ml-2 mt-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Buscar productos..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 h-9"
+                className="pl-10 h-10"
               />
             </div>
 
-            <div className="flex items-center gap-2">
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-[160px] h-9">
-                  <SlidersHorizontal className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Ordenar" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="popular">Más populares</SelectItem>
-                  <SelectItem value="newest">Más recientes</SelectItem>
-                  <SelectItem value="price-asc">Precio: menor a mayor</SelectItem>
-                  <SelectItem value="price-desc">Precio: mayor a menor</SelectItem>
-                </SelectContent>
-              </Select>
+            {/* Sort */}
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[200px] h-10 flex-shrink-0 mt-1">
+                <SlidersHorizontal className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Ordenar" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="popular">Más populares</SelectItem>
+                <SelectItem value="newest">Más recientes</SelectItem>
+                <SelectItem value="price-asc">Precio: menor a mayor</SelectItem>
+                <SelectItem value="price-desc">Precio: mayor a menor</SelectItem>
+              </SelectContent>
+            </Select>
 
-              {hasActiveFilters && (
+            {/* Price Range - Compact inline */}
+            <div className="flex items-center gap-3 px-4 py-1.5 h-10 border rounded-md bg-background flex-shrink-0">
+              <span className="text-sm font-medium whitespace-nowrap">Precio:</span>
+              <Input
+                type="number"
+                value={priceRange[0]}
+                onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                className="h-8 w-20 text-sm"
+                min={0}
+                placeholder="Mín"
+              />
+              <span className="text-muted-foreground text-sm">-</span>
+              <Input
+                type="number"
+                value={priceRange[1]}
+                onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                className="h-8 w-20 text-sm"
+                placeholder="Máx"
+              />
+              <Button
+                size="sm"
+                onClick={handleApplyPriceFilter}
+                className="h-8 px-3 text-sm"
+                disabled={
+                  appliedPriceRange?.[0] === priceRange[0] &&
+                  appliedPriceRange?.[1] === priceRange[1]
+                }
+              >
+                Aplicar
+              </Button>
+              {appliedPriceRange && (
                 <Button
-                  variant="outline"
                   size="sm"
-                  onClick={clearAllFilters}
-                  className="h-9 text-destructive border-destructive/30 hover:bg-destructive/10"
+                  variant="ghost"
+                  onClick={handleClearPriceFilter}
+                  className="h-8 px-2"
                 >
-                  <X className="h-4 w-4 mr-1" />
-                  Limpiar
+                  <X className="h-4 w-4" />
                 </Button>
               )}
             </div>
-          </div>
 
-          {/* Row 2: Categories (always visible, horizontal scroll) */}
-          <div className="rounded-lg border border-border/50 bg-muted/30 px-2 py-2">
-            <div className="flex gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-              <Button
-                variant={selectedCategory === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleCategoryClick("all")}
-                className="h-7 text-xs"
-              >
-                Todas
-              </Button>
-              {categories?.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => handleCategoryClick(category.id)}
-                  className="h-7 text-xs whitespace-nowrap"
-                >
-                  {category.name}
-                </Button>
-              ))}
-            </div>
-          </div>
-
-          {/* Row 3: Price Range + Tags */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-            {/* Price Range */}
-            <div className="rounded-lg border border-border/50 bg-muted/30 px-2 py-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-medium text-foreground">Precio (USD)</span>
-                {appliedPriceRange && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearPriceFilter}
-                    className="h-7 px-2 text-muted-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-              <div className="space-y-1 mt-1">
-                <Slider
-                  value={priceRange}
-                  onValueChange={(value) => setPriceRange(value as [number, number])}
-                  min={0}
-                  max={500}
-                  step={5}
-                  className="w-full"
-                />
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    value={priceRange[0]}
-                    onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-                    className="h-7 text-xs w-24"
-                    min={0}
-                  />
-                  <span className="text-muted-foreground text-xs">—</span>
-                  <Input
-                    type="number"
-                    value={priceRange[1]}
-                    onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-                    className="h-7 text-xs w-24"
-                  />
-                  <Button
-                    size="sm"
-                    onClick={handleApplyPriceFilter}
-                    className="h-7 px-3"
-                    disabled={
-                      appliedPriceRange?.[0] === priceRange[0] &&
-                      appliedPriceRange?.[1] === priceRange[1]
-                    }
-                  >
-                    Aplicar
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Tags */}
-            <div className="rounded-lg border border-border/50 bg-muted/30 px-2 py-2">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Tag className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-xs font-medium text-foreground">Etiquetas</span>
-                </div>
-                {selectedTag && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedTag("")}
-                    className="h-7 px-2 text-muted-foreground"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-              <div className="flex flex-wrap gap-1 mt-2">
+            {/* Tags - Compact inline */}
+            <div className="hidden xl:flex items-center gap-2.5 px-4 py-1.5 h-10 border rounded-md bg-background flex-shrink-0">
+              <Tag className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm font-medium whitespace-nowrap">Etiquetas:</span>
+              <div className="flex gap-1.5">
                 {availableTags.map((tag) => (
                   <Badge
                     key={tag}
                     variant={selectedTag === tag ? "default" : "outline"}
                     className={cn(
-                      "cursor-pointer capitalize h-6 px-2 text-[11px]",
+                      "cursor-pointer capitalize h-7 px-2.5 text-xs whitespace-nowrap",
                       selectedTag === tag
                         ? "bg-primary text-primary-foreground"
                         : "hover:bg-muted"
@@ -462,6 +428,62 @@ const Marketplace = () => {
                   </Badge>
                 ))}
               </div>
+              {selectedTag && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedTag("")}
+                  className="h-8 px-2"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            {/* Clear Filters */}
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={clearAllFilters}
+                className="h-10 px-4 text-destructive border-destructive/30 hover:bg-destructive/10 flex-shrink-0"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Limpiar
+              </Button>
+            )}
+          </div>
+
+          {/* Categories - Desktop only */}
+          <div className="hidden lg:block rounded-lg border border-border/50 bg-muted/30 px-3 py-2 pb-1">
+            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+              {categoriesLoading ? (
+                <div className="flex justify-center py-1 w-full">
+                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  <Button
+                    variant={selectedCategory === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleCategoryClick("all")}
+                    className="h-8 px-3 text-sm whitespace-nowrap"
+                  >
+                    Todas
+                  </Button>
+                  {categories?.map((category) => (
+                    <Button
+                      key={category.id}
+                      variant={selectedCategory === category.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleCategoryClick(category.id)}
+                      className="h-8 px-3 text-sm whitespace-nowrap"
+                    >
+                      {category.name}
+                    </Button>
+                  ))}
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -589,6 +611,164 @@ const Marketplace = () => {
         selectedContactId={selectedContact?.id}
         redirectOnClose={userHasLocation ? undefined : "/"}
       />
+
+      {/* Mobile Filters Bottom Sheet */}
+      <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
+        <SheetContent side="bottom" className="h-[85vh] flex flex-col">
+          <SheetHeader>
+            <SheetTitle>Filtros</SheetTitle>
+            <SheetDescription>
+              Filtra y busca productos
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="flex-1 overflow-y-auto space-y-6 py-4">
+            {/* Search */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Buscar</label>
+              <div className="relative mx-2">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar productos..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            {/* Categories */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Categorías</label>
+              {categoriesLoading ? (
+                <div className="flex justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <Button
+                    variant={selectedCategory === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleCategoryClick("all")}
+                    className="w-full"
+                  >
+                    Todas
+                  </Button>
+                  {categories?.map((category) => (
+                    <Button
+                      key={category.id}
+                      variant={selectedCategory === category.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => handleCategoryClick(category.id)}
+                      className="w-full"
+                    >
+                      {category.name}
+                    </Button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Price Range */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Precio (USD)</label>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    value={priceRange[0]}
+                    onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
+                    className="flex-1"
+                    min={0}
+                    placeholder="Mínimo"
+                  />
+                  <span className="text-muted-foreground">-</span>
+                  <Input
+                    type="number"
+                    value={priceRange[1]}
+                    onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
+                    className="flex-1"
+                    placeholder="Máximo"
+                  />
+                </div>
+                <Button
+                  onClick={handleApplyPriceFilter}
+                  className="w-full"
+                  disabled={
+                    appliedPriceRange?.[0] === priceRange[0] &&
+                    appliedPriceRange?.[1] === priceRange[1]
+                  }
+                >
+                  Aplicar rango de precio
+                </Button>
+                {appliedPriceRange && (
+                  <Button
+                    variant="outline"
+                    onClick={handleClearPriceFilter}
+                    className="w-full"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Limpiar precio
+                  </Button>
+                )}
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">Etiquetas</label>
+              <div className="flex flex-wrap gap-2">
+                {availableTags.map((tag) => (
+                  <Badge
+                    key={tag}
+                    variant={selectedTag === tag ? "default" : "outline"}
+                    className={cn(
+                      "cursor-pointer capitalize",
+                      selectedTag === tag
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-muted"
+                    )}
+                    onClick={() => handleTagClick(tag)}
+                  >
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+              {selectedTag && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedTag("")}
+                  className="w-full mt-2"
+                >
+                  <X className="h-4 w-4 mr-2" />
+                  Limpiar etiqueta
+                </Button>
+              )}
+            </div>
+          </div>
+
+          {/* Footer with actions */}
+          <div className="border-t pt-4 space-y-2">
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                onClick={clearAllFilters}
+                className="w-full text-destructive border-destructive/30"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Limpiar todos los filtros
+              </Button>
+            )}
+            <Button
+              onClick={() => setShowMobileFilters(false)}
+              className="w-full"
+            >
+              Aplicar filtros
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };

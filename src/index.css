@@ -242,6 +242,16 @@
 }
 
 @layer utilities {
+  /* Scrollbar Hide */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
   /* Text Shadow */
   .text-shadow {
     text-shadow: 0 2px 4px hsl(222 47% 11% / 0.1);
