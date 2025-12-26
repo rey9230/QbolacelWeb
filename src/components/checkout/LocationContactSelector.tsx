@@ -42,11 +42,13 @@ interface LocationContactSelectorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (contact: ContactDto) => void;
+  /** Optional: allow selecting only a municipality+province without choosing a saved contact */
+  onSelectLocation?: (municipality: string, province: string) => void;
   selectedContactId?: string;
   redirectOnClose?: string;
 }
 
-type View = "list" | "create";
+type View = "list" | "create" | "zone";
 
 const emptyForm: CreateContactRequest = {
   fullName: "",
@@ -61,6 +63,7 @@ export function LocationContactSelector({
   open,
   onOpenChange,
   onSelect,
+  onSelectLocation,
   selectedContactId,
   redirectOnClose,
 }: LocationContactSelectorProps) {
@@ -79,7 +82,12 @@ export function LocationContactSelector({
   const [selectedProvince, setSelectedProvince] = useState<string>("");
   const [localSelectedId, setLocalSelectedId] = useState<string | undefined>(selectedContactId);
 
+  // Location-only (zone) selection
+  const [zoneProvince, setZoneProvince] = useState<string>("");
+  const [zoneMunicipality, setZoneMunicipality] = useState<string>("");
+
   const { data: municipalities, isLoading: isLoadingMunicipalities } = useMunicipalities(selectedProvince);
+  const { data: zoneMunicipalities, isLoading: isLoadingZoneMunicipalities } = useMunicipalities(zoneProvince);
 
   const contacts = contactsData?.contacts || [];
   const defaultContactId = contactsData?.defaultContactId;
@@ -99,6 +107,8 @@ export function LocationContactSelector({
       setView("list");
       setFormData(emptyForm);
       setSelectedProvince("");
+      setZoneProvince("");
+      setZoneMunicipality("");
     }
   }, [open]);
 
@@ -133,11 +143,21 @@ export function LocationContactSelector({
     }
   };
 
+  const handleConfirmZone = () => {
+    if (!onSelectLocation) return;
+    if (zoneProvince && zoneMunicipality) {
+      onSelectLocation(zoneMunicipality, zoneProvince);
+      onOpenChange(false);
+    }
+  };
+
   const isFormValid =
     formData.fullName.trim() &&
     formData.phone.trim() &&
     formData.street.trim() &&
     formData.municipality;
+
+  const isZoneValid = !!(zoneProvince && zoneMunicipality);
 
   return (
     <Dialog
@@ -149,7 +169,7 @@ export function LocationContactSelector({
       <DialogContent className="max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {view === "create" && (
+            {view !== "list" && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -159,7 +179,11 @@ export function LocationContactSelector({
                 <ChevronLeft className="h-4 w-4" />
               </Button>
             )}
-            {view === "list" ? "Seleccionar Dirección" : "Nueva Dirección"}
+            {view === "list"
+              ? "Seleccionar Dirección"
+              : view === "create"
+                ? "Nueva Dirección"
+                : "Seleccionar Zona"}
           </DialogTitle>
         </DialogHeader>
 
@@ -194,10 +218,21 @@ export function LocationContactSelector({
                     <p className="text-muted-foreground mb-4">
                       No tienes direcciones guardadas
                     </p>
-                    <Button onClick={() => setView("create")} className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Añadir Primera Dirección
-                    </Button>
+                    <div className="space-y-2">
+                      <Button onClick={() => setView("create")} className="gap-2 w-full">
+                        <Plus className="h-4 w-4" />
+                        Añadir Primera Dirección
+                      </Button>
+                      {onSelectLocation && (
+                        <Button
+                          variant="outline"
+                          onClick={() => setView("zone")}
+                          className="w-full"
+                        >
+                          Elegir solo zona (municipio/provincia)
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <>
@@ -254,18 +289,29 @@ export function LocationContactSelector({
                       </div>
                     ))}
 
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2 mt-4"
-                      onClick={() => setView("create")}
-                    >
-                      <Plus className="h-4 w-4" />
-                      Añadir Nueva Dirección
-                    </Button>
+                    <div className="grid gap-2 mt-4">
+                      <Button
+                        variant="outline"
+                        className="w-full gap-2"
+                        onClick={() => setView("create")}
+                      >
+                        <Plus className="h-4 w-4" />
+                        Añadir Nueva Dirección
+                      </Button>
+                      {onSelectLocation && (
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setView("zone")}
+                        >
+                          Elegir solo zona (municipio/provincia)
+                        </Button>
+                      )}
+                    </div>
                   </>
                 )}
               </motion.div>
-            ) : (
+            ) : view === "create" ? (
               <motion.div
                 key="create"
                 initial={{ opacity: 0, x: 20 }}
@@ -388,6 +434,58 @@ export function LocationContactSelector({
                   </Label>
                 </div>
               </motion.div>
+            ) : (
+              <motion.div
+                key="zone"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                className="space-y-4"
+              >
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Provincia *</Label>
+                    <Select
+                      value={zoneProvince}
+                      onValueChange={(v) => {
+                        setZoneProvince(v);
+                        setZoneMunicipality("");
+                      }}
+                      disabled={isLoadingProvinces}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {provinces?.map((province) => (
+                          <SelectItem key={province} value={province}>
+                            {province}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Municipio *</Label>
+                    <Select
+                      value={zoneMunicipality}
+                      onValueChange={setZoneMunicipality}
+                      disabled={!zoneProvince || isLoadingZoneMunicipalities}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccionar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {zoneMunicipalities?.map((m) => (
+                          <SelectItem key={m} value={m}>
+                            {m}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </motion.div>
             )}
           </AnimatePresence>
         </div>
@@ -407,7 +505,7 @@ export function LocationContactSelector({
                 Seleccionar
               </Button>
             </>
-          ) : (
+          ) : view === "create" ? (
             <>
               <Button variant="outline" onClick={() => setView("list")}>
                 Cancelar
@@ -423,6 +521,15 @@ export function LocationContactSelector({
                   <Plus className="h-4 w-4" />
                 )}
                 Guardar Dirección
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => setView("list")}>
+                Cancelar
+              </Button>
+              <Button onClick={handleConfirmZone} disabled={!isZoneValid}>
+                Confirmar zona
               </Button>
             </>
           )}
