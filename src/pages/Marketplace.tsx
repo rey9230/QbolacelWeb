@@ -306,36 +306,50 @@ const Marketplace = () => {
       {/* Filters Section */}
       <section className="sticky top-16 z-30 bg-background border-b border-border shadow-sm overflow-hidden">
         <div className="container mx-auto px-4 pt-4 pb-4 space-y-3">
-          {/* Mobile View - Compact buttons */}
-          <div className="flex lg:hidden items-center gap-2">
-            {/* Filters Button */}
-            <Button
-              variant="outline"
-              onClick={() => setShowMobileFilters(true)}
-              className="flex-1 h-10"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-              Filtros
-              {hasActiveFilters && (
-                <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                  !
-                </Badge>
-              )}
-            </Button>
+          {/* Mobile View - Search + Compact buttons */}
+          <div className="lg:hidden space-y-3">
+            {/* Search Bar */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar productos..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10 h-10"
+              />
+            </div>
 
-            {/* Sort Dropdown */}
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="flex-1 h-10">
-                <SlidersHorizontal className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Ordenar" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="popular">Más populares</SelectItem>
-                <SelectItem value="newest">Más recientes</SelectItem>
-                <SelectItem value="price-asc">Precio: menor a mayor</SelectItem>
-                <SelectItem value="price-desc">Precio: mayor a menor</SelectItem>
-              </SelectContent>
-            </Select>
+            {/* Filter and Sort Buttons */}
+            <div className="flex items-center gap-2">
+              {/* Filters Button */}
+              <Button
+                variant="outline"
+                onClick={() => setShowMobileFilters(true)}
+                className="flex-1 h-10"
+              >
+                <Filter className="h-4 w-4 mr-2" />
+                Filtros
+                {hasActiveFilters && (
+                  <Badge variant="destructive" className="ml-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+                    !
+                  </Badge>
+                )}
+              </Button>
+
+              {/* Sort Dropdown */}
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="flex-1 h-10">
+                  <SlidersHorizontal className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Ordenar" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="popular">Más populares</SelectItem>
+                  <SelectItem value="newest">Más recientes</SelectItem>
+                  <SelectItem value="price-asc">Precio: menor a mayor</SelectItem>
+                  <SelectItem value="price-desc">Precio: mayor a menor</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Desktop View - All filters in one line */}
@@ -623,19 +637,6 @@ const Marketplace = () => {
           </SheetHeader>
 
           <div className="flex-1 overflow-y-auto space-y-6 py-4">
-            {/* Search */}
-            <div>
-              <label className="text-sm font-medium mb-2 block">Buscar</label>
-              <div className="relative mx-2">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Buscar productos..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
 
             {/* Categories */}
             <div>
