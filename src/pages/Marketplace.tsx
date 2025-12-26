@@ -247,37 +247,30 @@ const Marketplace = () => {
                   <div className="inline-flex items-center gap-2 bg-white/15 backdrop-blur-sm border border-white/20 rounded-full px-4 py-2 text-white">
                     <MapPin className="h-4 w-4" />
                     <span className="text-sm">
-                      Entregas en <span className="font-semibold">{locationDisplay.municipality}, {locationDisplay.province}</span>
+                      {isAuthenticated && selectedContact ? (
+                        <>
+                          <span className="font-semibold">{selectedContact.fullName}</span>
+                          <span className="text-white/80"> — {locationDisplay.municipality}, {locationDisplay.province}</span>
+                        </>
+                      ) : (
+                        <>
+                          Entregas en <span className="font-semibold">{locationDisplay.municipality}, {locationDisplay.province}</span>
+                        </>
+                      )}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-3 pl-2">
-                    {isAuthenticated ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => setShowContactSelector(true)}
-                          className="text-white/85 text-sm underline hover:text-white"
-                        >
-                          Cambiar dirección
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setShowLocationModal(true)}
-                          className="text-white/85 text-sm underline hover:text-white"
-                        >
-                          Cambiar zona
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => setShowLocationModal(true)}
-                        className="text-white/85 text-sm underline hover:text-white"
-                      >
-                        Cambiar
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (isAuthenticated) setShowContactSelector(true);
+                        else setShowLocationModal(true);
+                      }}
+                      className="text-white/85 text-sm underline hover:text-white"
+                    >
+                      Cambiar
+                    </button>
                   </div>
                 </motion.div>
               )}
@@ -312,9 +305,9 @@ const Marketplace = () => {
 
       {/* Filters Section */}
       <section className="sticky top-16 z-30 bg-background border-b border-border shadow-sm">
-        <div className="container mx-auto px-4 py-3 space-y-3">
+        <div className="container mx-auto px-4 py-2 space-y-2">
           {/* Row 1: Search + Sort + Clear */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -354,16 +347,12 @@ const Marketplace = () => {
           </div>
 
           {/* Row 2: Categories (always visible, horizontal scroll) */}
-          <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
-            <div className="flex items-center gap-2 mb-2">
-              <Filter className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium text-foreground">Categorías</span>
-            </div>
-            <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="rounded-lg border border-border/50 bg-muted/30 px-2 py-2">
+            <div className="flex gap-2 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <Button
-                variant={selectedCategory === 'all' ? "default" : "outline"}
+                variant={selectedCategory === "all" ? "default" : "outline"}
                 size="sm"
-                onClick={() => handleCategoryClick('all')}
+                onClick={() => handleCategoryClick("all")}
                 className="h-7 text-xs"
               >
                 Todas
@@ -383,11 +372,11 @@ const Marketplace = () => {
           </div>
 
           {/* Row 3: Price Range + Tags */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
             {/* Price Range */}
-            <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <span className="text-sm font-medium text-foreground">Precio (USD)</span>
+            <div className="rounded-lg border border-border/50 bg-muted/30 px-2 py-2">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-medium text-foreground">Precio (USD)</span>
                 {appliedPriceRange && (
                   <Button
                     variant="ghost"
@@ -399,7 +388,7 @@ const Marketplace = () => {
                   </Button>
                 )}
               </div>
-              <div className="space-y-2">
+              <div className="space-y-1 mt-1">
                 <Slider
                   value={priceRange}
                   onValueChange={(value) => setPriceRange(value as [number, number])}
@@ -413,7 +402,7 @@ const Marketplace = () => {
                     type="number"
                     value={priceRange[0]}
                     onChange={(e) => setPriceRange([Number(e.target.value), priceRange[1]])}
-                    className="h-7 text-xs"
+                    className="h-7 text-xs w-24"
                     min={0}
                   />
                   <span className="text-muted-foreground text-xs">—</span>
@@ -421,7 +410,7 @@ const Marketplace = () => {
                     type="number"
                     value={priceRange[1]}
                     onChange={(e) => setPriceRange([priceRange[0], Number(e.target.value)])}
-                    className="h-7 text-xs"
+                    className="h-7 text-xs w-24"
                   />
                   <Button
                     size="sm"
@@ -439,18 +428,30 @@ const Marketplace = () => {
             </div>
 
             {/* Tags */}
-            <div className="rounded-lg border border-border/50 bg-muted/30 px-3 py-2">
-              <div className="flex items-center gap-2 mb-2">
-                <Tag className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium text-foreground">Etiquetas</span>
+            <div className="rounded-lg border border-border/50 bg-muted/30 px-2 py-2">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <Tag className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs font-medium text-foreground">Etiquetas</span>
+                </div>
+                {selectedTag && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedTag("")}
+                    className="h-7 px-2 text-muted-foreground"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1 mt-2">
                 {availableTags.map((tag) => (
                   <Badge
                     key={tag}
                     variant={selectedTag === tag ? "default" : "outline"}
                     className={cn(
-                      "cursor-pointer capitalize h-7 px-2 text-xs",
+                      "cursor-pointer capitalize h-6 px-2 text-[11px]",
                       selectedTag === tag
                         ? "bg-primary text-primary-foreground"
                         : "hover:bg-muted"
@@ -577,6 +578,12 @@ const Marketplace = () => {
           if (contact.municipality && contact.province) {
             setLocation(contact.municipality, contact.province);
           }
+          setShowContactSelector(false);
+        }}
+        onSelectLocation={(m, p) => {
+          // User wants only a zone, not a saved contact.
+          setSelectedContact(null);
+          setLocation(m, p);
           setShowContactSelector(false);
         }}
         selectedContactId={selectedContact?.id}
