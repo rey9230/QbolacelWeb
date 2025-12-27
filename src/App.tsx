@@ -5,9 +5,11 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { CartSheet } from "@/components/cart/CartSheet";
+// import { CartDebugger } from "@/components/cart/CartDebugger";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { useCartSync } from "@/hooks/useCartSync";
 import { queryClient } from "@/lib/queryClient";
+import "@/utils/debugCart"; // Debug utilities for cart
 
 // Pages
 import Index from "./pages/Index";
@@ -35,6 +37,7 @@ const App = () => {
       <TooltipProvider>
         <Toaster />
         <Sonner />
+        {/* <CartDebugger /> */}
         <BrowserRouter>
           <ScrollToTop />
           <Routes>

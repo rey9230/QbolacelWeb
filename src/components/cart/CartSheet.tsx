@@ -17,6 +17,16 @@ export function CartSheet() {
   const subtotal = getSubtotal();
   const totalItems = getTotalItems();
 
+  // Debug logs
+  console.log('🛒 [CartSheet] Render with:', {
+    itemsCount: items.length,
+    items,
+    isOpen,
+    isLoading,
+    totalItems,
+    subtotal,
+  });
+
   const handleCheckout = () => {
     if (!isAuthenticated) {
       openAuthModal("login");

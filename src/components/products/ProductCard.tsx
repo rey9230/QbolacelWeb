@@ -38,9 +38,17 @@ export function ProductCard({ product }: ProductCardProps) {
     e.preventDefault();
     e.stopPropagation();
     
+    console.log('🛍️ [ProductCard] Add to cart clicked for:', product.name);
+    console.log('🛍️ [ProductCard] Product data:', {
+      id: product.id,
+      name: product.name,
+      price: product.price.amount,
+      stock: product.stock,
+    });
+
     setIsAdding(true);
     try {
-      await addItem({
+      const itemToAdd = {
         productId: product.id,
         name: product.name,
         image: imageUrl,
@@ -49,16 +57,21 @@ export function ProductCard({ product }: ProductCardProps) {
         stock: product.stock,
         vendorId: product.agencyId || '',
         vendorName: '', // Agency name not available in Product, will be enriched by cart
-      });
+      };
 
+      console.log('🛍️ [ProductCard] Calling addItem with:', itemToAdd);
+      await addItem(itemToAdd);
+
+      console.log('✅ [ProductCard] Item added successfully');
       toast({
         title: "¡Añadido al carrito!",
         description: product.name,
       });
     } catch (error) {
+      console.error('❌ [ProductCard] Error adding to cart:', error);
       toast({
         title: "Error",
-        description: "No se pudo añadir al carrito",
+        description: error instanceof Error ? error.message : "No se pudo añadir al carrito",
         variant: "destructive",
       });
     } finally {

@@ -44,29 +44,51 @@ interface CartStore {
 const isAuthenticated = (): boolean => {
   try {
     const authState = localStorage.getItem('qbolacel-auth');
+    console.log('🔐 [Auth Check] Raw auth state:', authState);
+
     if (authState) {
       const parsed = JSON.parse(authState);
-      return !!parsed.state?.token;
+      console.log('🔐 [Auth Check] Parsed state:', parsed);
+      const hasToken = !!parsed.state?.token;
+      console.log('🔐 [Auth Check] Has token:', hasToken);
+      return hasToken;
     }
-  } catch {
+
+    console.log('🔐 [Auth Check] No auth state found');
+  } catch (error) {
+    console.error('🔐 [Auth Check] Error parsing auth state:', error);
     return false;
   }
   return false;
 };
 
 // Convert server cart item to local cart item
-const mapServerItemToLocal = (item: CartItemDto): CartItem => ({
-  itemId: item.itemId,
-  productId: item.productId,
-  name: item.product?.name || 'Producto',
-  image: item.product?.primaryImage || '/placeholder.svg',
-  price: item.unitPrice,
-  currency: item.currency,
-  qty: item.qty,
-  stock: item.product?.stock || 99,
-  vendorId: item.product?.agencyId || '',
-  vendorName: item.product?.agencyName || 'Vendedor',
-});
+const mapServerItemToLocal = (item: CartItemDto): CartItem => {
+  console.log('📦 [Cart Mapper] Input item:', {
+    itemId: item.itemId,
+    productId: item.productId,
+    qty: item.qty,
+    unitPrice: item.unitPrice,
+    hasProduct: !!item.product,
+    productName: item.product?.name,
+  });
+
+  const mapped = {
+    itemId: item.itemId,
+    productId: item.productId,
+    name: item.product?.name || 'Producto',
+    image: item.product?.primaryImage || '/placeholder.svg',
+    price: item.unitPrice,
+    currency: item.currency,
+    qty: item.qty,
+    stock: item.product?.stock || 99,
+    vendorId: item.product?.agencyId || '',
+    vendorName: item.product?.agencyName || 'Vendedor',
+  };
+
+  console.log('✅ [Cart Mapper] Output item:', mapped);
+  return mapped;
+};
 
 export const useCartStore = create<CartStore>()(
   persist(
@@ -77,15 +99,28 @@ export const useCartStore = create<CartStore>()(
       isSynced: false,
       
       addItem: async (item, qty = 1) => {
-        if (isAuthenticated()) {
+        console.log('🔵 [Cart Store] addItem called with:', { item, qty });
+        const isAuth = isAuthenticated();
+        console.log('🔵 [Cart Store] isAuthenticated:', isAuth);
+
+        if (isAuth) {
           // Add via API
           set({ isLoading: true });
           try {
+            console.log('🚀 [Cart Store] Adding item to server cart:', { productId: item.productId, qty });
             const cart = await cartApi.addItem(item.productId, qty);
+            console.log('✅ [Cart Store] Server response received:', cart);
+            console.log('✅ [Cart Store] Response items count:', cart.items?.length || 0);
+
             get().setFromServerCart(cart);
             set({ isOpen: true, isLoading: false });
+
+            console.log('✅ [Cart Store] Final store state after addItem:', {
+              itemsCount: get().items.length,
+              items: get().items,
+            });
           } catch (error) {
-            console.error('Error adding item to cart:', error);
+            console.error('❌ [Cart Store] Error adding item to cart:', error);
             set({ isLoading: false });
             throw error;
           }
@@ -226,8 +261,17 @@ export const useCartStore = create<CartStore>()(
       },
       
       setFromServerCart: (cart: CartDto) => {
+        console.log('🔍 [Cart Store] setFromServerCart called with:', cart);
+        console.log('🔍 [Cart Store] Cart items count:', cart.items?.length || 0);
+        console.log('🔍 [Cart Store] Cart items:', cart.items);
+
         const mappedItems = cart.items.map(mapServerItemToLocal);
+        console.log('🔍 [Cart Store] Mapped items count:', mappedItems.length);
+        console.log('🔍 [Cart Store] Mapped items:', mappedItems);
+
         set({ items: mappedItems, isSynced: true });
+
+        console.log('🔍 [Cart Store] Store updated. Current items:', get().items);
       },
       
       resetCart: () => {

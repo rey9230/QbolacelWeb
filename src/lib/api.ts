@@ -583,7 +583,7 @@ export interface CartItemDto {
   qty: number;
   unitPrice: number;
   currency: string;
-  meta?: Record<string, string>;
+  meta?: Record<string, string> | null;
   product?: CartProductInfo;
 }
 
@@ -605,11 +605,13 @@ export const cartApi = {
   get: () =>
     apiFetchWithValidation('/carts/me', CartDtoSchema, {}, true) as Promise<CartDto>,
 
-  addItem: (productId: string, qty: number = 1) =>
-    apiFetchWithValidation('/carts/me/items', CartDtoSchema, {
+  addItem: (productId: string, qty: number = 1) => {
+    console.log('[API] Adding item to cart:', { productId, qty });
+    return apiFetchWithValidation('/carts/me/items', CartDtoSchema, {
       method: 'POST',
       body: JSON.stringify({ productId, qty }),
-    }, true) as Promise<CartDto>,
+    }, true) as Promise<CartDto>;
+  },
 
   updateItem: (itemId: string, qty: number) =>
     apiFetchWithValidation(`/carts/me/items/${itemId}`, CartDtoSchema, {

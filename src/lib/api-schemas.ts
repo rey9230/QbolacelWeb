@@ -147,6 +147,7 @@ export const CartProductInfoSchema = z.object({
   categoryIds: z.array(z.string()),
   tags: z.array(z.string()),
   attributes: z.record(z.string()).nullish(),
+  deliveryZone: z.string().nullish(),
   salesCount: z.number(),
   rating: z.number(),
   reviewsCount: z.number(),
@@ -158,7 +159,7 @@ export const CartItemDtoSchema = z.object({
   qty: z.number(),
   unitPrice: z.number(),
   currency: z.string(),
-  meta: z.record(z.string()).optional(),
+  meta: z.record(z.string()).nullable().optional(),
   product: CartProductInfoSchema.optional(),
 });
 
@@ -365,10 +366,14 @@ export const MessageResponseSchema = z.object({
 // Validation helper that logs errors in development
 export function validateApiResponse<T>(schema: z.ZodSchema<T>, data: unknown, context: string): T {
   try {
-    return schema.parse(data);
+    console.log(`[API Validation] Validating response for ${context}:`, data);
+    const result = schema.parse(data);
+    console.log(`[API Validation] Success for ${context}:`, result);
+    return result;
   } catch (error) {
     if (error instanceof z.ZodError) {
       console.error(`[API Validation Error] ${context}:`, error.errors);
+      console.error(`[API Validation Error] Raw data:`, data);
     }
     throw error;
   }
