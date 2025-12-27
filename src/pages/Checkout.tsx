@@ -167,7 +167,7 @@ export default function Checkout() {
           productId: item.productId,
           qty: item.qty,
         })),
-        currency: "USD",
+        currency: "EUR",
         shipping: {
           method: shippingData.shippingMethod,
           address,
