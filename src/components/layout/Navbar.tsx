@@ -4,10 +4,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   Menu, 
   X, 
-  Smartphone, 
-  ShoppingBag, 
+  ShoppingBag,
   User, 
   LogIn,
+  LogOut,
   Download,
   Zap,
   HelpCircle,
@@ -30,7 +30,7 @@ const navLinks = [
 
 export function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const { isAuthenticated, openAuthModal } = useAuthStore();
+  const { isAuthenticated, user, logout, openAuthModal } = useAuthStore();
   const location = useLocation();
 
   const isActive = (path: string) => location.pathname === path;
@@ -157,8 +157,35 @@ export function Navbar() {
                   Descargar App
                 </Button>
 
-                {!isAuthenticated && (
-                  <Button 
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      to="/cuenta"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-lg text-base font-medium transition-colors",
+                        isActive("/cuenta")
+                          ? "bg-primary/10 text-primary"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                      )}
+                    >
+                      <User className="h-5 w-5" />
+                      {user?.name || "Mi Cuenta"}
+                    </Link>
+                    <Button
+                      variant="outline"
+                      className="w-full gap-2 text-destructive hover:text-destructive"
+                      onClick={() => {
+                        logout();
+                        setIsMobileMenuOpen(false);
+                      }}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      Cerrar Sesión
+                    </Button>
+                  </>
+                ) : (
+                  <Button
                     className="w-full gap-2"
                     onClick={() => {
                       openAuthModal('login');
