@@ -28,6 +28,8 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import About from "./pages/About";
 import NotFound from "./pages/NotFound";
+import VerifyEmail from "./pages/VerifyEmail";
+import ResetPassword from "./pages/ResetPassword";
 
 const App = () => {
   useCartSync();
@@ -59,6 +61,10 @@ const App = () => {
             <Route path="/sobre-nosotros" element={<About />} />
             <Route path="/terminos" element={<Terms />} />
             <Route path="/privacidad" element={<Privacy />} />
+
+            {/* Auth Pages */}
+            <Route path="/verify-email" element={<VerifyEmail />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
 
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
