@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Smartphone, Wifi, ShoppingBag, Mail, Phone, MapPin, Facebook, Instagram, Twitter } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import logoVertical from "@/assets/logo-vertical.svg";
+import logoVertical from "@/assets/logo-vertical-dark.svg";
 
 const services = [
   { icon: Smartphone, label: "Recargas Móvil Cubacel", to: "/recargas" },
