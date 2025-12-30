@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle, XCircle, Loader2, Mail, ArrowLeft } from "lucide-react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
@@ -18,6 +18,7 @@ type VerifyState = 'loading' | 'success' | 'error' | 'resend';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const token = searchParams.get("token");
   const { toast } = useToast();
   const { openAuthModal } = useAuthStore();
@@ -27,12 +28,19 @@ export default function VerifyEmail() {
   const [isResending, setIsResending] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<TurnstileInstance>(null);
+  const hasVerifiedRef = useRef(false);
 
   useEffect(() => {
     if (!token) {
       setState('error');
       return;
     }
+
+    // Prevent duplicate verification calls (React StrictMode double-mounts)
+    if (hasVerifiedRef.current) {
+      return;
+    }
+    hasVerifiedRef.current = true;
 
     const verifyEmail = async () => {
       try {
@@ -89,7 +97,11 @@ export default function VerifyEmail() {
   };
 
   const handleOpenLogin = () => {
-    openAuthModal('login');
+    navigate('/');
+    // Use setTimeout to ensure navigation completes before opening modal
+    setTimeout(() => {
+      openAuthModal('login');
+    }, 100);
   };
 
   return (
