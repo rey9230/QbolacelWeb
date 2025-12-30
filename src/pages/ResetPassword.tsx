@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle, XCircle, Loader2, Lock, Eye, EyeOff, ArrowLeft, KeyRound } from "lucide-react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
@@ -18,6 +18,7 @@ type ResetState = 'form' | 'loading' | 'success' | 'error' | 'no-token';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const token = searchParams.get("token");
   const { toast } = useToast();
   const { openAuthModal } = useAuthStore();
@@ -101,11 +102,19 @@ export default function ResetPassword() {
   };
 
   const handleOpenLogin = () => {
-    openAuthModal('login');
+    navigate('/');
+    // Use setTimeout to ensure navigation completes before opening modal
+    setTimeout(() => {
+      openAuthModal('login');
+    }, 100);
   };
 
   const handleRequestNewLink = () => {
-    openAuthModal('login');
+    navigate('/');
+    // Use setTimeout to ensure navigation completes before opening modal
+    setTimeout(() => {
+      openAuthModal('login');
+    }, 100);
   };
 
   return (
