@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, Loader2 } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import {
   Dialog,
@@ -20,6 +20,8 @@ import { authApi } from "@/lib/api";
 
 const TURNSTILE_SITE_KEY = "0x4AAAAAACH8RFaY-5kF9i74";
 
+type ModalView = 'auth' | 'forgot-password';
+
 export function AuthModal() {
   const { 
     isAuthModalOpen, 
@@ -30,14 +32,17 @@ export function AuthModal() {
   } = useAuthStore();
   const { toast } = useToast();
   
+  const [view, setView] = useState<ModalView>('auth');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
   // Turnstile refs and tokens
   const loginTurnstileRef = useRef<TurnstileInstance>(null);
   const registerTurnstileRef = useRef<TurnstileInstance>(null);
+  const forgotTurnstileRef = useRef<TurnstileInstance>(null);
   const [loginTurnstileToken, setLoginTurnstileToken] = useState<string | null>(null);
   const [registerTurnstileToken, setRegisterTurnstileToken] = useState<string | null>(null);
+  const [forgotTurnstileToken, setForgotTurnstileToken] = useState<string | null>(null);
   
   // Form states
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
@@ -48,6 +53,7 @@ export function AuthModal() {
     confirmPassword: "",
     acceptTerms: false,
   });
+  const [forgotEmail, setForgotEmail] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,100 +201,369 @@ export function AuthModal() {
     }
   };
 
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!forgotTurnstileToken) {
+      toast({
+        title: "Verificación requerida",
+        description: "Por favor completa la verificación de seguridad",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsLoading(true);
+    
+    try {
+      await authApi.forgotPassword({
+        email: forgotEmail,
+        turnstileToken: forgotTurnstileToken,
+      });
+      
+      toast({
+        title: "Enlace enviado",
+        description: "Si el email existe en nuestro sistema, recibirás un enlace para recuperar tu contraseña",
+      });
+      
+      setForgotEmail("");
+      setForgotTurnstileToken(null);
+      forgotTurnstileRef.current?.reset();
+      setView('auth');
+    } catch (error) {
+      // Reset turnstile on error
+      forgotTurnstileRef.current?.reset();
+      setForgotTurnstileToken(null);
+      
+      // Show generic message for security (don't reveal if email exists)
+      toast({
+        title: "Enlace enviado",
+        description: "Si el email existe en nuestro sistema, recibirás un enlace para recuperar tu contraseña",
+      });
+      
+      setForgotEmail("");
+      setView('auth');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleModalClose = (open: boolean) => {
+    if (!open) {
+      closeAuthModal();
+      // Reset view when modal closes
+      setTimeout(() => setView('auth'), 300);
+    }
+  };
+
   return (
-    <Dialog open={isAuthModalOpen} onOpenChange={(open) => !open && closeAuthModal()}>
+    <Dialog open={isAuthModalOpen} onOpenChange={handleModalClose}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="text-center">
-          <DialogTitle className="text-2xl font-bold">
-            {authModalTab === "login" ? "Bienvenido de vuelta" : "Crear cuenta"}
-          </DialogTitle>
-          <DialogDescription>
-            {authModalTab === "login" 
-              ? "Ingresa tus credenciales para continuar"
-              : "Regístrate para acceder a todos nuestros servicios"
-            }
-          </DialogDescription>
-        </DialogHeader>
+        {view === 'auth' ? (
+          <>
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-2xl font-bold">
+                {authModalTab === "login" ? "Bienvenido de vuelta" : "Crear cuenta"}
+              </DialogTitle>
+              <DialogDescription>
+                {authModalTab === "login" 
+                  ? "Ingresa tus credenciales para continuar"
+                  : "Regístrate para acceder a todos nuestros servicios"
+                }
+              </DialogDescription>
+            </DialogHeader>
 
-        <Tabs 
-          value={authModalTab} 
-          onValueChange={(v) => setAuthModalTab(v as "login" | "register")}
-          className="mt-4"
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="login">Ingresar</TabsTrigger>
-            <TabsTrigger value="register">Registrarse</TabsTrigger>
-          </TabsList>
-
-          {/* Login Form */}
-          <TabsContent value="login">
-            <motion.form
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              onSubmit={handleLogin}
-              className="space-y-4"
+            <Tabs 
+              value={authModalTab} 
+              onValueChange={(v) => setAuthModalTab(v as "login" | "register")}
+              className="mt-4"
             >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="login">Ingresar</TabsTrigger>
+                <TabsTrigger value="register">Registrarse</TabsTrigger>
+              </TabsList>
+
+              {/* Login Form */}
+              <TabsContent value="login">
+                <motion.form
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  onSubmit={handleLogin}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Correo electrónico</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="login-email"
+                        type="email"
+                        placeholder="tu@email.com"
+                        className="pl-10"
+                        value={loginForm.email}
+                        onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">Contraseña</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="login-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        className="pl-10 pr-10"
+                        value={loginForm.password}
+                        onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
+                        required
+                        disabled={isLoading}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="remember" />
+                      <label htmlFor="remember" className="text-sm text-muted-foreground">
+                        Recordarme
+                      </label>
+                    </div>
+                    <Button 
+                      type="button"
+                      variant="link" 
+                      className="px-0 h-auto text-sm"
+                      onClick={() => setView('forgot-password')}
+                    >
+                      ¿Olvidaste tu contraseña?
+                    </Button>
+                  </div>
+
+                  {/* Turnstile widget for login */}
+                  <div className="flex justify-center">
+                    <Turnstile
+                      ref={loginTurnstileRef}
+                      siteKey={TURNSTILE_SITE_KEY}
+                      onSuccess={setLoginTurnstileToken}
+                      onError={() => setLoginTurnstileToken(null)}
+                      onExpire={() => setLoginTurnstileToken(null)}
+                      options={{
+                        theme: "light",
+                        size: "normal",
+                      }}
+                    />
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    variant="gradient" 
+                    className="w-full" 
+                    size="lg"
+                    disabled={isLoading || !loginTurnstileToken}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Iniciando sesión...
+                      </>
+                    ) : (
+                      "Iniciar Sesión"
+                    )}
+                  </Button>
+
+                </motion.form>
+              </TabsContent>
+
+              {/* Register Form */}
+              <TabsContent value="register">
+                <motion.form
+                  initial={{ opacity: 0, x: 10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  onSubmit={handleRegister}
+                  className="space-y-4"
+                >
+                  <div className="space-y-2">
+                    <Label htmlFor="register-name">Nombre completo</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="register-name"
+                        type="text"
+                        placeholder="Tu nombre"
+                        className="pl-10"
+                        value={registerForm.name}
+                        onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="register-email">Correo electrónico</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="register-email"
+                        type="email"
+                        placeholder="tu@email.com"
+                        className="pl-10"
+                        value={registerForm.email}
+                        onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="register-password">Contraseña</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="register-password"
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        className="pl-10 pr-10"
+                        value={registerForm.password}
+                        onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
+                        required
+                        disabled={isLoading}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="register-confirm">Confirmar contraseña</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="register-confirm"
+                        type="password"
+                        placeholder="••••••••"
+                        className="pl-10"
+                        value={registerForm.confirmPassword}
+                        onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-2">
+                    <Checkbox 
+                      id="terms" 
+                      checked={registerForm.acceptTerms}
+                      onCheckedChange={(checked) => 
+                        setRegisterForm({ ...registerForm, acceptTerms: checked as boolean })
+                      }
+                      disabled={isLoading}
+                    />
+                    <label htmlFor="terms" className="text-sm text-muted-foreground leading-tight">
+                      Acepto los{" "}
+                      <Button variant="link" className="px-0 h-auto text-sm">
+                        términos y condiciones
+                      </Button>
+                      {" "}y la{" "}
+                      <Button variant="link" className="px-0 h-auto text-sm">
+                        política de privacidad
+                      </Button>
+                    </label>
+                  </div>
+
+                  {/* Turnstile widget for register */}
+                  <div className="flex justify-center">
+                    <Turnstile
+                      ref={registerTurnstileRef}
+                      siteKey={TURNSTILE_SITE_KEY}
+                      onSuccess={setRegisterTurnstileToken}
+                      onError={() => setRegisterTurnstileToken(null)}
+                      onExpire={() => setRegisterTurnstileToken(null)}
+                      options={{
+                        theme: "light",
+                        size: "normal",
+                      }}
+                    />
+                  </div>
+
+                  <Button 
+                    type="submit" 
+                    variant="gradient" 
+                    className="w-full" 
+                    size="lg"
+                    disabled={isLoading || !registerTurnstileToken}
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Creando cuenta...
+                      </>
+                    ) : (
+                      "Crear Cuenta"
+                    )}
+                  </Button>
+                </motion.form>
+              </TabsContent>
+            </Tabs>
+          </>
+        ) : (
+          // Forgot Password View
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <DialogHeader className="text-center">
+              <DialogTitle className="text-2xl font-bold">
+                Recuperar contraseña
+              </DialogTitle>
+              <DialogDescription>
+                Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña
+              </DialogDescription>
+            </DialogHeader>
+
+            <form onSubmit={handleForgotPassword} className="mt-6 space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="login-email">Correo electrónico</Label>
+                <Label htmlFor="forgot-email">Correo electrónico</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="login-email"
+                    id="forgot-email"
                     type="email"
                     placeholder="tu@email.com"
                     className="pl-10"
-                    value={loginForm.email}
-                    onChange={(e) => setLoginForm({ ...loginForm, email: e.target.value })}
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
                     required
                     disabled={isLoading}
                   />
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Contraseña</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="login-password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="pl-10 pr-10"
-                    value={loginForm.password}
-                    onChange={(e) => setLoginForm({ ...loginForm, password: e.target.value })}
-                    required
-                    disabled={isLoading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="remember" />
-                  <label htmlFor="remember" className="text-sm text-muted-foreground">
-                    Recordarme
-                  </label>
-                </div>
-                <Button variant="link" className="px-0 h-auto text-sm">
-                  ¿Olvidaste tu contraseña?
-                </Button>
-              </div>
-
-              {/* Turnstile widget for login */}
+              {/* Turnstile widget for forgot password */}
               <div className="flex justify-center">
                 <Turnstile
-                  ref={loginTurnstileRef}
+                  ref={forgotTurnstileRef}
                   siteKey={TURNSTILE_SITE_KEY}
-                  onSuccess={setLoginTurnstileToken}
-                  onError={() => setLoginTurnstileToken(null)}
-                  onExpire={() => setLoginTurnstileToken(null)}
+                  onSuccess={setForgotTurnstileToken}
+                  onError={() => setForgotTurnstileToken(null)}
+                  onExpire={() => setForgotTurnstileToken(null)}
                   options={{
                     theme: "light",
                     size: "normal",
@@ -301,159 +576,31 @@ export function AuthModal() {
                 variant="gradient" 
                 className="w-full" 
                 size="lg"
-                disabled={isLoading || !loginTurnstileToken}
+                disabled={isLoading || !forgotTurnstileToken}
               >
                 {isLoading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Iniciando sesión...
+                    Enviando...
                   </>
                 ) : (
-                  "Iniciar Sesión"
+                  "Enviar enlace de recuperación"
                 )}
               </Button>
 
-            </motion.form>
-          </TabsContent>
-
-          {/* Register Form */}
-          <TabsContent value="register">
-            <motion.form
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              onSubmit={handleRegister}
-              className="space-y-4"
-            >
-              <div className="space-y-2">
-                <Label htmlFor="register-name">Nombre completo</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="register-name"
-                    type="text"
-                    placeholder="Tu nombre"
-                    className="pl-10"
-                    value={registerForm.name}
-                    onChange={(e) => setRegisterForm({ ...registerForm, name: e.target.value })}
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="register-email">Correo electrónico</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="register-email"
-                    type="email"
-                    placeholder="tu@email.com"
-                    className="pl-10"
-                    value={registerForm.email}
-                    onChange={(e) => setRegisterForm({ ...registerForm, email: e.target.value })}
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="register-password">Contraseña</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="register-password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    className="pl-10 pr-10"
-                    value={registerForm.password}
-                    onChange={(e) => setRegisterForm({ ...registerForm, password: e.target.value })}
-                    required
-                    disabled={isLoading}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="register-confirm">Confirmar contraseña</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="register-confirm"
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-10"
-                    value={registerForm.confirmPassword}
-                    onChange={(e) => setRegisterForm({ ...registerForm, confirmPassword: e.target.value })}
-                    required
-                    disabled={isLoading}
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-start space-x-2">
-                <Checkbox 
-                  id="terms" 
-                  checked={registerForm.acceptTerms}
-                  onCheckedChange={(checked) => 
-                    setRegisterForm({ ...registerForm, acceptTerms: checked as boolean })
-                  }
-                  disabled={isLoading}
-                />
-                <label htmlFor="terms" className="text-sm text-muted-foreground leading-tight">
-                  Acepto los{" "}
-                  <Button variant="link" className="px-0 h-auto text-sm">
-                    términos y condiciones
-                  </Button>
-                  {" "}y la{" "}
-                  <Button variant="link" className="px-0 h-auto text-sm">
-                    política de privacidad
-                  </Button>
-                </label>
-              </div>
-
-              {/* Turnstile widget for register */}
-              <div className="flex justify-center">
-                <Turnstile
-                  ref={registerTurnstileRef}
-                  siteKey={TURNSTILE_SITE_KEY}
-                  onSuccess={setRegisterTurnstileToken}
-                  onError={() => setRegisterTurnstileToken(null)}
-                  onExpire={() => setRegisterTurnstileToken(null)}
-                  options={{
-                    theme: "light",
-                    size: "normal",
-                  }}
-                />
-              </div>
-
-              <Button 
-                type="submit" 
-                variant="gradient" 
-                className="w-full" 
-                size="lg"
-                disabled={isLoading || !registerTurnstileToken}
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full"
+                onClick={() => setView('auth')}
+                disabled={isLoading}
               >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Creando cuenta...
-                  </>
-                ) : (
-                  "Crear Cuenta"
-                )}
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Volver al inicio de sesión
               </Button>
-            </motion.form>
-          </TabsContent>
-        </Tabs>
+            </form>
+          </motion.div>
+        )}
       </DialogContent>
     </Dialog>
   );

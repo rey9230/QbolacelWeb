@@ -312,6 +312,27 @@ async function apiFetchWithToken<T>(
   return data as T;
 }
 
+// Password recovery and email verification interfaces
+export interface ForgotPasswordRequest {
+  email: string;
+  turnstileToken: string;
+}
+
+export interface ResetPasswordRequest {
+  token: string;
+  newPassword: string;
+  turnstileToken: string;
+}
+
+export interface ResendVerificationRequest {
+  email: string;
+  turnstileToken: string;
+}
+
+export interface SimpleStatusResponse {
+  status: 'OK' | 'INVALID';
+}
+
 export const authApi = {
   login: async (data: LoginRequest): Promise<{ user: UserProfile; token: string; refreshToken: string }> => {
     const tokenResponse = await apiFetchWithValidation('/auth/web/login', AuthTokenResponseSchema, {
@@ -358,6 +379,27 @@ export const authApi = {
       method: 'PUT',
       body: JSON.stringify(data),
     }, true) as Promise<UserProfile>,
+
+  forgotPassword: (data: ForgotPasswordRequest): Promise<SimpleStatusResponse> =>
+    apiFetchPublic('/auth/web/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  resetPassword: (data: ResetPasswordRequest): Promise<SimpleStatusResponse> =>
+    apiFetchPublic('/auth/web/reset-password', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  verifyEmail: (token: string): Promise<SimpleStatusResponse> =>
+    apiFetchPublic(`/auth/web/verify-email?token=${encodeURIComponent(token)}`),
+
+  resendVerification: (data: ResendVerificationRequest): Promise<SimpleStatusResponse> =>
+    apiFetchPublic('/auth/web/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 };
 export interface ContactDto {
   id: string;
