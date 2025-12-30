@@ -32,7 +32,7 @@ export function Footer() {
           {/* Brand */}
           <div className="space-y-4">
             <Link to="/">
-              <img src={logoVertical} alt="Qbolacel" className="h-20 brightness-0 invert" />
+              <img src={logoVertical} alt="Qbolacel" className="h-20" />
             </Link>
             <p className="text-primary-foreground/70 text-sm">
               La plataforma #1 para recargas móviles y envío de productos a Cuba. Rápido, seguro y confiable.
