@@ -233,7 +233,7 @@ const Marketplace = () => {
                 transition={{ delay: 0.1 }}
                 className="text-white/90 text-lg lg:text-xl max-w-xl"
               >
-                Electrodomésticos, tecnología, alimentos y más con entrega a domicilio
+                Electrodomésticos, tecnología, alimentos y más con entrega a domicilio. Tiendas verificadas y multivendedor para toda Cuba.
               </motion.p>
               
               {/* Location Badge */}

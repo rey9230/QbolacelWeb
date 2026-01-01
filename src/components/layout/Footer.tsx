@@ -42,22 +42,31 @@ export function Footer() {
                 variant="ghost"
                 size="icon"
                 className="text-primary-foreground/70 hover:text-primary-foreground h-9 w-9"
+                asChild
               >
-                <Facebook className="h-5 w-5" />
+                <a href="https://facebook.com/qbolacel" target="_blank" rel="noreferrer" aria-label="Facebook">
+                  <Facebook className="h-5 w-5" />
+                </a>
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 className="text-primary-foreground/70 hover:text-primary-foreground h-9 w-9"
+                asChild
               >
-                <Instagram className="h-5 w-5" />
+                <a href="https://instagram.com/qbolacel" target="_blank" rel="noreferrer" aria-label="Instagram">
+                  <Instagram className="h-5 w-5" />
+                </a>
               </Button>
               <Button
                 variant="ghost"
                 size="icon"
                 className="text-primary-foreground/70 hover:text-primary-foreground h-9 w-9"
+                asChild
               >
-                <Twitter className="h-5 w-5" />
+                <a href="https://twitter.com/qbolacel" target="_blank" rel="noreferrer" aria-label="X">
+                  <Twitter className="h-5 w-5" />
+                </a>
               </Button>
             </div>
           </div>
@@ -84,16 +93,18 @@ export function Footer() {
               <h4 className="font-medium mb-3 text-sm">Descarga la App</h4>
               <div className="flex gap-2">
                 <a
-                  href="#"
-                  className="bg-primary-foreground/10 text-primary-foreground px-3 py-2 rounded-lg text-xs font-medium hover:bg-primary-foreground/20 transition-colors"
-                >
-                  App Store
-                </a>
-                <a
-                  href="#"
+                  href="https://play.google.com/store/apps/details?id=com.qbolacel.app"
+                  target="_blank"
+                  rel="noreferrer"
                   className="bg-primary-foreground/10 text-primary-foreground px-3 py-2 rounded-lg text-xs font-medium hover:bg-primary-foreground/20 transition-colors"
                 >
                   Google Play
+                </a>
+                <a
+                  aria-disabled="true"
+                  className="bg-primary-foreground/5 text-primary-foreground/60 px-3 py-2 rounded-lg text-xs font-medium cursor-not-allowed"
+                >
+                  App Store (próx.)
                 </a>
               </div>
             </div>

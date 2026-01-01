@@ -30,6 +30,7 @@ import About from "./pages/About";
 import NotFound from "./pages/NotFound";
 import VerifyEmail from "./pages/VerifyEmail";
 import ResetPassword from "./pages/ResetPassword";
+import Services from "./pages/Services";
 
 const App = () => {
   useCartSync();
@@ -61,6 +62,7 @@ const App = () => {
             <Route path="/sobre-nosotros" element={<About />} />
             <Route path="/terminos" element={<Terms />} />
             <Route path="/privacidad" element={<Privacy />} />
+            <Route path="/servicios" element={<Services />} />
 
             {/* Auth Pages */}
             <Route path="/verify-email" element={<VerifyEmail />} />
@@ -78,4 +80,3 @@ const App = () => {
 };
 
 export default App;
-

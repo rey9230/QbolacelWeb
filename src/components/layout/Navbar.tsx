@@ -24,6 +24,7 @@ const navLinks = [
   { to: "/", label: "Inicio" },
   { to: "/recargas", label: "Recargas", icon: Zap, highlight: true },
   { to: "/marketplace", label: "Marketplace", icon: ShoppingBag },
+  { to: "/servicios", label: "Servicios" },
   { to: "/preguntas-frecuentes", label: "FAQ", icon: HelpCircle },
   { to: "/contacto", label: "Contacto", icon: Mail },
 ];
@@ -75,9 +76,20 @@ export function Navbar() {
 
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center gap-3">
-            <Button variant="outline" size="sm" className="gap-2">
-              <Download className="h-4 w-4" />
-              App
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              asChild
+            >
+              <a
+                href="https://play.google.com/store/apps/details?id=com.qbolacel.app"
+                target="_blank"
+                rel="noreferrer"
+              >
+                <Download className="h-4 w-4" />
+                Android App
+              </a>
             </Button>
 
             <CartButton />
@@ -152,9 +164,15 @@ export function Navbar() {
               ))}
 
               <div className="pt-4 border-t border-border space-y-2">
-                <Button variant="outline" className="w-full gap-2">
-                  <Download className="h-4 w-4" />
-                  Descargar App
+                <Button variant="outline" className="w-full gap-2" asChild>
+                  <a
+                    href="https://play.google.com/store/apps/details?id=com.qbolacel.app"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <Download className="h-4 w-4" />
+                    Android App
+                  </a>
                 </Button>
 
                 {isAuthenticated ? (

@@ -169,6 +169,42 @@ export function FAQSchema({ items }: { items: FAQItem[] }) {
   return <JsonLd data={data} />;
 }
 
+// Schema.org HowTo
+interface HowToStep {
+  name: string;
+  text: string;
+}
+
+export function HowToSchema({
+  name,
+  description,
+  image,
+  steps,
+}: {
+  name: string;
+  description: string;
+  image?: string;
+  steps: HowToStep[];
+}) {
+  const data: Record<string, unknown> = {
+    '@context': 'https://schema.org',
+    '@type': 'HowTo',
+    name,
+    description,
+    step: steps.map((step) => ({
+      '@type': 'HowToStep',
+      name: step.name,
+      text: step.text,
+    })),
+  };
+
+  if (image) {
+    data.image = image;
+  }
+
+  return <JsonLd data={data} />;
+}
+
 // Schema.org WebSite with SearchAction
 export function WebsiteSchema() {
   const data = {
