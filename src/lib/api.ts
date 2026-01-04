@@ -23,12 +23,28 @@ import {
   MessageResponseSchema,
   validateApiResponse,
 } from './api-schemas';
+import { getAuditHeaders } from './client-metadata';
 
-const API_BASE_URL = 'https://api.qbolacel.com/api/v1';
+// const API_BASE_URL = 'https://api.qbolacel.com/api/v1';
+const API_BASE_URL = 'http://localhost:8080/api/v1';
 
 // Flag to prevent multiple simultaneous refresh attempts
 let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
+
+const buildHeaders = (provided?: HeadersInit) => {
+  const headers = new Headers({
+    'Content-Type': 'application/json',
+    ...getAuditHeaders(),
+  });
+
+  if (provided) {
+    const extra = new Headers(provided);
+    extra.forEach((value, key) => headers.set(key, value));
+  }
+
+  return headers;
+};
 
 // Helper to get auth tokens from localStorage
 const getAuthState = (): { token: string | null; refreshToken: string | null } => {
@@ -92,9 +108,7 @@ async function refreshAccessToken(): Promise<string | null> {
   try {
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: buildHeaders(),
       body: JSON.stringify({ refreshToken }),
     });
 
@@ -143,15 +157,12 @@ async function apiFetchWithValidation<T>(
   options: RequestInit = {},
   requiresAuth = false
 ): Promise<T> {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+  const headers = buildHeaders(options.headers);
 
   let { token } = getAuthState();
   if (requiresAuth || token) {
     if (token) {
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${token}`;
+      headers.set('Authorization', `Bearer ${token}`);
     }
   }
 
@@ -174,7 +185,7 @@ async function apiFetchWithValidation<T>(
 
     if (newToken) {
       // Retry the original request with new token
-      (headers as Record<string, string>)['Authorization'] = `Bearer ${newToken}`;
+      headers.set('Authorization', `Bearer ${newToken}`);
       response = await fetch(`${API_BASE_URL}${endpoint}`, {
         ...options,
         headers,
@@ -205,10 +216,7 @@ async function apiFetchPublic<T>(
   options: RequestInit = {},
   schema?: z.ZodSchema<T>
 ): Promise<T> {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+  const headers = buildHeaders(options.headers);
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
@@ -287,11 +295,8 @@ async function apiFetchWithToken<T>(
   options: RequestInit = {},
   schema?: z.ZodSchema<T>
 ): Promise<T> {
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
-    ...options.headers,
-  };
+  const headers = buildHeaders(options.headers);
+  headers.set('Authorization', `Bearer ${token}`);
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
     ...options,
