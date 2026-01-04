@@ -1,99 +1,75 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Smartphone, Gift, Percent, Wifi } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Link } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useSlider, SliderItem } from "@/hooks/useSlider";
 
-// Desktop images
-import slide1Desktop from "@/assets/hero/slide1-desktop.jpg";
-import slide2Desktop from "@/assets/hero/slide2-desktop.jpg";
-import slide3Desktop from "@/assets/hero/slide3-desktop.jpg";
-import slide4Desktop from "@/assets/hero/slide4-desktop.jpg";
-
-// Mobile images
-import slide1Mobile from "@/assets/hero/slide1-mobile.jpg";
-import slide2Mobile from "@/assets/hero/slide2-mobile.jpg";
-import slide3Mobile from "@/assets/hero/slide3-mobile.jpg";
-import slide4Mobile from "@/assets/hero/slide4-mobile.jpg";
-
-interface Slide {
-  id: number;
-  title: string;
-  subtitle: string;
-  cta: string;
-  ctaLink: string;
-  badge?: string;
-  icon: React.ElementType;
-  imageDesktop: string;
-  imageMobile: string;
-  overlayColor: string;
+function getSlideLink(item: SliderItem): string | null {
+  if (!item.link) return null;
+  
+  if (item.link.action === 'external' || item.link.action === 'internal') {
+    return item.link.url || null;
+  }
+  
+  if (item.link.action === 'whatsapp' && item.link.phoneNumber) {
+    const message = encodeURIComponent(item.link.message || '');
+    return `https://wa.me/${item.link.phoneNumber}?text=${message}`;
+  }
+  
+  return null;
 }
 
-const slides: Slide[] = [
-  {
-    id: 1,
-    title: "Recarga Cubacel al instante",
-    subtitle: "Hasta $5 de BONUS en recargas +$20. Tu familia lo recibe en segundos.",
-    cta: "Recargar Ahora",
-    ctaLink: "/recargas",
-    badge: "OFERTA ESPECIAL",
-    icon: Smartphone,
-    imageDesktop: slide1Desktop,
-    imageMobile: slide1Mobile,
-    overlayColor: "from-primary/80 via-primary/50 to-transparent",
-  },
-  {
-    id: 2,
-    title: "Envía productos a Cuba",
-    subtitle: "Marketplace con miles de artículos. Entrega garantizada en toda la isla.",
-    cta: "Ver Catálogo",
-    ctaLink: "/marketplace",
-    badge: "MARKETPLACE",
-    icon: Percent,
-    imageDesktop: slide4Desktop,
-    imageMobile: slide4Mobile,
-    overlayColor: "from-warning/80 via-warning/50 to-transparent",
-  },
-  {
-    id: 3,
-    title: "Internet para Cuba",
-    subtitle: "Recargas Nauta desde $6. Mantén conectada a tu familia.",
-    cta: "Ver Planes Nauta",
-    ctaLink: "/recargas",
-    badge: "NAUTA",
-    icon: Wifi,
-    imageDesktop: slide2Desktop,
-    imageMobile: slide2Mobile,
-    overlayColor: "from-indigo-900/80 via-indigo-900/50 to-transparent",
-  },
-  {
-    id: 4,
-    title: "Primera Recarga: 10% Extra",
-    subtitle: "Usa código BIENVENIDO10 y recibe más saldo en tu primera recarga.",
-    cta: "Obtener Bonus",
-    ctaLink: "/recargas",
-    badge: "NUEVO USUARIO",
-    icon: Gift,
-    imageDesktop: slide3Desktop,
-    imageMobile: slide3Mobile,
-    overlayColor: "from-success/80 via-success/50 to-transparent",
-  },
-];
+function getSlideData(item: SliderItem) {
+  const visual = item.config.visual || item.preset?.payload;
+  
+  return {
+    id: item.id,
+    title: visual?.title || '',
+    subtitle: visual?.subtitle || '',
+    imageUrl: visual?.url || '',
+    backgroundColor: item.config.backgroundColor || '#f5f5f5',
+    ctaText: item.config.visual?.ctaText || 'Ver más',
+    link: getSlideLink(item),
+  };
+}
+
+function SliderSkeleton() {
+  return (
+    <section className="relative h-[400px] md:h-[450px] lg:h-[500px] bg-muted overflow-hidden">
+      <div className="container mx-auto px-4 md:px-8 lg:px-16 h-full flex items-center">
+        <div className="flex flex-col md:flex-row items-center justify-between w-full gap-8">
+          <div className="flex-1 max-w-lg space-y-4">
+            <Skeleton className="h-12 w-3/4" />
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-6 w-5/6" />
+            <Skeleton className="h-12 w-40 mt-4" />
+          </div>
+          <div className="flex-1 flex justify-end">
+            <Skeleton className="w-[300px] h-[300px] md:w-[400px] md:h-[350px] rounded-lg" />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 export function HeroSlider() {
+  const { data, isLoading, isError } = useSlider();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
 
+  const slides = data?.version?.sections?.[0]?.items || [];
+
   useEffect(() => {
-    if (!isAutoPlaying) return;
+    if (!isAutoPlaying || slides.length === 0) return;
 
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
     }, 5000);
 
     return () => clearInterval(timer);
-  }, [isAutoPlaying]);
+  }, [isAutoPlaying, slides.length]);
 
   const goToSlide = (index: number) => {
     setCurrentSlide(index);
@@ -104,116 +80,164 @@ export function HeroSlider() {
   const nextSlide = () => goToSlide((currentSlide + 1) % slides.length);
   const prevSlide = () => goToSlide((currentSlide - 1 + slides.length) % slides.length);
 
-  const slide = slides[currentSlide];
-  const Icon = slide.icon;
+  if (isLoading) {
+    return <SliderSkeleton />;
+  }
+
+  if (isError || slides.length === 0) {
+    return null;
+  }
+
+  const currentItem = slides[currentSlide];
+  const slideData = getSlideData(currentItem);
+
+  const handleCtaClick = () => {
+    if (slideData.link) {
+      if (slideData.link.startsWith('https://wa.me')) {
+        window.open(slideData.link, '_blank', 'noopener,noreferrer');
+      } else if (slideData.link.startsWith('http')) {
+        window.location.href = slideData.link;
+      } else {
+        window.location.href = slideData.link;
+      }
+    }
+  };
 
   return (
-    <section className="relative h-[500px] md:h-[550px] overflow-hidden">
-      {/* Background Image */}
+    <section className="relative h-[400px] md:h-[450px] lg:h-[500px] overflow-hidden">
+      {/* Background Color */}
       <AnimatePresence mode="wait">
         <motion.div
-          key={slide.id}
-          initial={{ opacity: 0, scale: 1.1 }}
-          animate={{ opacity: 1, scale: 1 }}
+          key={slideData.id + '-bg'}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.7 }}
+          transition={{ duration: 0.5 }}
           className="absolute inset-0"
-        >
-          {/* Desktop Image */}
-          <img
-            src={slide.imageDesktop}
-            alt={slide.title}
-            className="hidden md:block absolute inset-0 w-full h-full object-cover"
-          />
-          {/* Mobile Image */}
-          <img
-            src={slide.imageMobile}
-            alt={slide.title}
-            className="block md:hidden absolute inset-0 w-full h-full object-cover"
-          />
-
-          {/* Gradient Overlay for text readability */}
-          <div className={`absolute inset-0 bg-gradient-to-r ${slide.overlayColor}`} />
-
-          {/* Additional dark overlay for better text contrast */}
-          <div className="absolute inset-0 bg-black/20" />
-        </motion.div>
+          style={{ backgroundColor: slideData.backgroundColor }}
+        />
       </AnimatePresence>
 
-      {/* Content */}
-      <div className="relative z-10 container mx-auto px-4 h-full flex items-center">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={slide.id}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -30 }}
-            transition={{ duration: 0.5 }}
-            className="max-w-2xl"
-          >
-            {slide.badge && (
-              <Badge className="bg-white/20 text-white border-white/30 mb-4 backdrop-blur-sm">{slide.badge}</Badge>
-            )}
+      {/* Content - 50/50 Layout */}
+      <div className="relative z-10 container mx-auto px-4 md:px-8 lg:px-16 h-full">
+        <div className="flex flex-col md:flex-row items-center justify-between h-full py-8 md:py-0">
+          {/* Left Side - Text Content (50%) */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={slideData.id + '-text'}
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 30 }}
+              transition={{ duration: 0.5 }}
+              className="flex-1 max-w-lg order-2 md:order-1 text-center md:text-left"
+            >
+              <h2 
+                className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight"
+                style={{ color: '#1A1A1A', lineHeight: 1.2 }}
+              >
+                {slideData.title}
+              </h2>
 
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-4 rounded-2xl bg-white/20 backdrop-blur-sm">
-                <Icon className="h-10 w-10 text-white" />
-              </div>
-            </div>
+              <p 
+                className="text-base md:text-lg lg:text-xl mb-8 leading-relaxed"
+                style={{ color: '#4A4A4A', lineHeight: 1.5 }}
+              >
+                {slideData.subtitle}
+              </p>
 
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight drop-shadow-lg">
-              {slide.title}
-            </h2>
+              {slideData.link && (
+                <Button
+                  onClick={handleCtaClick}
+                  size="lg"
+                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-3 text-base shadow-lg hover:shadow-xl transition-all"
+                >
+                  {slideData.ctaText}
+                </Button>
+              )}
+            </motion.div>
+          </AnimatePresence>
 
-            <p className="text-xl text-white/90 mb-8 max-w-lg drop-shadow-md">{slide.subtitle}</p>
-
-            <Button asChild size="xl" className="bg-white text-foreground hover:bg-white/90 font-bold gap-2 shadow-lg">
-              <Link to={slide.ctaLink}>{slide.cta}</Link>
-            </Button>
-          </motion.div>
-        </AnimatePresence>
+          {/* Right Side - Image (50%) */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={slideData.id + '-image'}
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -30 }}
+              transition={{ duration: 0.5 }}
+              className="flex-1 flex justify-center md:justify-end order-1 md:order-2"
+            >
+              <motion.img
+                src={slideData.imageUrl}
+                alt={slideData.title}
+                className="max-w-[280px] md:max-w-[380px] lg:max-w-[450px] h-auto object-contain"
+                style={{
+                  filter: 'drop-shadow(0px 20px 40px rgba(0, 0, 0, 0.08))',
+                }}
+                animate={{
+                  y: [0, -10, 0],
+                }}
+                transition={{
+                  duration: 3,
+                  ease: "easeInOut",
+                  repeat: Infinity,
+                }}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
 
       {/* Navigation Arrows */}
-      <button
-        onClick={prevSlide}
-        className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors"
-        aria-label="Previous slide"
-      >
-        <ChevronLeft className="h-6 w-6" />
-      </button>
-      <button
-        onClick={nextSlide}
-        className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/20 backdrop-blur-sm text-white hover:bg-white/30 transition-colors"
-        aria-label="Next slide"
-      >
-        <ChevronRight className="h-6 w-6" />
-      </button>
+      {slides.length > 1 && (
+        <>
+          <button
+            onClick={prevSlide}
+            className="absolute left-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/60 backdrop-blur-sm text-foreground hover:bg-white/80 transition-colors shadow-md"
+            aria-label="Slide anterior"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+          <button
+            onClick={nextSlide}
+            className="absolute right-4 top-1/2 -translate-y-1/2 z-20 p-2 rounded-full bg-white/60 backdrop-blur-sm text-foreground hover:bg-white/80 transition-colors shadow-md"
+            aria-label="Siguiente slide"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+        </>
+      )}
 
       {/* Dots Navigation */}
-      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
-        {slides.map((_, index) => (
-          <button
-            key={index}
-            onClick={() => goToSlide(index)}
-            className={`w-3 h-3 rounded-full transition-all ${
-              index === currentSlide ? "bg-white w-8" : "bg-white/40 hover:bg-white/60"
-            }`}
-            aria-label={`Go to slide ${index + 1}`}
-          />
-        ))}
-      </div>
+      {slides.length > 1 && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+          {slides.map((_, index) => (
+            <button
+              key={index}
+              onClick={() => goToSlide(index)}
+              className={`h-2 rounded-full transition-all duration-300 ${
+                index === currentSlide 
+                  ? "bg-primary w-6" 
+                  : "bg-gray-300 hover:bg-gray-400 w-2"
+              }`}
+              aria-label={`Ir al slide ${index + 1}`}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Progress Bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/20">
-        <motion.div
-          className="h-full bg-white"
-          initial={{ width: "0%" }}
-          animate={{ width: "100%" }}
-          transition={{ duration: 5, ease: "linear" }}
-          key={currentSlide}
-        />
-      </div>
+      {slides.length > 1 && (
+        <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/10">
+          <motion.div
+            className="h-full bg-primary"
+            initial={{ width: "0%" }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 5, ease: "linear" }}
+            key={currentSlide}
+          />
+        </div>
+      )}
     </section>
   );
 }
