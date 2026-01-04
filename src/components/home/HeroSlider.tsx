@@ -1,9 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSlider, SliderItem } from "@/hooks/useSlider";
+
+// Color contrast mapping based on background colors
+const colorContrastMap: Record<string, { text: string; textMuted: string; cta: string; ctaText: string }> = {
+  '#e3f2fd': { text: '#1B2631', textMuted: '#1B2631B3', cta: '#1565C0', ctaText: '#FFFFFF' }, // Blue pastel
+  '#E3F2FD': { text: '#1B2631', textMuted: '#1B2631B3', cta: '#1565C0', ctaText: '#FFFFFF' },
+  '#fef5e7': { text: '#3E2723', textMuted: '#3E2723B3', cta: '#8D6E63', ctaText: '#FFFFFF' }, // Cream
+  '#FEF5E7': { text: '#3E2723', textMuted: '#3E2723B3', cta: '#8D6E63', ctaText: '#FFFFFF' },
+  '#f3e5f5': { text: '#2C1A32', textMuted: '#2C1A32B3', cta: '#7B1FA2', ctaText: '#FFFFFF' }, // Lavender
+  '#F3E5F5': { text: '#2C1A32', textMuted: '#2C1A32B3', cta: '#7B1FA2', ctaText: '#FFFFFF' },
+  '#e8f6f3': { text: '#0E2F29', textMuted: '#0E2F29B3', cta: '#00897B', ctaText: '#FFFFFF' }, // Mint green
+  '#E8F6F3': { text: '#0E2F29', textMuted: '#0E2F29B3', cta: '#00897B', ctaText: '#FFFFFF' },
+};
+
+const defaultColors = { text: '#1A1A1A', textMuted: '#4A4A4A', cta: 'hsl(var(--primary))', ctaText: '#FFFFFF' };
+
+function getContrastColors(bgColor: string) {
+  return colorContrastMap[bgColor] || defaultColors;
+}
 
 function getSlideLink(item: SliderItem): string | null {
   if (!item.link) return null;
@@ -22,15 +40,18 @@ function getSlideLink(item: SliderItem): string | null {
 
 function getSlideData(item: SliderItem) {
   const visual = item.config.visual || item.preset?.payload;
+  const bgColor = item.config.backgroundColor || '#f5f5f5';
+  const colors = getContrastColors(bgColor);
   
   return {
     id: item.id,
     title: visual?.title || '',
     subtitle: visual?.subtitle || '',
     imageUrl: visual?.url || '',
-    backgroundColor: item.config.backgroundColor || '#f5f5f5',
+    backgroundColor: bgColor,
     ctaText: item.config.visual?.ctaText || 'Ver más',
     link: getSlideLink(item),
+    colors,
   };
 }
 
@@ -133,14 +154,14 @@ export function HeroSlider() {
             >
               <h2 
                 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 leading-tight"
-                style={{ color: '#1A1A1A', lineHeight: 1.2 }}
+                style={{ color: slideData.colors.text, lineHeight: 1.2 }}
               >
                 {slideData.title}
               </h2>
 
               <p 
                 className="text-base md:text-lg lg:text-xl mb-8 leading-relaxed"
-                style={{ color: '#4A4A4A', lineHeight: 1.5 }}
+                style={{ color: slideData.colors.textMuted, lineHeight: 1.5 }}
               >
                 {slideData.subtitle}
               </p>
@@ -149,7 +170,11 @@ export function HeroSlider() {
                 <Button
                   onClick={handleCtaClick}
                   size="lg"
-                  className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold px-8 py-3 text-base shadow-lg hover:shadow-xl transition-all"
+                  className="font-semibold px-8 py-3 text-base shadow-lg hover:shadow-xl transition-all hover:opacity-90"
+                  style={{ 
+                    backgroundColor: slideData.colors.cta, 
+                    color: slideData.colors.ctaText 
+                  }}
                 >
                   {slideData.ctaText}
                 </Button>
@@ -167,20 +192,12 @@ export function HeroSlider() {
               transition={{ duration: 0.5 }}
               className="flex-1 flex justify-center md:justify-end order-1 md:order-2"
             >
-              <motion.img
+              <img
                 src={slideData.imageUrl}
                 alt={slideData.title}
                 className="max-w-[280px] md:max-w-[380px] lg:max-w-[450px] h-auto object-contain"
                 style={{
-                  filter: 'drop-shadow(0px 20px 40px rgba(0, 0, 0, 0.08))',
-                }}
-                animate={{
-                  y: [0, -10, 0],
-                }}
-                transition={{
-                  duration: 3,
-                  ease: "easeInOut",
-                  repeat: Infinity,
+                  filter: 'drop-shadow(0px 25px 50px rgba(0, 0, 0, 0.15)) drop-shadow(0px 10px 20px rgba(0, 0, 0, 0.1))',
                 }}
               />
             </motion.div>
