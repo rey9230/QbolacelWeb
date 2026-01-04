@@ -3,12 +3,16 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
-import { Car, Plane, FileText, Banknote, Sparkles, ArrowRight, ShieldCheck } from "lucide-react";
+import { Car, Plane, FileText, Banknote, ArrowRight, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
-import slide1Desktop from "@/assets/hero/slide1-desktop.jpg";
-import slide2Desktop from "@/assets/hero/slide2-desktop.jpg";
-import slide3Desktop from "@/assets/hero/slide3-desktop.jpg";
-import slide4Desktop from "@/assets/hero/slide4-desktop.jpg";
+
+// Service images from Unsplash
+const serviceImages = {
+  car: "https://images.unsplash.com/photo-1502877338535-766e1452684a?w=800&q=80",
+  plane: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80",
+  documents: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&q=80",
+  money: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80",
+};
 
 const services = [
   {
@@ -17,7 +21,7 @@ const services = [
     icon: Car,
     message: "Hola, quiero información sobre renta de autos en Cuba.",
     perks: ["Coordinación y confirmación", "Soporte personalizado", "Opciones flexibles"],
-    image: slide1Desktop,
+    image: serviceImages.car,
   },
   {
     title: "Boletos aéreos",
@@ -25,7 +29,7 @@ const services = [
     icon: Plane,
     message: "Hola, necesito cotizar boletos aéreos.",
     perks: ["Búsqueda guiada", "Emisión segura", "Cambios y soporte"],
-    image: slide2Desktop,
+    image: serviceImages.plane,
   },
   {
     title: "Trámites legales y pasaporte",
@@ -33,7 +37,7 @@ const services = [
     icon: FileText,
     message: "Hola, requiero ayuda con trámites legales/pasaporte.",
     perks: ["Checklist simple", "Documentación guiada", "Seguimiento de estado"],
-    image: slide3Desktop,
+    image: serviceImages.documents,
   },
   {
     title: "Envío de remesas",
@@ -41,7 +45,7 @@ const services = [
     icon: Banknote,
     message: "Hola, quiero información para enviar remesas.",
     perks: ["Opciones seguras", "Tiempos claros", "Asistencia directa"],
-    image: slide4Desktop,
+    image: serviceImages.money,
   },
 ];
 
@@ -145,7 +149,7 @@ export default function Services() {
             </div>
             </div>
             <div className="overflow-hidden rounded-3xl border border-border">
-              <img src={slide4Desktop} alt="Servicios Qbolacel" className="w-full h-60 object-cover" />
+              <img src={serviceImages.money} alt="Servicios Qbolacel" className="w-full h-60 object-cover" />
             </div>
           </div>
         </div>
