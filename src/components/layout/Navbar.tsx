@@ -1,30 +1,32 @@
-import { Link, useLocation } from "react-router-dom";
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Menu, 
-  X, 
-  ShoppingBag,
-  User, 
-  LogIn,
-  LogOut,
-  Download,
-  Zap,
-  HelpCircle,
-  Mail
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { CartButton } from "@/components/cart/CartButton";
-import { useAuthStore } from "@/stores/auth.store";
-import { cn } from "@/lib/utils";
 import logoLarge from "@/assets/logo-large.svg";
+import { CartButton } from "@/components/cart/CartButton";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth.store";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+    Briefcase,
+    Download,
+    HelpCircle,
+    Home,
+    LogIn,
+    LogOut,
+    Mail,
+    Menu,
+    ShoppingBag,
+    User,
+    X,
+    Zap
+} from "lucide-react";
+import { useState } from "react";
+import { Link, useLocation } from "react-router-dom";
 
 const navLinks = [
-  { to: "/", label: "Inicio" },
+  { to: "/", label: "Inicio", icon: Home },
   { to: "/recargas", label: "Recargas", icon: Zap, highlight: true },
   { to: "/marketplace", label: "Marketplace", icon: ShoppingBag },
-  { to: "/servicios", label: "Servicios" },
+  { to: "/servicios", label: "Servicios", icon: Briefcase },
   { to: "/preguntas-frecuentes", label: "FAQ", icon: HelpCircle },
   { to: "/contacto", label: "Contacto", icon: Mail },
 ];
@@ -42,9 +44,9 @@ export function Navbar() {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center">
-            <img 
-              src={logoLarge} 
-              alt="Qbolacel" 
+            <img
+              src={logoLarge}
+              alt="Qbolacel"
               className="h-10"
             />
           </Link>
@@ -101,8 +103,8 @@ export function Navbar() {
                 </Link>
               </Button>
             ) : (
-              <Button 
-                variant="default" 
+              <Button
+                variant="default"
                 size="sm"
                 onClick={() => openAuthModal('login')}
                 className="gap-2"

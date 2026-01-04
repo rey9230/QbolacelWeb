@@ -1,36 +1,37 @@
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { CartSheet } from "@/components/cart/CartSheet";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 // import { CartDebugger } from "@/components/cart/CartDebugger";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { BottomNav } from "@/components/layout/BottomNav";
 import { useCartSync } from "@/hooks/useCartSync";
 import { queryClient } from "@/lib/queryClient";
 import "@/utils/debugCart"; // Debug utilities for cart
 
 // Pages
-import Index from "./pages/Index";
-import Marketplace from "./pages/Marketplace";
-import Recargas from "./pages/Recargas";
-import ProductDetail from "./pages/ProductDetail";
-import Checkout from "./pages/Checkout";
-import CheckoutSuccess from "./pages/CheckoutSuccess";
-import CheckoutCancel from "./pages/CheckoutCancel";
-import RechargeSuccess from "./pages/RechargeSuccess";
-import RechargeCancel from "./pages/RechargeCancel";
+import About from "./pages/About";
 import Account from "./pages/Account";
+import Checkout from "./pages/Checkout";
+import CheckoutCancel from "./pages/CheckoutCancel";
+import CheckoutSuccess from "./pages/CheckoutSuccess";
 import Contact from "./pages/Contact";
 import FAQ from "./pages/FAQ";
-import Terms from "./pages/Terms";
-import Privacy from "./pages/Privacy";
-import About from "./pages/About";
+import Index from "./pages/Index";
+import Marketplace from "./pages/Marketplace";
 import NotFound from "./pages/NotFound";
-import VerifyEmail from "./pages/VerifyEmail";
+import Privacy from "./pages/Privacy";
+import ProductDetail from "./pages/ProductDetail";
+import Recargas from "./pages/Recargas";
+import RechargeCancel from "./pages/RechargeCancel";
+import RechargeSuccess from "./pages/RechargeSuccess";
 import ResetPassword from "./pages/ResetPassword";
 import Services from "./pages/Services";
+import Terms from "./pages/Terms";
+import VerifyEmail from "./pages/VerifyEmail";
 
 const App = () => {
   useCartSync();
@@ -73,6 +74,7 @@ const App = () => {
           </Routes>
           <CartSheet />
           <AuthModal />
+          <BottomNav />
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>

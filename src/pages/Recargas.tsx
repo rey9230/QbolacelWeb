@@ -1,26 +1,26 @@
-import { useState, useEffect, useMemo } from "react";
-import { useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
-import { 
-  Smartphone, 
-  Wifi, 
-  Zap,
-  Shield,
-  Clock,
-  Gift,
-  CheckCircle,
-  ArrowRight,
-  Download,
-  Loader2
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
 import { RechargeCheckoutModal } from "@/components/recharge/RechargeCheckoutModal";
-import { useTopupProducts, type TopupProduct } from "@/hooks/useTopup";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { useTopupProducts } from "@/hooks/useTopup";
+import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import {
+    ArrowRight,
+    CheckCircle,
+    Clock,
+    Download,
+    Gift,
+    Loader2,
+    Shield,
+    Smartphone,
+    Wifi,
+    Zap
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 type RechargeType = "mobile" | "nauta";
 
@@ -55,12 +55,12 @@ const Recargas = () => {
   const { data: allProducts, isLoading, error } = useTopupProducts({ country: "CU" });
 
   // Filter products by type
-  const mobileProducts = useMemo(() => 
+  const mobileProducts = useMemo(() =>
     allProducts?.filter(p => p.operator === "CUBACEL" || p.productType === "MOBILE_TOPUP") || [],
     [allProducts]
   );
 
-  const nautaProducts = useMemo(() => 
+  const nautaProducts = useMemo(() =>
     allProducts?.filter(p => p.operator === "NAUTA" || p.productType === "NAUTA") || [],
     [allProducts]
   );
@@ -106,8 +106,8 @@ const Recargas = () => {
 
       {/* Hero Section - Clean */}
       <section className={cn(
-        "py-16 md:py-20 relative overflow-hidden",
-        rechargeType === "mobile" 
+        "py-6 md:py-16 relative overflow-hidden",
+        rechargeType === "mobile"
           ? "bg-gradient-to-br from-primary via-primary/90 to-accent"
           : "bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-500"
       )}>
@@ -118,22 +118,22 @@ const Recargas = () => {
 
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-2xl mx-auto text-center">
-            <Badge className="bg-white/20 text-white border-white/30 mb-4">
+            <Badge className="bg-white/20 text-white border-white/30 mb-2 md:mb-4">
               Servicio #1 en recargas a Cuba
             </Badge>
 
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
+            <h1 className="text-2xl md:text-5xl font-bold text-white mb-2 md:mb-4">
               {rechargeType === "mobile" ? "Recargas Cubacel" : "Recargas Nauta"}
             </h1>
 
-            <p className="text-xl text-white/90 mb-8">
-              {rechargeType === "mobile" 
+            <p className="text-sm md:text-xl text-white/90 mb-4 md:mb-8">
+              {rechargeType === "mobile"
                 ? "Envía saldo móvil a Cuba al instante. Bonos exclusivos incluidos."
                 : "Internet para Cuba. Planes de navegación desde 1 hora."
               }
             </p>
 
-            <div className="flex flex-wrap gap-4 justify-center text-white/80">
+            <div className="hidden md:flex flex-wrap gap-4 justify-center text-white/80">
               <div className="flex items-center gap-2">
                 <CheckCircle className="h-5 w-5" />
                 <span>Sin comisiones ocultas</span>
@@ -207,17 +207,17 @@ const Recargas = () => {
                     </h3>
                     <div className={cn(
                       "grid gap-3",
-                      products.length <= 4 ? "grid-cols-2 md:grid-cols-4" 
+                      products.length <= 4 ? "grid-cols-2 md:grid-cols-4"
                         : products.length <= 6 ? "grid-cols-2 md:grid-cols-3 lg:grid-cols-6"
                         : "grid-cols-2 md:grid-cols-4 lg:grid-cols-5"
                     )}>
                       {products.map((product, i) => {
                         const hasDiscount = product.originalPrice && product.originalPrice > product.salePrice;
-                        const discountPercent = hasDiscount 
+                        const discountPercent = hasDiscount
                           ? Math.round(((product.originalPrice! - product.salePrice) / product.originalPrice!) * 100)
                           : null;
                         const isSelected = selectedProductId === product.id;
-                        
+
                         return (
                           <motion.button
                             key={product.id}
@@ -239,7 +239,7 @@ const Recargas = () => {
                             {/* Badges */}
                             <div className="absolute -top-2.5 left-2 right-2 flex justify-center gap-1">
                               {product.isFeatured && (
-                                <Badge 
+                                <Badge
                                   className={cn(
                                     "text-[9px] px-1.5",
                                     rechargeType === "mobile" ? "bg-primary" : "bg-indigo-500"
@@ -312,8 +312,8 @@ const Recargas = () => {
                   {selectedProduct && (
                     <div className={cn(
                       "rounded-2xl p-4 mb-6",
-                      rechargeType === "mobile" 
-                        ? "bg-primary/5 border border-primary/20" 
+                      rechargeType === "mobile"
+                        ? "bg-primary/5 border border-primary/20"
                         : "bg-indigo-500/5 border border-indigo-500/20"
                     )}>
                       <div className="flex items-center justify-between">
@@ -336,7 +336,7 @@ const Recargas = () => {
                         <div className="text-right">
                           <p className="text-sm text-muted-foreground">Recibe en Cuba</p>
                           <p className="text-lg font-bold">
-                            {selectedProduct.receiveValue 
+                            {selectedProduct.receiveValue
                               ? `${selectedProduct.receiveValue} ${selectedProduct.receiveCurrency || 'CUP'}`
                               : `$${selectedProduct.salePrice} saldo`
                             }
@@ -347,8 +347,8 @@ const Recargas = () => {
                   )}
 
                   {/* CTA */}
-                  <Button 
-                    size="xl" 
+                  <Button
+                    size="xl"
                     className={cn(
                       "w-full gap-2 text-lg",
                       rechargeType === "nauta" && "bg-indigo-500 hover:bg-indigo-600"

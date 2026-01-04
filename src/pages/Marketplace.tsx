@@ -1,35 +1,35 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { motion } from "framer-motion";
-import { Search, Filter, SlidersHorizontal, X, MapPin, Loader2, Tag, ShoppingBag, Truck, Package } from "lucide-react";
+import { LocationContactSelector } from "@/components/checkout/LocationContactSelector";
+import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
+import { LocationSelectorModal } from "@/components/location/LocationSelectorModal";
+import { ProductGrid } from "@/components/products/ProductGrid";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
 } from "@/components/ui/sheet";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { ProductGrid } from "@/components/products/ProductGrid";
+import { ContactDto, useContacts } from "@/hooks/useContacts";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { useCategories, useProducts } from "@/hooks/useProducts";
+import { useProfile } from "@/hooks/useProfile";
+import { capitalizeWords, cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth.store";
 import { useLocationStore } from "@/stores/location.store";
-import { useProfile } from "@/hooks/useProfile";
-import { LocationSelectorModal } from "@/components/location/LocationSelectorModal";
-import { LocationContactSelector } from "@/components/checkout/LocationContactSelector";
-import { ContactDto, useContacts } from "@/hooks/useContacts";
-import { useProducts, useCategories } from "@/hooks/useProducts";
-import { useDocumentMeta } from "@/hooks/useDocumentMeta";
-import { capitalizeWords, cn } from "@/lib/utils";
+import { motion } from "framer-motion";
+import { Filter, Grid2X2, LayoutList, Loader2, MapPin, Package, Search, ShoppingBag, SlidersHorizontal, Tag, Truck, X } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const Marketplace = () => {
   useDocumentMeta({
@@ -41,23 +41,24 @@ const Marketplace = () => {
   const { municipality, province, hasLocation, setLocation } = useLocationStore();
   const { data: profile } = useProfile();
   const { data: contactsData } = useContacts();
-  
+
   // Search and filters
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [sortBy, setSortBy] = useState("popular");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 
   // Price range filter
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 500]);
   const [appliedPriceRange, setAppliedPriceRange] = useState<[number, number] | null>(null);
-  
+
   // Tag filter
   const [selectedTag, setSelectedTag] = useState<string>("");
-  
+
   const loadMoreRef = useRef<HTMLDivElement>(null);
-  
+
   // Location modals
   const [showLocationModal, setShowLocationModal] = useState(false);
   const [showContactSelector, setShowContactSelector] = useState(false);
@@ -97,8 +98,8 @@ const Marketplace = () => {
   };
 
   // Fetch products with cursor pagination
-  const { 
-    data: productsData, 
+  const {
+    data: productsData,
     isLoading: productsLoading,
     isFetchingNextPage,
     hasNextPage,
@@ -117,8 +118,8 @@ const Marketplace = () => {
   const { data: categories, isLoading: categoriesLoading } = useCategories();
 
   // Determine if user needs to select location
-  const userHasLocation = isAuthenticated 
-    ? !!(selectedContact || profile?.municipality || municipality) 
+  const userHasLocation = isAuthenticated
+    ? !!(selectedContact || profile?.municipality || municipality)
     : hasLocation();
 
   // Show location modal on mount if no location
@@ -210,32 +211,32 @@ const Marketplace = () => {
       <Navbar />
 
       {/* Hero Section */}
-      <section className="relative overflow-hidden gradient-primary py-12 lg:py-16">
+      <section className="relative overflow-hidden gradient-primary py-6 md:py-12 lg:py-16">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-10 left-10 w-64 h-64 bg-white/20 rounded-full blur-3xl" />
           <div className="absolute bottom-10 right-10 w-80 h-80 bg-white/10 rounded-full blur-3xl" />
         </div>
-        
+
         <div className="container mx-auto px-4 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-4 md:gap-8">
             {/* Left Content */}
             <div className="flex-1 text-center lg:text-left">
-              <motion.h1 
+              <motion.h1
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-4"
+                className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-white mb-2 md:mb-4"
               >
                 Marketplace Cuba
               </motion.h1>
-              <motion.p 
+              <motion.p
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-white/90 text-lg lg:text-xl max-w-xl"
+                className="text-white/90 text-sm md:text-lg lg:text-xl max-w-xl"
               >
                 Electrodomésticos, tecnología, alimentos y más con entrega a domicilio. Tiendas verificadas y multivendedor para toda Cuba.
               </motion.p>
-              
+
               {/* Location Badge */}
               {hasLocationData && (
                 <motion.div
@@ -276,12 +277,12 @@ const Marketplace = () => {
               )}
             </div>
 
-            {/* Right Stats */}
+            {/* Right Stats - Hidden on mobile */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: 0.3 }}
-              className="flex gap-4 lg:gap-6"
+              className="hidden md:flex gap-4 lg:gap-6"
             >
               <div className="flex flex-col items-center bg-white/10 backdrop-blur-sm rounded-xl p-4 lg:p-6 border border-white/20">
                 <ShoppingBag className="h-8 w-8 text-white mb-2" />
@@ -349,6 +350,20 @@ const Marketplace = () => {
                   <SelectItem value="price-desc">Precio: mayor a menor</SelectItem>
                 </SelectContent>
               </Select>
+
+              {/* View Mode Toggle */}
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 flex-shrink-0"
+                onClick={() => setViewMode(viewMode === "grid" ? "list" : "grid")}
+              >
+                {viewMode === "grid" ? (
+                  <LayoutList className="h-4 w-4" />
+                ) : (
+                  <Grid2X2 className="h-4 w-4" />
+                )}
+              </Button>
             </div>
           </div>
 
@@ -565,7 +580,7 @@ const Marketplace = () => {
         ) : products.length > 0 ? (
           <>
             {/* Product Grid */}
-            <ProductGrid products={products} />
+            <ProductGrid products={products} viewMode={viewMode} />
 
             {/* Infinite Scroll Trigger */}
             <div ref={loadMoreRef} className="py-8 flex justify-center">

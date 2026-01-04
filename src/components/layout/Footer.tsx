@@ -1,7 +1,7 @@
-import { Link } from "react-router-dom";
-import { Smartphone, Wifi, ShoppingBag, Mail, Phone, MapPin, Facebook, Instagram, Twitter } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import logoVertical from "@/assets/logo-vertical-dark.svg";
+import { Button } from "@/components/ui/button";
+import { Facebook, Instagram, Mail, MapPin, Phone, ShoppingBag, Smartphone, Twitter, Wifi } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const services = [
   { icon: Smartphone, label: "Recargas Móvil Cubacel", to: "/recargas" },
@@ -25,7 +25,7 @@ const legalLinks = [
 
 export function Footer() {
   return (
-    <footer className="bg-foreground text-primary-foreground">
+    <footer className="bg-foreground text-primary-foreground pb-20 md:pb-0">
       {/* Main Footer */}
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">

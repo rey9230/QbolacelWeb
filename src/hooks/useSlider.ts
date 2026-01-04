@@ -28,6 +28,7 @@ export interface SliderPreset {
     title: string;
     subtitle: string;
     overlayText?: string;
+    ctaText?: string;
     aspectRatio: string;
     mediaType: string;
   };
