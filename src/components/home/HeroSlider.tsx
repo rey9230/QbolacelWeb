@@ -5,22 +5,100 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSlider, SliderItem } from "@/hooks/useSlider";
 
-// Color contrast mapping based on background colors
+// Color contrast mapping based on background colors (keys normalized to lowercase)
 const colorContrastMap: Record<string, { text: string; textMuted: string; cta: string; ctaText: string }> = {
-  '#e3f2fd': { text: '#1B2631', textMuted: '#1B2631B3', cta: '#1565C0', ctaText: '#FFFFFF' }, // Blue pastel
-  '#E3F2FD': { text: '#1B2631', textMuted: '#1B2631B3', cta: '#1565C0', ctaText: '#FFFFFF' },
-  '#fef5e7': { text: '#3E2723', textMuted: '#3E2723B3', cta: '#8D6E63', ctaText: '#FFFFFF' }, // Cream
-  '#FEF5E7': { text: '#3E2723', textMuted: '#3E2723B3', cta: '#8D6E63', ctaText: '#FFFFFF' },
-  '#f3e5f5': { text: '#2C1A32', textMuted: '#2C1A32B3', cta: '#7B1FA2', ctaText: '#FFFFFF' }, // Lavender
-  '#F3E5F5': { text: '#2C1A32', textMuted: '#2C1A32B3', cta: '#7B1FA2', ctaText: '#FFFFFF' },
-  '#e8f6f3': { text: '#0E2F29', textMuted: '#0E2F29B3', cta: '#00897B', ctaText: '#FFFFFF' }, // Mint green
-  '#E8F6F3': { text: '#0E2F29', textMuted: '#0E2F29B3', cta: '#00897B', ctaText: '#FFFFFF' },
+  '#e3f2fd': { text: '#1B2631', textMuted: 'rgba(27, 38, 49, 0.7)', cta: '#1565C0', ctaText: '#FFFFFF' }, // Blue pastel
+  '#fef5e7': { text: '#3E2723', textMuted: 'rgba(62, 39, 35, 0.7)', cta: '#8D6E63', ctaText: '#FFFFFF' }, // Cream
+  '#f3e5f5': { text: '#2C1A32', textMuted: 'rgba(44, 26, 50, 0.7)', cta: '#7B1FA2', ctaText: '#FFFFFF' }, // Lavender
+  '#e8f6f3': { text: '#0E2F29', textMuted: 'rgba(14, 47, 41, 0.7)', cta: '#00897B', ctaText: '#FFFFFF' }, // Mint green
 };
 
-const defaultColors = { text: '#1A1A1A', textMuted: '#4A4A4A', cta: 'hsl(var(--primary))', ctaText: '#FFFFFF' };
+const defaultColors = { text: '#1A1A1A', textMuted: 'rgba(26, 26, 26, 0.7)', cta: '#2563eb', ctaText: '#FFFFFF' };
+
+// Function to calculate luminance and derive text color from any background
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? {
+    r: parseInt(result[1], 16),
+    g: parseInt(result[2], 16),
+    b: parseInt(result[3], 16)
+  } : null;
+}
+
+function getLuminance(r: number, g: number, b: number): number {
+  const [rs, gs, bs] = [r, g, b].map(c => {
+    c = c / 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  });
+  return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+}
+
+function darkenColor(hex: string, percent: number): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return '#1A1A1A';
+  const factor = 1 - percent;
+  const r = Math.round(rgb.r * factor);
+  const g = Math.round(rgb.g * factor);
+  const b = Math.round(rgb.b * factor);
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
+
+function saturateColor(hex: string): string {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return '#2563eb';
+  
+  let r = rgb.r, g = rgb.g, b = rgb.b;
+  // Darken and saturate based on dominant channel
+  if (rgb.r >= rgb.g && rgb.r >= rgb.b) {
+    r = Math.min(255, Math.round(rgb.r * 0.6));
+    g = Math.round(rgb.g * 0.4);
+    b = Math.round(rgb.b * 0.4);
+  } else if (rgb.g >= rgb.r && rgb.g >= rgb.b) {
+    r = Math.round(rgb.r * 0.4);
+    g = Math.min(255, Math.round(rgb.g * 0.6));
+    b = Math.round(rgb.b * 0.4);
+  } else {
+    r = Math.round(rgb.r * 0.4);
+    g = Math.round(rgb.g * 0.4);
+    b = Math.min(255, Math.round(rgb.b * 0.6));
+  }
+  
+  return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`;
+}
 
 function getContrastColors(bgColor: string) {
-  return colorContrastMap[bgColor] || defaultColors;
+  const normalizedBg = bgColor.toLowerCase();
+  
+  // Check if we have a predefined mapping
+  if (colorContrastMap[normalizedBg]) {
+    return colorContrastMap[normalizedBg];
+  }
+  
+  // Calculate colors dynamically based on background
+  const rgb = hexToRgb(normalizedBg);
+  if (!rgb) return defaultColors;
+  
+  const luminance = getLuminance(rgb.r, rgb.g, rgb.b);
+  
+  // For light backgrounds (pastels), use dark text derived from the background
+  if (luminance > 0.5) {
+    const textColor = darkenColor(normalizedBg, 0.85);
+    const ctaColor = saturateColor(normalizedBg);
+    return {
+      text: textColor,
+      textMuted: `${textColor}B3`,
+      cta: ctaColor,
+      ctaText: '#FFFFFF'
+    };
+  }
+  
+  // For dark backgrounds, use light text
+  return {
+    text: '#FFFFFF',
+    textMuted: 'rgba(255, 255, 255, 0.7)',
+    cta: '#FFFFFF',
+    ctaText: '#1A1A1A'
+  };
 }
 
 function getSlideLink(item: SliderItem): string | null {
