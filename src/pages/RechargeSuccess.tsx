@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle, Zap, Smartphone, ArrowRight, Loader2 } from "lucide-react";
@@ -7,6 +7,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { useCheckout } from "@/hooks/useCheckout";
 import { toast } from "sonner";
+import { trackPurchase, CONTENT_CATEGORIES } from "@/lib/pixel";
 
 export default function RechargeSuccess() {
   const [searchParams] = useSearchParams();
@@ -17,6 +18,7 @@ export default function RechargeSuccess() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [transactionSku, setTransactionSku] = useState<string | null>(null);
   const [amount, setAmount] = useState<number | null>(null);
+  const hasTrackedPurchase = useRef(false);
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -27,6 +29,25 @@ export default function RechargeSuccess() {
             setTransactionSku(status.transactionSku);
             setAmount(status.amount);
             toast.success("¡Recarga confirmada!");
+
+            // Track Purchase event for Meta Pixel (only once)
+            // Determine if it's Cubacel or Nauta based on recharge context
+            if (!hasTrackedPurchase.current) {
+              const contentCategory = rechargeId?.includes('nauta') 
+                ? CONTENT_CATEGORIES.NAUTA 
+                : CONTENT_CATEGORIES.CUBACEL;
+              
+              trackPurchase({
+                transactionId: status.transactionSku || transactionId,
+                value: status.amount,
+                currency: status.currency || 'USD',
+                contentName: contentCategory === CONTENT_CATEGORIES.NAUTA 
+                  ? 'Recarga Nauta' 
+                  : 'Recarga Cubacel',
+                contentCategory,
+              });
+              hasTrackedPurchase.current = true;
+            }
           } else if (status.status === "PROCESSING") {
             toast.info("Tu recarga está siendo procesada");
           } else if (status.status === "FAILED") {
@@ -40,7 +61,7 @@ export default function RechargeSuccess() {
     };
 
     verifyPayment();
-  }, [transactionId, checkTransactionStatus]);
+  }, [transactionId, rechargeId, checkTransactionStatus]);
 
   if (isVerifying) {
     return (

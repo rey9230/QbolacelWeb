@@ -1,15 +1,17 @@
+import { useEffect } from "react";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { CartSheet } from "@/components/cart/CartSheet";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 // import { CartDebugger } from "@/components/cart/CartDebugger";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useCartSync } from "@/hooks/useCartSync";
 import { queryClient } from "@/lib/queryClient";
+import { initPixel, trackPageView } from "@/lib/pixel";
 import "@/utils/debugCart"; // Debug utilities for cart
 
 // Pages
@@ -33,6 +35,24 @@ import Services from "./pages/Services";
 import Terms from "./pages/Terms";
 import VerifyEmail from "./pages/VerifyEmail";
 
+// Meta Pixel route change tracker
+const PixelPageTracker = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    // Initialize Meta Pixel on first load
+    initPixel();
+    trackPageView();
+  }, []);
+
+  useEffect(() => {
+    // Track page view on every route change
+    trackPageView();
+  }, [location.pathname]);
+
+  return null;
+};
+
 const App = () => {
   useCartSync();
 
@@ -43,6 +63,7 @@ const App = () => {
         <Sonner />
         {/* <CartDebugger /> */}
         <BrowserRouter>
+          <PixelPageTracker />
           <ScrollToTop />
           <Routes>
             {/* Public Pages */}

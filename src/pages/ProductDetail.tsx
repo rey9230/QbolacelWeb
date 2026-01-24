@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
@@ -26,6 +26,7 @@ import { useProductBySlug } from "@/hooks/useProducts";
 import { ProductCard } from "@/components/products/ProductCard";
 import { useDocumentMeta, BASE_URL } from "@/hooks/useDocumentMeta";
 import { ProductSchema, BreadcrumbSchema } from "@/components/seo/JsonLd";
+import { trackViewContent, CONTENT_CATEGORIES } from "@/lib/pixel";
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -115,6 +116,19 @@ export default function ProductDetail() {
   });
 
   const discountPercent = activePromotion?.type === 'percentage' ? activePromotion.amount : null;
+
+  // Track ViewContent when product loads
+  useEffect(() => {
+    if (product) {
+      trackViewContent({
+        contentId: product.id,
+        contentName: product.name,
+        contentCategory: CONTENT_CATEGORIES.MARKETPLACE,
+        value: product.price.amount,
+        currency: product.price.currency,
+      });
+    }
+  }, [product]);
 
   if (isLoading) {
     return (

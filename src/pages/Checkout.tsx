@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -41,6 +41,7 @@ import { useCreateOrder, generateIdempotencyKey } from "@/hooks/useOrders";
 import { useCheckout, type PaymentProvider } from "@/hooks/useCheckout";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { trackInitiateCheckout, CONTENT_CATEGORIES } from "@/lib/pixel";
 
 // Mapeo de tipos de método de pago a proveedores del backend
 const mapPaymentMethodToProvider = (type: PaymentMethodType): PaymentProvider | undefined => {
@@ -71,6 +72,7 @@ export default function Checkout() {
   const [selectedContact, setSelectedContact] = useState<ContactDto | null>(null);
   const [paymentSelection, setPaymentSelection] = useState<PaymentSelection | null>(null);
   const [orderSku, setOrderSku] = useState<string | null>(null);
+  const hasTrackedCheckout = useRef(false);
 
   const [shippingData, setShippingData] = useState({
     fullName: "",
@@ -114,6 +116,20 @@ export default function Checkout() {
   const total = subtotal + shippingCost;
 
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
+
+  // Track InitiateCheckout when page loads with items
+  useEffect(() => {
+    if (items.length > 0 && !hasTrackedCheckout.current) {
+      trackInitiateCheckout({
+        contentIds: items.map(item => item.productId),
+        contentCategory: CONTENT_CATEGORIES.MARKETPLACE,
+        value: subtotal,
+        currency: 'USD',
+        numItems: items.reduce((acc, item) => acc + item.qty, 0),
+      });
+      hasTrackedCheckout.current = true;
+    }
+  }, [items, subtotal]);
 
   const goToStep = (step: Step) => {
     if (step === "shipping" && !isAuthenticated) {

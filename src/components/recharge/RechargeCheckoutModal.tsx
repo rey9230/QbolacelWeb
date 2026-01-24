@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   CreditCard,
@@ -28,6 +28,7 @@ import { usePurchaseTopup, generateIdempotencyKey, type TopupProduct } from "@/h
 import { useAuthStore } from "@/stores/auth.store";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { trackAddToCart, trackInitiateCheckout, CONTENT_CATEGORIES } from "@/lib/pixel";
 
 type RechargeType = "mobile" | "nauta";
 
@@ -50,6 +51,7 @@ export const RechargeCheckoutModal = ({
   const [paymentSelection, setPaymentSelection] = useState<PaymentSelection | null>(null);
   const [acceptedNoRefund, setAcceptedNoRefund] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const hasTrackedOpen = useRef(false);
 
   const { mutate: purchaseTopup, isPending: isLoading, error } = usePurchaseTopup({
     onSuccess: (response) => {
@@ -73,8 +75,39 @@ export const RechargeCheckoutModal = ({
       setPaymentSelection(null);
       setAcceptedNoRefund(false);
       setPurchaseSuccess(false);
+      hasTrackedOpen.current = false;
     }
   }, [open]);
+
+  // Track AddToCart and InitiateCheckout when modal opens
+  useEffect(() => {
+    if (open && product && !hasTrackedOpen.current) {
+      const category = rechargeType === 'mobile' 
+        ? CONTENT_CATEGORIES.CUBACEL 
+        : CONTENT_CATEGORIES.NAUTA;
+
+      // Track AddToCart for recharge
+      trackAddToCart({
+        contentId: product.id,
+        contentName: product.name,
+        contentCategory: category,
+        value: product.salePrice,
+        currency: 'USD',
+        quantity: 1,
+      });
+
+      // Track InitiateCheckout
+      trackInitiateCheckout({
+        contentIds: [product.id],
+        contentCategory: category,
+        value: product.salePrice,
+        currency: 'USD',
+        numItems: 1,
+      });
+
+      hasTrackedOpen.current = true;
+    }
+  }, [open, product, rechargeType]);
 
   // Calculate bonus
   const bonus = product.receiveValue && product.salePrice && product.receiveValue > product.salePrice

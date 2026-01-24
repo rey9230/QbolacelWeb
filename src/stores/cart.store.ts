@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { cartApi, CartDto, CartItemDto } from '@/lib/api';
+import { trackAddToCart, CONTENT_CATEGORIES } from '@/lib/pixel';
 
 export interface CartItem {
   itemId: string;
@@ -102,6 +103,16 @@ export const useCartStore = create<CartStore>()(
         console.log('🔵 [Cart Store] addItem called with:', { item, qty });
         const isAuth = isAuthenticated();
         console.log('🔵 [Cart Store] isAuthenticated:', isAuth);
+
+        // Track AddToCart event for Meta Pixel
+        trackAddToCart({
+          contentId: item.productId,
+          contentName: item.name,
+          contentCategory: CONTENT_CATEGORIES.MARKETPLACE,
+          value: item.price * qty,
+          currency: item.currency || 'USD',
+          quantity: qty,
+        });
 
         if (isAuth) {
           // Add via API

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CheckCircle, Package, Mail, Truck, ArrowRight, Loader2 } from "lucide-react";
@@ -7,6 +7,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
 import { useCheckout } from "@/hooks/useCheckout";
 import { toast } from "sonner";
+import { trackPurchase, CONTENT_CATEGORIES } from "@/lib/pixel";
 
 export default function CheckoutSuccess() {
   const [searchParams] = useSearchParams();
@@ -16,6 +17,7 @@ export default function CheckoutSuccess() {
   const { checkTransactionStatus } = useCheckout();
   const [isVerifying, setIsVerifying] = useState(true);
   const [transactionSku, setTransactionSku] = useState<string | null>(null);
+  const hasTrackedPurchase = useRef(false);
 
   useEffect(() => {
     const verifyPayment = async () => {
@@ -25,6 +27,18 @@ export default function CheckoutSuccess() {
           if (status.status === "COMPLETED") {
             setTransactionSku(status.transactionSku);
             toast.success("¡Pago confirmado!");
+
+            // Track Purchase event for Meta Pixel (only once)
+            if (!hasTrackedPurchase.current) {
+              trackPurchase({
+                transactionId: status.transactionSku || transactionId,
+                value: status.amount,
+                currency: status.currency || 'USD',
+                contentName: 'Compra Marketplace',
+                contentCategory: CONTENT_CATEGORIES.MARKETPLACE,
+              });
+              hasTrackedPurchase.current = true;
+            }
           } else if (status.status === "PROCESSING") {
             toast.info("Tu pago está siendo procesado");
           } else if (status.status === "FAILED") {
