@@ -1,13 +1,13 @@
-import { useEffect, useState, useRef } from "react";
-import { useSearchParams, Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { CheckCircle, Package, Mail, Truck, ArrowRight, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
+import { Button } from "@/components/ui/button";
 import { useCheckout } from "@/hooks/useCheckout";
+import { CONTENT_CATEGORIES, trackPurchase } from "@/lib/pixel";
+import { motion } from "framer-motion";
+import { ArrowRight, CheckCircle, Loader2, Mail, Package, Truck } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { trackPurchase, CONTENT_CATEGORIES } from "@/lib/pixel";
 
 export default function CheckoutSuccess() {
   const [searchParams] = useSearchParams();

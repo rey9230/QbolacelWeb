@@ -1,7 +1,7 @@
 /**
  * Meta Pixel (Facebook Pixel) - Centralized Tracking Helper
  * Pixel ID: 881143634560521
- * 
+ *
  * Este módulo centraliza toda la lógica de tracking de Meta Pixel para Qbolacel.
  * Incluye tracking de: PageView, ViewContent, AddToCart, InitiateCheckout, Purchase, Lead
  */
@@ -75,7 +75,7 @@ export function initPixel(): void {
  */
 export function trackPageView(): void {
   ReactPixel.pageView();
-  
+
   if (import.meta.env.DEV) {
     console.log('🔵 Pixel PageView:', window.location.pathname);
   }
@@ -197,13 +197,13 @@ export interface PurchaseParams {
  * Este es el evento de conversión principal para Meta Ads.
  */
 export function trackPurchase(params: PurchaseParams): void {
-  const { 
-    transactionId, 
-    value, 
-    currency = 'USD', 
-    contentIds, 
-    contentName, 
-    contentCategory 
+  const {
+    transactionId,
+    value,
+    currency = 'USD',
+    contentIds,
+    contentName,
+    contentCategory
   } = params;
 
   ReactPixel.track('Purchase', {
@@ -232,7 +232,7 @@ export interface LeadParams {
 /**
  * Registra un lead de servicios premium vía WhatsApp.
  * Usa valores estimados predefinidos basados en el tipo de servicio.
- * 
+ *
  * @param serviceType - Tipo de servicio: 'carRental' | 'flights' | 'legal' | 'remittances' | 'general'
  */
 export function trackLead(params: LeadParams): void {

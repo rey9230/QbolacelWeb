@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
 import { cartApi, CartDto, CartItemDto } from '@/lib/api';
-import { trackAddToCart, CONTENT_CATEGORIES } from '@/lib/pixel';
+import { CONTENT_CATEGORIES, trackAddToCart } from '@/lib/pixel';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 export interface CartItem {
   itemId: string;
@@ -21,7 +21,7 @@ interface CartStore {
   isOpen: boolean;
   isLoading: boolean;
   isSynced: boolean;
-  
+
   // Actions
   addItem: (item: Omit<CartItem, 'qty' | 'itemId'>, qty?: number) => Promise<void>;
   removeItem: (itemId: string) => Promise<void>;
@@ -30,12 +30,12 @@ interface CartStore {
   openCart: () => void;
   closeCart: () => void;
   toggleCart: () => void;
-  
+
   // Server sync
   syncWithServer: () => Promise<void>;
   setFromServerCart: (cart: CartDto) => void;
   resetCart: () => void;
-  
+
   // Computed
   getTotalItems: () => number;
   getSubtotal: () => number;
@@ -98,7 +98,7 @@ export const useCartStore = create<CartStore>()(
       isOpen: false,
       isLoading: false,
       isSynced: false,
-      
+
       addItem: async (item, qty = 1) => {
         console.log('🔵 [Cart Store] addItem called with:', { item, qty });
         const isAuth = isAuthenticated();
@@ -139,7 +139,7 @@ export const useCartStore = create<CartStore>()(
           // Local only for unauthenticated users
           set((state) => {
             const existingItem = state.items.find(i => i.productId === item.productId);
-            
+
             if (existingItem) {
               const newQty = Math.min(existingItem.qty + qty, item.stock);
               return {
@@ -151,7 +151,7 @@ export const useCartStore = create<CartStore>()(
                 isOpen: true,
               };
             }
-            
+
             // Generate a temporary itemId for local items
             const tempItemId = `temp_${item.productId}_${Date.now()}`;
             return {
@@ -161,7 +161,7 @@ export const useCartStore = create<CartStore>()(
           });
         }
       },
-      
+
       removeItem: async (itemId) => {
         if (isAuthenticated()) {
           set({ isLoading: true });
@@ -180,12 +180,12 @@ export const useCartStore = create<CartStore>()(
           }));
         }
       },
-      
+
       updateQty: async (itemId, qty) => {
         if (qty <= 0) {
           return get().removeItem(itemId);
         }
-        
+
         if (isAuthenticated()) {
           set({ isLoading: true });
           try {
@@ -207,7 +207,7 @@ export const useCartStore = create<CartStore>()(
           }));
         }
       },
-      
+
       clearCart: async () => {
         if (isAuthenticated()) {
           set({ isLoading: true });
@@ -223,35 +223,35 @@ export const useCartStore = create<CartStore>()(
           set({ items: [] });
         }
       },
-      
+
       openCart: () => {
         set({ isOpen: true });
       },
-      
+
       closeCart: () => {
         set({ isOpen: false });
       },
-      
+
       toggleCart: () => {
         set((state) => ({ isOpen: !state.isOpen }));
       },
-      
+
       syncWithServer: async () => {
         if (!isAuthenticated()) {
           return;
         }
-        
+
         const localItems = get().items;
         set({ isLoading: true });
-        
+
         try {
           // First, get the server cart
           const serverCart = await cartApi.get();
           const serverProductIds = new Set(serverCart.items.map(item => item.productId));
-          
+
           // Find local items that are NOT on the server (by productId)
           const itemsToAdd = localItems.filter(item => !serverProductIds.has(item.productId));
-          
+
           // Add local items to server sequentially to avoid race conditions
           let finalCart = serverCart;
           for (const item of itemsToAdd) {
@@ -261,7 +261,7 @@ export const useCartStore = create<CartStore>()(
               console.warn(`Could not add item ${item.productId} to server cart:`, error);
             }
           }
-          
+
           // Set the final merged cart from server
           get().setFromServerCart(finalCart);
           set({ isLoading: false, isSynced: true });
@@ -270,7 +270,7 @@ export const useCartStore = create<CartStore>()(
           set({ isLoading: false });
         }
       },
-      
+
       setFromServerCart: (cart: CartDto) => {
         console.log('🔍 [Cart Store] setFromServerCart called with:', cart);
         console.log('🔍 [Cart Store] Cart items count:', cart.items?.length || 0);
@@ -284,15 +284,15 @@ export const useCartStore = create<CartStore>()(
 
         console.log('🔍 [Cart Store] Store updated. Current items:', get().items);
       },
-      
+
       resetCart: () => {
         set({ items: [], isSynced: false });
       },
-      
+
       getTotalItems: () => {
         return get().items.reduce((total, item) => total + item.qty, 0);
       },
-      
+
       getSubtotal: () => {
         return get().items.reduce((total, item) => total + (item.price * item.qty), 0);
       },

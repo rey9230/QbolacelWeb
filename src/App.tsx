@@ -1,17 +1,17 @@
-import { useEffect } from "react";
 import { ScrollToTop } from "@/components/ScrollToTop";
 import { CartSheet } from "@/components/cart/CartSheet";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 // import { CartDebugger } from "@/components/cart/CartDebugger";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useCartSync } from "@/hooks/useCartSync";
-import { queryClient } from "@/lib/queryClient";
 import { initPixel, trackPageView } from "@/lib/pixel";
+import { queryClient } from "@/lib/queryClient";
 import "@/utils/debugCart"; // Debug utilities for cart
 
 // Pages

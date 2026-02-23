@@ -1,11 +1,11 @@
-import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Button } from "@/components/ui/button";
+import { Navbar } from "@/components/layout/Navbar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
-import { Car, Plane, FileText, Banknote, ArrowRight, ShieldCheck } from "lucide-react";
+import { trackContact, trackLead, type LeadServiceType } from "@/lib/pixel";
+import { ArrowRight, Banknote, Car, FileText, Plane, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
-import { trackLead, trackContact, type LeadServiceType } from "@/lib/pixel";
 
 // Service images from Unsplash
 const serviceImages = {
@@ -111,9 +111,9 @@ export default function Services() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild className="gap-2">
-                <a 
-                  href={buildWhatsAppLink("Hola, quiero hablar sobre servicios premium de Qbolacel.")} 
-                  target="_blank" 
+                <a
+                  href={buildWhatsAppLink("Hola, quiero hablar sobre servicios premium de Qbolacel.")}
+                  target="_blank"
                   rel="noreferrer"
                   onClick={() => trackContact('Hero - Servicios Premium')}
                 >
@@ -156,9 +156,9 @@ export default function Services() {
               </div>
             <div className="pt-2">
               <Button asChild className="w-full">
-                <a 
-                  href={buildWhatsAppLink("Hola, quiero empezar con un servicio premium de Qbolacel.")} 
-                  target="_blank" 
+                <a
+                  href={buildWhatsAppLink("Hola, quiero empezar con un servicio premium de Qbolacel.")}
+                  target="_blank"
                   rel="noreferrer"
                   onClick={() => trackContact('Cómo funciona - Iniciar chat')}
                 >
@@ -215,9 +215,9 @@ export default function Services() {
                   </div>
                   <div className="flex flex-wrap gap-3 pt-1">
                     <Button asChild className="gap-2">
-                      <a 
-                        href={buildWhatsAppLink(service.message)} 
-                        target="_blank" 
+                      <a
+                        href={buildWhatsAppLink(service.message)}
+                        target="_blank"
                         rel="noreferrer"
                         onClick={() => {
                           const leadType = serviceToLeadType[service.title];
@@ -252,9 +252,9 @@ export default function Services() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Button asChild>
-              <a 
-                href={buildWhatsAppLink("Hola, quiero coordinar un servicio ahora.")} 
-                target="_blank" 
+              <a
+                href={buildWhatsAppLink("Hola, quiero coordinar un servicio ahora.")}
+                target="_blank"
                 rel="noreferrer"
                 onClick={() => trackContact('Footer CTA - Hablar ahora')}
               >

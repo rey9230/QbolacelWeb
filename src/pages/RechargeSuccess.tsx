@@ -1,13 +1,13 @@
-import { useEffect, useState, useRef } from "react";
-import { useSearchParams, Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { CheckCircle, Zap, Smartphone, ArrowRight, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
+import { Button } from "@/components/ui/button";
 import { useCheckout } from "@/hooks/useCheckout";
+import { CONTENT_CATEGORIES, trackPurchase } from "@/lib/pixel";
+import { motion } from "framer-motion";
+import { ArrowRight, CheckCircle, Loader2, Smartphone, Zap } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { trackPurchase, CONTENT_CATEGORIES } from "@/lib/pixel";
 
 export default function RechargeSuccess() {
   const [searchParams] = useSearchParams();
@@ -33,16 +33,16 @@ export default function RechargeSuccess() {
             // Track Purchase event for Meta Pixel (only once)
             // Determine if it's Cubacel or Nauta based on recharge context
             if (!hasTrackedPurchase.current) {
-              const contentCategory = rechargeId?.includes('nauta') 
-                ? CONTENT_CATEGORIES.NAUTA 
+              const contentCategory = rechargeId?.includes('nauta')
+                ? CONTENT_CATEGORIES.NAUTA
                 : CONTENT_CATEGORIES.CUBACEL;
-              
+
               trackPurchase({
                 transactionId: status.transactionSku || transactionId,
                 value: status.amount,
                 currency: status.currency || 'USD',
-                contentName: contentCategory === CONTENT_CATEGORIES.NAUTA 
-                  ? 'Recarga Nauta' 
+                contentName: contentCategory === CONTENT_CATEGORIES.NAUTA
+                  ? 'Recarga Nauta'
                   : 'Recarga Cubacel',
                 contentCategory,
               });

@@ -1,34 +1,34 @@
-import { useState, useEffect, useRef } from "react";
-import { motion } from "framer-motion";
 import {
-  CreditCard,
-  Smartphone,
-  Wifi,
-  Gift,
-  Shield,
-  AlertTriangle,
-  Loader2,
-  CheckCircle,
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+    PaymentMethodSelector,
+    type PaymentSelection,
+} from "@/components/payment/PaymentMethodSelector";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
-  PaymentMethodSelector,
-  type PaymentSelection,
-} from "@/components/payment/PaymentMethodSelector";
-import { usePurchaseTopup, generateIdempotencyKey, type TopupProduct } from "@/hooks/useTopup";
-import { useAuthStore } from "@/stores/auth.store";
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { generateIdempotencyKey, usePurchaseTopup, type TopupProduct } from "@/hooks/useTopup";
+import { CONTENT_CATEGORIES, trackAddToCart, trackInitiateCheckout } from "@/lib/pixel";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth.store";
+import { motion } from "framer-motion";
+import {
+    AlertTriangle,
+    CheckCircle,
+    CreditCard,
+    Gift,
+    Loader2,
+    Shield,
+    Smartphone,
+    Wifi,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { trackAddToCart, trackInitiateCheckout, CONTENT_CATEGORIES } from "@/lib/pixel";
 
 type RechargeType = "mobile" | "nauta";
 
@@ -82,8 +82,8 @@ export const RechargeCheckoutModal = ({
   // Track AddToCart and InitiateCheckout when modal opens
   useEffect(() => {
     if (open && product && !hasTrackedOpen.current) {
-      const category = rechargeType === 'mobile' 
-        ? CONTENT_CATEGORIES.CUBACEL 
+      const category = rechargeType === 'mobile'
+        ? CONTENT_CATEGORIES.CUBACEL
         : CONTENT_CATEGORIES.NAUTA;
 
       // Track AddToCart for recharge
