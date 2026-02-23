@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
 import { useAuthStore } from "@/stores/auth.store";
-import { Loader2, LogOut, Phone as PhoneIcon, ShieldAlert } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
+import { Loader2, LogOut, Phone as PhoneIcon, ShieldAlert } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PhoneVerification } from "./PhoneVerification";
 
