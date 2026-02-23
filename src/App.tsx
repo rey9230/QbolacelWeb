@@ -34,6 +34,7 @@ import ResetPassword from "./pages/ResetPassword";
 import Services from "./pages/Services";
 import Terms from "./pages/Terms";
 import VerifyEmail from "./pages/VerifyEmail";
+import { PhoneRequirementGate } from "@/components/auth/PhoneRequirementGate";
 
 // Meta Pixel route change tracker
 const PixelPageTracker = () => {
@@ -93,6 +94,7 @@ const App = () => {
             {/* 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          <PhoneRequirementGate />
           <CartSheet />
           <AuthModal />
           <BottomNav />

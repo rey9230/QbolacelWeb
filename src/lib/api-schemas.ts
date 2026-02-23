@@ -33,6 +33,7 @@ export const UserProfileSchema = z.object({
   address: z.string().optional(),
   roles: z.array(z.string()).optional(),
   location: z.string().nullable().optional(),
+  phoneVerified: z.boolean().optional().default(false),
 });
 
 // ============ CONTACT SCHEMAS ============

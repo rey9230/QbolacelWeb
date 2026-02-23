@@ -91,7 +91,8 @@ export function AuthModal() {
           id: user.id, 
           email: user.email, 
           name: user.userName,
-          avatar: user.avatar 
+          avatar: user.avatar,
+          phoneVerified: user.phoneVerified,
         },
         token,
         refreshToken
@@ -216,25 +217,43 @@ export function AuthModal() {
     }
   };
 
-  const handlePhoneVerified = () => {
+  const handlePhoneVerified = async () => {
     if (pendingAuth) {
-      setUser(pendingAuth.user, pendingAuth.token, pendingAuth.refreshToken);
-      
-      toast({
-        title: "¡Cuenta creada!",
-        description: "Tu cuenta ha sido creada y verificada correctamente",
-      });
-      
-      setPendingAuth(null);
-      setRegisterForm({
-        name: "",
-        phone: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        acceptTerms: false,
-      });
-      closeAuthModal();
+      try {
+        // Refresh profile to get latest phone & phoneVerified from backend
+        const profile = await authApi.me();
+
+        setUser(
+          {
+            id: profile.id,
+            email: profile.email,
+            name: profile.userName,
+            avatar: profile.avatar,
+            phoneVerified: profile.phoneVerified,
+          },
+          pendingAuth.token,
+          pendingAuth.refreshToken
+        );
+
+        toast({
+          title: "¡Cuenta creada!",
+          description: "Tu cuenta ha sido creada y verificada correctamente",
+        });
+      } catch {
+        // If profile fetch fails, still log in with pending auth
+        setUser(pendingAuth.user, pendingAuth.token, pendingAuth.refreshToken);
+      } finally {
+        setPendingAuth(null);
+        setRegisterForm({
+          name: "",
+          phone: "",
+          email: "",
+          password: "",
+          confirmPassword: "",
+          acceptTerms: false,
+        });
+        closeAuthModal();
+      }
     }
   };
 
@@ -284,6 +303,16 @@ export function AuthModal() {
   };
 
   const handleModalClose = (open: boolean) => {
+    // While in phone verification after registration, do not allow closing
+    if (!open && view === 'phone-verification' && pendingAuth) {
+      toast({
+        title: "Verificación requerida",
+        description: "Debes verificar tu número de teléfono para activar tu cuenta.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!open) {
       closeAuthModal();
       setTimeout(() => {
@@ -463,7 +492,11 @@ export function AuthModal() {
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Incluye el código de país (ej: +53 para Cuba)
+                      Incluye el código de país (ej: +53 para Cuba).
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Al proporcionar tu número, aceptas recibir un SMS de un solo uso para fines de verificación.
+                      Pueden aplicarse tarifas de mensajes y datos según tu operador.
                     </p>
                   </div>
 

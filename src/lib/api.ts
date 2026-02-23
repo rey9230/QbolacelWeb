@@ -305,6 +305,7 @@ export interface UserProfile {
   address?: string;
   roles?: string[];
   location?: string | null;
+  phoneVerified?: boolean;
 }
 
 export interface UpdateProfileRequest {

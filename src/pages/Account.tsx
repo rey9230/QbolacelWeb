@@ -82,7 +82,20 @@ export default function Account() {
     toast.success("Sesión cerrada correctamente");
   };
 
+  const validatePhone = (phone: string): boolean => {
+    const e164Regex = /^\+[1-9]\d{6,14}$/;
+    return e164Regex.test(phone);
+  };
+
   const handleSaveProfile = () => {
+    if (!validatePhone(formData.phone)) {
+      toast.error("Teléfono inválido", {
+        description:
+          "Ingresa un número de teléfono válido con código de país (ej: +5355123456)",
+      });
+      return;
+    }
+
     updateProfile.mutate(formData, {
       onSuccess: () => {
         setIsEditing(false);

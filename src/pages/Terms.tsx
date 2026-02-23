@@ -82,6 +82,21 @@ export default function Terms() {
                   Qbolacel podrá suspender o cancelar cuentas que incumplan estos términos o presenten actividad
                   sospechosa, sin previo aviso.
                 </p>
+                <h3>3.1 Mensajes SMS de verificación</h3>
+                <p>
+                  Como parte de las medidas de seguridad, Qbolacel puede enviar mensajes SMS de verificación de un solo
+                  uso al número de teléfono que usted proporcione al registrarse o al actualizar su perfil.
+                </p>
+                <p>
+                  Estos mensajes se utilizan exclusivamente para confirmar su identidad y proteger su cuenta. La
+                  frecuencia de estos mensajes es única por solicitud del usuario (1 mensaje por cada solicitud de
+                  verificación) y pueden aplicarse tarifas de mensajes y datos según su operador móvil.
+                </p>
+                <p>
+                  Qbolacel no utiliza los mensajes SMS de verificación para fines promocionales o de marketing. Si no
+                  desea utilizar la verificación por SMS, puede contactar a nuestro equipo de soporte en
+                  soporte@qbolacel.com para conocer alternativas de verificación disponibles.
+                </p>
               </section>
 
               <section>

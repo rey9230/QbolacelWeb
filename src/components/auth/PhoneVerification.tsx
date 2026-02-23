@@ -1,11 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Phone, Loader2, ArrowLeft, ShieldCheck } from "lucide-react";
-import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { Button } from "@/components/ui/button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
 import { otpApi } from "@/lib/api";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+import { motion } from "framer-motion";
+import { ArrowLeft, Loader2, Phone, ShieldCheck } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 const TURNSTILE_SITE_KEY = "0x4AAAAAACH8RFaY-5kF9i74";
 const COOLDOWN_SECONDS = 60;
@@ -19,19 +19,19 @@ interface PhoneVerificationProps {
 
 export function PhoneVerification({ phone, onVerified, onBack }: PhoneVerificationProps) {
   const { toast } = useToast();
-  
+
   const [step, setStep] = useState<'send' | 'verify'>('send');
   const [isLoading, setIsLoading] = useState(false);
   const [otpCode, setOtpCode] = useState("");
-  
+
   // Cooldown state
   const [cooldown, setCooldown] = useState(0);
   const cooldownRef = useRef<ReturnType<typeof setInterval>>();
-  
+
   // Expiry state
   const [expiryTime, setExpiryTime] = useState(0);
   const expiryRef = useRef<ReturnType<typeof setInterval>>();
-  
+
   // Turnstile
   const sendTurnstileRef = useRef<TurnstileInstance>(null);
   const verifyTurnstileRef = useRef<TurnstileInstance>(null);
@@ -102,7 +102,7 @@ export function PhoneVerification({ phone, onVerified, onBack }: PhoneVerificati
       }
     } catch (error) {
       const message = error instanceof Error ? error.message : "No se pudo enviar el código";
-      
+
       // Handle specific error cases
       if (message.includes("429") || message.includes("Demasiados") || message.includes("Rate")) {
         toast({
@@ -208,11 +208,17 @@ export function PhoneVerification({ phone, onVerified, onBack }: PhoneVerificati
         </div>
         <h3 className="text-xl font-bold">Verifica tu teléfono</h3>
         <p className="text-sm text-muted-foreground">
-          {step === 'send' 
+          {step === 'send'
             ? `Enviaremos un código de verificación al número ${phone}`
             : `Ingresa el código de 6 dígitos enviado al ${phone}`
           }
         </p>
+        {step === 'send' && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Este código se envía por SMS de un solo uso a solicitud tuya. Pueden aplicarse tarifas de mensajes y
+            datos según tu operador.
+          </p>
+        )}
       </div>
 
       {step === 'send' ? (
@@ -334,8 +340,8 @@ export function PhoneVerification({ phone, onVerified, onBack }: PhoneVerificati
               onClick={handleResendCode}
               disabled={cooldown > 0 || isLoading}
             >
-              {cooldown > 0 
-                ? `Reenviar código en ${cooldown}s` 
+              {cooldown > 0
+                ? `Reenviar código en ${cooldown}s`
                 : "¿No recibiste el código? Reenviar"
               }
             </Button>

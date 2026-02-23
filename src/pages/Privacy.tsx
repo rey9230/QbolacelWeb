@@ -78,6 +78,16 @@ export default function Privacy() {
                   <li>Cumplir con obligaciones legales</li>
                   <li>Prevenir fraudes</li>
                 </ul>
+                <h3>3.1 Uso de números de teléfono móviles para verificación por SMS</h3>
+                <p>
+                  Los números de teléfono móviles recopilados para la verificación por SMS se utilizan únicamente con
+                  fines de seguridad y autenticación de cuenta, como el envío de códigos de verificación de un solo
+                  uso cuando usted lo solicita.
+                </p>
+                <p>
+                  Los números de teléfono móviles recopilados para la verificación por SMS no se compartirán con
+                  terceros ni con afiliados para fines de marketing o promocionales.
+                </p>
               </section>
 
               <section>
