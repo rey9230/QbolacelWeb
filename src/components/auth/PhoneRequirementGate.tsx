@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
 import { useAuthStore } from "@/stores/auth.store";
 import { Loader2, LogOut, Phone as PhoneIcon, ShieldAlert } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { PhoneVerification } from "./PhoneVerification";
 
@@ -22,9 +23,12 @@ export function PhoneRequirementGate() {
   const updateProfile = useUpdateProfile();
   const { toast } = useToast();
 
+  const queryClient = useQueryClient();
+
   const [step, setStep] = useState<"collect-phone" | "verify">("collect-phone");
   const [phoneInput, setPhoneInput] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [locallyVerified, setLocallyVerified] = useState(false);
 
   // Sync local state with profile
   useEffect(() => {
@@ -48,7 +52,7 @@ export function PhoneRequirementGate() {
   const isVerified = profile?.phoneVerified === true;
 
   // If we don't have profile yet, or user is already OK, don't block
-  if (!profile || isVerified || (hasPhone && isVerified)) {
+  if (!profile || isVerified || (hasPhone && isVerified) || locallyVerified) {
     return null;
   }
 
@@ -91,6 +95,12 @@ export function PhoneRequirementGate() {
   };
 
   const handleVerified = () => {
+    // Cerrar inmediatamente el gate en el cliente
+    setLocallyVerified(true);
+
+    // Refrescar el perfil para traer phoneVerified=true desde el backend
+    queryClient.invalidateQueries({ queryKey: ["profile"] });
+
     toast({
       title: "¡Teléfono verificado!",
       description: "Tu número ha sido verificado correctamente",
