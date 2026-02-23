@@ -1,46 +1,47 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { motion, AnimatePresence } from "framer-motion";
-import { 
-  ShoppingCart, 
-  Truck, 
-  CreditCard, 
-  CheckCircle,
-  ChevronLeft,
-  ChevronRight,
-  MapPin,
-  Phone,
-  Mail,
-  Package,
-  Shield,
-  Minus,
-  Plus,
-  Trash2,
-  Edit2,
-  Star,
-  AlertTriangle,
-  Loader2
-} from "lucide-react";
+import { LocationContactSelector } from "@/components/checkout/LocationContactSelector";
+import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
+import {
+    PaymentMethodSelector,
+    type PaymentMethodType,
+    type PaymentSelection
+} from "@/components/payment/PaymentMethodSelector";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { LocationContactSelector } from "@/components/checkout/LocationContactSelector";
-import { 
-  PaymentMethodSelector, 
-  type PaymentSelection,
-  type PaymentMethodType 
-} from "@/components/payment/PaymentMethodSelector";
-import { useCartStore } from "@/stores/cart.store";
-import { useAuthStore } from "@/stores/auth.store";
-import { type ContactDto } from "@/hooks/useContacts";
-import { useCreateOrder, generateIdempotencyKey } from "@/hooks/useOrders";
+import { Textarea } from "@/components/ui/textarea";
 import { useCheckout, type PaymentProvider } from "@/hooks/useCheckout";
-import { toast } from "sonner";
+import { type ContactDto } from "@/hooks/useContacts";
+import { generateIdempotencyKey, useCreateOrder } from "@/hooks/useOrders";
+import { CONTENT_CATEGORIES, trackInitiateCheckout } from "@/lib/pixel";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth.store";
+import { useCartStore } from "@/stores/cart.store";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+    AlertTriangle,
+    CheckCircle,
+    ChevronLeft,
+    ChevronRight,
+    CreditCard,
+    Edit2,
+    Loader2,
+    Mail,
+    MapPin,
+    Minus,
+    Package,
+    Phone,
+    Plus,
+    Shield,
+    ShoppingCart,
+    Star,
+    Trash2,
+    Truck
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 
 // Mapeo de tipos de método de pago a proveedores del backend
 const mapPaymentMethodToProvider = (type: PaymentMethodType): PaymentProvider | undefined => {
@@ -71,6 +72,7 @@ export default function Checkout() {
   const [selectedContact, setSelectedContact] = useState<ContactDto | null>(null);
   const [paymentSelection, setPaymentSelection] = useState<PaymentSelection | null>(null);
   const [orderSku, setOrderSku] = useState<string | null>(null);
+  const hasTrackedCheckout = useRef(false);
 
   const [shippingData, setShippingData] = useState({
     fullName: "",
@@ -86,7 +88,7 @@ export default function Checkout() {
 
   // Hook para crear orden
   const createOrderMutation = useCreateOrder();
-  
+
   // Hook para checkout/pago
   const {
     isLoading: isCheckoutLoading,
@@ -114,6 +116,20 @@ export default function Checkout() {
   const total = subtotal + shippingCost;
 
   const currentStepIndex = steps.findIndex(s => s.id === currentStep);
+
+  // Track InitiateCheckout when page loads with items
+  useEffect(() => {
+    if (items.length > 0 && !hasTrackedCheckout.current) {
+      trackInitiateCheckout({
+        contentIds: items.map(item => item.productId),
+        contentCategory: CONTENT_CATEGORIES.MARKETPLACE,
+        value: subtotal,
+        currency: 'USD',
+        numItems: items.reduce((acc, item) => acc + item.qty, 0),
+      });
+      hasTrackedCheckout.current = true;
+    }
+  }, [items, subtotal]);
 
   const goToStep = (step: Step) => {
     if (step === "shipping" && !isAuthenticated) {
@@ -175,7 +191,7 @@ export default function Checkout() {
       };
 
       const order = await createOrderMutation.mutateAsync({ data: orderData, idempotencyKey });
-      
+
       // Guardar el SKU de la orden
       if (order.orderSku) {
         setOrderSku(order.orderSku);
@@ -275,7 +291,7 @@ export default function Checkout() {
                       {step.label}
                     </span>
                   </div>
-                  
+
                   {index < steps.length - 1 && (
                     <div className={cn(
                       "w-16 md:w-24 h-0.5 mx-2",
@@ -299,7 +315,7 @@ export default function Checkout() {
               className="max-w-4xl mx-auto"
             >
               <h1 className="text-2xl font-bold mb-6">Revisa tu pedido</h1>
-              
+
               <div className="grid lg:grid-cols-3 gap-8">
                 {/* Cart Items */}
                 <div className="lg:col-span-2 space-y-4">
@@ -352,7 +368,7 @@ export default function Checkout() {
                 {/* Order Summary */}
                 <div className="bg-card border border-border rounded-xl p-6 h-fit sticky top-24">
                   <h2 className="font-bold mb-4">Resumen del pedido</h2>
-                  
+
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Subtotal ({items.length} productos)</span>
@@ -368,7 +384,7 @@ export default function Checkout() {
                     </div>
                   </div>
 
-                  <Button 
+                  <Button
                     className="w-full mt-6 gap-2"
                     onClick={() => goToStep("shipping")}
                   >
@@ -399,7 +415,7 @@ export default function Checkout() {
               </Button>
 
               <h1 className="text-2xl font-bold mb-6">Información de envío</h1>
-              
+
               <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
                   <div className="bg-card border border-border rounded-xl p-6">
@@ -456,7 +472,7 @@ export default function Checkout() {
                         </div>
                       </div>
                     ) : (
-                      <div 
+                      <div
                         className="p-6 border-2 border-dashed border-border rounded-xl text-center cursor-pointer hover:border-primary/50 transition-colors mb-4"
                         onClick={() => setIsContactSelectorOpen(true)}
                       >
@@ -548,7 +564,7 @@ export default function Checkout() {
                 {/* Order Summary */}
                 <div className="bg-card border border-border rounded-xl p-6 h-fit sticky top-24">
                   <h2 className="font-bold mb-4">Resumen</h2>
-                  
+
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Subtotal</span>
@@ -564,7 +580,7 @@ export default function Checkout() {
                     </div>
                   </div>
 
-                  <Button 
+                  <Button
                     className="w-full mt-6 gap-2"
                     onClick={() => setCurrentStep("payment")}
                   >
@@ -595,7 +611,7 @@ export default function Checkout() {
               </Button>
 
               <h1 className="text-2xl font-bold mb-6">Método de pago</h1>
-              
+
               <div className="grid lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-2">
                   <div className="bg-card border border-border rounded-xl p-6">
@@ -632,7 +648,7 @@ export default function Checkout() {
                 {/* Order Summary */}
                 <div className="bg-card border border-border rounded-xl p-6 h-fit sticky top-24">
                   <h2 className="font-bold mb-4">Resumen del pedido</h2>
-                  
+
                   {/* Mini cart preview */}
                   <div className="space-y-3 mb-4">
                     {items.slice(0, 3).map((item) => (
@@ -671,7 +687,7 @@ export default function Checkout() {
                     </div>
                   </div>
 
-                  <Button 
+                  <Button
                     className="w-full mt-6 gap-2"
                     onClick={handlePlaceOrder}
                     disabled={isProcessing || !paymentSelection}
@@ -712,7 +728,7 @@ export default function Checkout() {
               <h1 className="text-3xl font-bold mb-4">
                 ¡Pedido Confirmado!
               </h1>
-              
+
               <p className="text-xl text-muted-foreground mb-2">
                 Orden #{orderSku || `QBC-${Math.random().toString(36).substr(2, 8).toUpperCase()}`}
               </p>

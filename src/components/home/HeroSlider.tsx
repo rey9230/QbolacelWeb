@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SliderItem, useSlider } from "@/hooks/useSlider";
+import { trackContact } from "@/lib/pixel";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -192,7 +193,9 @@ export function HeroSlider() {
 
   const handleCtaClick = () => {
     if (slideData.link) {
+      // Track WhatsApp contact if it's a WhatsApp link
       if (slideData.link.startsWith('https://wa.me')) {
+        trackContact(`Hero Slider - ${slideData.ctaText}`);
         window.open(slideData.link, '_blank', 'noopener,noreferrer');
       } else if (slideData.link.startsWith('http')) {
         window.location.href = slideData.link;

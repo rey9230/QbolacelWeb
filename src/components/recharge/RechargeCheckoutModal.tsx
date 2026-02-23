@@ -1,32 +1,33 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import {
-  CreditCard,
-  Smartphone,
-  Wifi,
-  Gift,
-  Shield,
-  AlertTriangle,
-  Loader2,
-  CheckCircle,
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+    PaymentMethodSelector,
+    type PaymentSelection,
+} from "@/components/payment/PaymentMethodSelector";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
-  PaymentMethodSelector,
-  type PaymentSelection,
-} from "@/components/payment/PaymentMethodSelector";
-import { usePurchaseTopup, generateIdempotencyKey, type TopupProduct } from "@/hooks/useTopup";
-import { useAuthStore } from "@/stores/auth.store";
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { generateIdempotencyKey, usePurchaseTopup, type TopupProduct } from "@/hooks/useTopup";
+import { CONTENT_CATEGORIES, trackAddToCart, trackInitiateCheckout } from "@/lib/pixel";
 import { cn } from "@/lib/utils";
+import { useAuthStore } from "@/stores/auth.store";
+import { motion } from "framer-motion";
+import {
+    AlertTriangle,
+    CheckCircle,
+    CreditCard,
+    Gift,
+    Loader2,
+    Shield,
+    Smartphone,
+    Wifi,
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 type RechargeType = "mobile" | "nauta";
@@ -50,6 +51,7 @@ export const RechargeCheckoutModal = ({
   const [paymentSelection, setPaymentSelection] = useState<PaymentSelection | null>(null);
   const [acceptedNoRefund, setAcceptedNoRefund] = useState(false);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
+  const hasTrackedOpen = useRef(false);
 
   const { mutate: purchaseTopup, isPending: isLoading, error } = usePurchaseTopup({
     onSuccess: (response) => {
@@ -73,8 +75,39 @@ export const RechargeCheckoutModal = ({
       setPaymentSelection(null);
       setAcceptedNoRefund(false);
       setPurchaseSuccess(false);
+      hasTrackedOpen.current = false;
     }
   }, [open]);
+
+  // Track AddToCart and InitiateCheckout when modal opens
+  useEffect(() => {
+    if (open && product && !hasTrackedOpen.current) {
+      const category = rechargeType === 'mobile'
+        ? CONTENT_CATEGORIES.CUBACEL
+        : CONTENT_CATEGORIES.NAUTA;
+
+      // Track AddToCart for recharge
+      trackAddToCart({
+        contentId: product.id,
+        contentName: product.name,
+        contentCategory: category,
+        value: product.salePrice,
+        currency: 'USD',
+        quantity: 1,
+      });
+
+      // Track InitiateCheckout
+      trackInitiateCheckout({
+        contentIds: [product.id],
+        contentCategory: category,
+        value: product.salePrice,
+        currency: 'USD',
+        numItems: 1,
+      });
+
+      hasTrackedOpen.current = true;
+    }
+  }, [open, product, rechargeType]);
 
   // Calculate bonus
   const bonus = product.receiveValue && product.salePrice && product.receiveValue > product.salePrice

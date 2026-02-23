@@ -1,9 +1,10 @@
-import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { Button } from "@/components/ui/button";
+import { Navbar } from "@/components/layout/Navbar";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
-import { Car, Plane, FileText, Banknote, ArrowRight, ShieldCheck } from "lucide-react";
+import { trackContact, trackLead, type LeadServiceType } from "@/lib/pixel";
+import { ArrowRight, Banknote, Car, FileText, Plane, ShieldCheck } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // Service images from Unsplash
@@ -12,6 +13,14 @@ const serviceImages = {
   plane: "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=800&q=80",
   documents: "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=800&q=80",
   money: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?w=800&q=80",
+};
+
+// Map service titles to pixel lead service types
+const serviceToLeadType: Record<string, LeadServiceType> = {
+  "Renta de autos": "carRental",
+  "Boletos aéreos": "flights",
+  "Trámites legales y pasaporte": "legal",
+  "Envío de remesas": "remittances",
 };
 
 const services = [
@@ -102,7 +111,12 @@ export default function Services() {
             </p>
             <div className="flex flex-wrap gap-3">
               <Button asChild className="gap-2">
-                <a href={buildWhatsAppLink("Hola, quiero hablar sobre servicios premium de Qbolacel.")} target="_blank" rel="noreferrer">
+                <a
+                  href={buildWhatsAppLink("Hola, quiero hablar sobre servicios premium de Qbolacel.")}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => trackContact('Hero - Servicios Premium')}
+                >
                   Solicitar ahora
                   <ArrowRight className="h-4 w-4" />
                 </a>
@@ -142,7 +156,12 @@ export default function Services() {
               </div>
             <div className="pt-2">
               <Button asChild className="w-full">
-                <a href={buildWhatsAppLink("Hola, quiero empezar con un servicio premium de Qbolacel.")} target="_blank" rel="noreferrer">
+                <a
+                  href={buildWhatsAppLink("Hola, quiero empezar con un servicio premium de Qbolacel.")}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => trackContact('Cómo funciona - Iniciar chat')}
+                >
                   Iniciar chat
                 </a>
               </Button>
@@ -196,7 +215,17 @@ export default function Services() {
                   </div>
                   <div className="flex flex-wrap gap-3 pt-1">
                     <Button asChild className="gap-2">
-                      <a href={buildWhatsAppLink(service.message)} target="_blank" rel="noreferrer">
+                      <a
+                        href={buildWhatsAppLink(service.message)}
+                        target="_blank"
+                        rel="noreferrer"
+                        onClick={() => {
+                          const leadType = serviceToLeadType[service.title];
+                          if (leadType) {
+                            trackLead({ serviceType: leadType, serviceName: service.title });
+                          }
+                        }}
+                      >
                         Solicitar por WhatsApp
                       </a>
                     </Button>
@@ -223,7 +252,12 @@ export default function Services() {
           </div>
           <div className="flex flex-wrap gap-3">
             <Button asChild>
-              <a href={buildWhatsAppLink("Hola, quiero coordinar un servicio ahora.")} target="_blank" rel="noreferrer">
+              <a
+                href={buildWhatsAppLink("Hola, quiero coordinar un servicio ahora.")}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => trackContact('Footer CTA - Hablar ahora')}
+              >
                 Hablar ahora
               </a>
             </Button>

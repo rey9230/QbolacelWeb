@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { useTopupProducts } from "@/hooks/useTopup";
+import { CONTENT_CATEGORIES, trackViewContent } from "@/lib/pixel";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import {
@@ -87,6 +88,23 @@ const Recargas = () => {
   }, [state]);
 
   const selectedProduct = products.find(p => p.id === selectedProductId);
+
+  // Track ViewContent when a product is selected
+  useEffect(() => {
+    if (selectedProduct) {
+      const category = rechargeType === 'mobile'
+        ? CONTENT_CATEGORIES.CUBACEL
+        : CONTENT_CATEGORIES.NAUTA;
+
+      trackViewContent({
+        contentId: selectedProduct.id,
+        contentName: selectedProduct.name,
+        contentCategory: category,
+        value: selectedProduct.salePrice,
+        currency: 'USD',
+      });
+    }
+  }, [selectedProduct, rechargeType]);
 
   const handleRechargeClick = () => {
     if (phoneNumber.trim().length > 0 && selectedProduct) {

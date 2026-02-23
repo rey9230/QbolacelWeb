@@ -1,31 +1,32 @@
-import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { 
-  ShoppingCart, 
-  Heart, 
-  Share2, 
-  Truck, 
-  Shield, 
-  Star,
-  Minus,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Store,
-  Loader2,
-  ChevronDown
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Navbar } from "@/components/layout/Navbar";
 import { Footer } from "@/components/layout/Footer";
-import { useCartStore } from "@/stores/cart.store";
-import { toast } from "sonner";
-import { useProductBySlug } from "@/hooks/useProducts";
+import { Navbar } from "@/components/layout/Navbar";
 import { ProductCard } from "@/components/products/ProductCard";
-import { useDocumentMeta, BASE_URL } from "@/hooks/useDocumentMeta";
-import { ProductSchema, BreadcrumbSchema } from "@/components/seo/JsonLd";
+import { BreadcrumbSchema, ProductSchema } from "@/components/seo/JsonLd";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { BASE_URL, useDocumentMeta } from "@/hooks/useDocumentMeta";
+import { useProductBySlug } from "@/hooks/useProducts";
+import { CONTENT_CATEGORIES, trackViewContent } from "@/lib/pixel";
+import { useCartStore } from "@/stores/cart.store";
+import { motion } from "framer-motion";
+import {
+    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    Heart,
+    Loader2,
+    Minus,
+    Plus,
+    Share2,
+    Shield,
+    ShoppingCart,
+    Star,
+    Store,
+    Truck
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { toast } from "sonner";
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -35,7 +36,7 @@ export default function ProductDetail() {
   const { addItem, openCart } = useCartStore();
 
   const { data, isLoading, error } = useProductBySlug(slug || '');
-  
+
   const product = data?.product;
   const similarProducts = data?.similar || [];
 
@@ -60,9 +61,9 @@ export default function ProductDetail() {
 
   const handleAddToCart = async () => {
     if (!product) return;
-    
+
     const imageUrl = product.primaryImage || product.pictures[0] || '/placeholder.svg';
-    
+
     try {
       await addItem({
         productId: product.id,
@@ -116,6 +117,19 @@ export default function ProductDetail() {
 
   const discountPercent = activePromotion?.type === 'percentage' ? activePromotion.amount : null;
 
+  // Track ViewContent when product loads
+  useEffect(() => {
+    if (product) {
+      trackViewContent({
+        contentId: product.id,
+        contentName: product.name,
+        contentCategory: CONTENT_CATEGORIES.MARKETPLACE,
+        value: product.price.amount,
+        currency: product.price.currency,
+      });
+    }
+  }, [product]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -148,13 +162,13 @@ export default function ProductDetail() {
   const buildImageList = () => {
     const primary = product.primaryImage;
     const others = product.pictures.filter(pic => pic !== primary);
-    
+
     if (primary) {
       return [primary, ...others];
     }
     return others.length > 0 ? others : ['/placeholder.svg'];
   };
-  
+
   const images = buildImageList();
   const currentImage = images[selectedImage] || images[0];
 
@@ -180,9 +194,9 @@ export default function ProductDetail() {
           { name: product.name, url: `${BASE_URL}/productos/${product.slug}` },
         ]}
       />
-      
+
       <Navbar />
-      
+
       {/* Breadcrumb */}
       <div className="container mx-auto px-4 py-4">
         <nav className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -209,7 +223,7 @@ export default function ProductDetail() {
                   alt={product.name}
                   className="w-full h-full object-contain"
                 />
-                
+
                 {/* Navigation Arrows */}
                 {images.length > 1 && (
                   <>
@@ -351,8 +365,8 @@ export default function ProductDetail() {
 
               {/* CTA Actions */}
               <div className="flex gap-3">
-                <Button 
-                  size="xl" 
+                <Button
+                  size="xl"
                   className="flex-1 gap-2"
                   onClick={handleAddToCart}
                   disabled={product.stockStatus === 'OUT_OF_STOCK'}
@@ -412,7 +426,7 @@ export default function ProductDetail() {
               {product.description && (
                 <div className="bg-card border border-border rounded-xl p-5">
                   <h3 className="font-semibold text-lg mb-4">Descripción del Producto</h3>
-                  
+
                   <div className="relative">
                     <div
                       className={`space-y-3 text-muted-foreground leading-relaxed ${
@@ -425,10 +439,10 @@ export default function ProductDetail() {
                         </p>
                       ))}
                     </div>
-                    
+
                     {/* Fade overlay when collapsed */}
                     {!descriptionExpanded && (
-                      <div 
+                      <div
                         className="absolute bottom-0 left-0 right-0 h-20 pointer-events-none"
                         style={{
                           background: 'linear-gradient(to bottom, transparent 0%, hsl(var(--card)) 100%)'
@@ -436,7 +450,7 @@ export default function ProductDetail() {
                       />
                     )}
                   </div>
-                  
+
                   {/* Ver más / Ver menos button */}
                   <Button
                     variant="ghost"
