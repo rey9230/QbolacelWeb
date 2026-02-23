@@ -256,9 +256,35 @@ export interface LoginRequest {
 
 export interface RegisterRequest {
   userName: string;
+  phone: string;
   email: string;
   password: string;
   turnstileToken: string;
+}
+
+// ============ OTP VERIFICATION API ============
+export interface SendOtpRequest {
+  phone: string;
+  turnstileToken: string;
+}
+
+export interface SendOtpResponse {
+  success: boolean;
+  message: string;
+  expiresInSeconds: number;
+  cooldownSeconds: number;
+}
+
+export interface VerifyOtpRequest {
+  phone: string;
+  code: string;
+  turnstileToken: string;
+}
+
+export interface VerifyOtpResponse {
+  success: boolean;
+  phoneVerified: boolean;
+  message: string;
 }
 
 export interface AuthTokenResponse {
@@ -405,6 +431,22 @@ export const authApi = {
       body: JSON.stringify(data),
     }),
 };
+
+// ============ OTP VERIFICATION API ============
+export const otpApi = {
+  sendOtp: (data: SendOtpRequest): Promise<SendOtpResponse> =>
+    apiFetchPublic('/verify/web/send-otp', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  verifyOtp: (data: VerifyOtpRequest): Promise<VerifyOtpResponse> =>
+    apiFetchPublic('/verify/web/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
 export interface ContactDto {
   id: string;
   fullName: string;

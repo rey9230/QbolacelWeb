@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, Loader2, ArrowLeft } from "lucide-react";
+import { Mail, Lock, User, Eye, EyeOff, Loader2, ArrowLeft, Phone } from "lucide-react";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import {
   Dialog,
@@ -17,10 +17,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuthStore } from "@/stores/auth.store";
 import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api";
+import { PhoneVerification } from "./PhoneVerification";
 
 const TURNSTILE_SITE_KEY = "0x4AAAAAACH8RFaY-5kF9i74";
 
-type ModalView = 'auth' | 'forgot-password';
+type ModalView = 'auth' | 'forgot-password' | 'phone-verification';
 
 export function AuthModal() {
   const { 
@@ -48,12 +49,21 @@ export function AuthModal() {
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
     name: "",
+    phone: "",
     email: "",
     password: "",
     confirmPassword: "",
     acceptTerms: false,
   });
   const [forgotEmail, setForgotEmail] = useState("");
+
+  // Pending user data for after phone verification
+  const [pendingAuth, setPendingAuth] = useState<{
+    user: { id: string; email: string; name: string; avatar?: string };
+    token: string;
+    refreshToken: string;
+    phone: string;
+  } | null>(null);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,7 +107,6 @@ export function AuthModal() {
       loginTurnstileRef.current?.reset();
       closeAuthModal();
     } catch (error) {
-      // Reset turnstile on error
       loginTurnstileRef.current?.reset();
       setLoginTurnstileToken(null);
       
@@ -111,6 +120,11 @@ export function AuthModal() {
     }
   };
 
+  const validatePhone = (phone: string): boolean => {
+    const e164Regex = /^\+[1-9]\d{6,14}$/;
+    return e164Regex.test(phone);
+  };
+
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -118,6 +132,15 @@ export function AuthModal() {
       toast({
         title: "Verificación requerida",
         description: "Por favor completa la verificación de seguridad",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!validatePhone(registerForm.phone)) {
+      toast({
+        title: "Teléfono inválido",
+        description: "Ingresa un número de teléfono válido con código de país (ej: +5355123456)",
         variant: "destructive",
       });
       return;
@@ -155,39 +178,31 @@ export function AuthModal() {
     try {
       const { user, token, refreshToken } = await authApi.register({
         userName: registerForm.name,
+        phone: registerForm.phone,
         email: registerForm.email,
         password: registerForm.password,
         turnstileToken: registerTurnstileToken,
       });
       
-      setUser(
-        { 
+      // Store pending auth — don't log in yet, require phone verification
+      setPendingAuth({
+        user: { 
           id: user.id, 
           email: user.email, 
           name: user.userName,
           avatar: user.avatar 
         },
         token,
-        refreshToken
-      );
-      
-      toast({
-        title: "¡Cuenta creada!",
-        description: "Tu cuenta ha sido creada correctamente",
+        refreshToken,
+        phone: registerForm.phone,
       });
       
-      setRegisterForm({
-        name: "",
-        email: "",
-        password: "",
-        confirmPassword: "",
-        acceptTerms: false,
-      });
       setRegisterTurnstileToken(null);
       registerTurnstileRef.current?.reset();
-      closeAuthModal();
+      
+      // Move to phone verification
+      setView('phone-verification');
     } catch (error) {
-      // Reset turnstile on error
       registerTurnstileRef.current?.reset();
       setRegisterTurnstileToken(null);
       
@@ -198,6 +213,28 @@ export function AuthModal() {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePhoneVerified = () => {
+    if (pendingAuth) {
+      setUser(pendingAuth.user, pendingAuth.token, pendingAuth.refreshToken);
+      
+      toast({
+        title: "¡Cuenta creada!",
+        description: "Tu cuenta ha sido creada y verificada correctamente",
+      });
+      
+      setPendingAuth(null);
+      setRegisterForm({
+        name: "",
+        phone: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        acceptTerms: false,
+      });
+      closeAuthModal();
     }
   };
 
@@ -231,11 +268,9 @@ export function AuthModal() {
       forgotTurnstileRef.current?.reset();
       setView('auth');
     } catch (error) {
-      // Reset turnstile on error
       forgotTurnstileRef.current?.reset();
       setForgotTurnstileToken(null);
       
-      // Show generic message for security (don't reveal if email exists)
       toast({
         title: "Enlace enviado",
         description: "Si el email existe en nuestro sistema, recibirás un enlace para recuperar tu contraseña",
@@ -251,15 +286,23 @@ export function AuthModal() {
   const handleModalClose = (open: boolean) => {
     if (!open) {
       closeAuthModal();
-      // Reset view when modal closes
-      setTimeout(() => setView('auth'), 300);
+      setTimeout(() => {
+        setView('auth');
+        setPendingAuth(null);
+      }, 300);
     }
   };
 
   return (
     <Dialog open={isAuthModalOpen} onOpenChange={handleModalClose}>
       <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
-        {view === 'auth' ? (
+        {view === 'phone-verification' && pendingAuth ? (
+          <PhoneVerification
+            phone={pendingAuth.phone}
+            onVerified={handlePhoneVerified}
+            onBack={() => setView('auth')}
+          />
+        ) : view === 'auth' ? (
           <>
             <DialogHeader className="text-center">
               <DialogTitle className="text-2xl font-bold">
@@ -349,7 +392,6 @@ export function AuthModal() {
                     </Button>
                   </div>
 
-                  {/* Turnstile widget for login */}
                   <div className="flex justify-center">
                     <Turnstile
                       ref={loginTurnstileRef}
@@ -357,10 +399,7 @@ export function AuthModal() {
                       onSuccess={setLoginTurnstileToken}
                       onError={() => setLoginTurnstileToken(null)}
                       onExpire={() => setLoginTurnstileToken(null)}
-                      options={{
-                        theme: "light",
-                        size: "normal",
-                      }}
+                      options={{ theme: "light", size: "normal" }}
                     />
                   </div>
 
@@ -380,7 +419,6 @@ export function AuthModal() {
                       "Iniciar Sesión"
                     )}
                   </Button>
-
                 </motion.form>
               </TabsContent>
 
@@ -407,6 +445,26 @@ export function AuthModal() {
                         disabled={isLoading}
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="register-phone">Número de teléfono</Label>
+                    <div className="relative">
+                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="register-phone"
+                        type="tel"
+                        placeholder="+5355123456"
+                        className="pl-10"
+                        value={registerForm.phone}
+                        onChange={(e) => setRegisterForm({ ...registerForm, phone: e.target.value })}
+                        required
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Incluye el código de país (ej: +53 para Cuba)
+                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -488,7 +546,6 @@ export function AuthModal() {
                     </label>
                   </div>
 
-                  {/* Turnstile widget for register */}
                   <div className="flex justify-center">
                     <Turnstile
                       ref={registerTurnstileRef}
@@ -496,10 +553,7 @@ export function AuthModal() {
                       onSuccess={setRegisterTurnstileToken}
                       onError={() => setRegisterTurnstileToken(null)}
                       onExpire={() => setRegisterTurnstileToken(null)}
-                      options={{
-                        theme: "light",
-                        size: "normal",
-                      }}
+                      options={{ theme: "light", size: "normal" }}
                     />
                   </div>
 
@@ -556,7 +610,6 @@ export function AuthModal() {
                 </div>
               </div>
 
-              {/* Turnstile widget for forgot password */}
               <div className="flex justify-center">
                 <Turnstile
                   ref={forgotTurnstileRef}
@@ -564,10 +617,7 @@ export function AuthModal() {
                   onSuccess={setForgotTurnstileToken}
                   onError={() => setForgotTurnstileToken(null)}
                   onExpire={() => setForgotTurnstileToken(null)}
-                  options={{
-                    theme: "light",
-                    size: "normal",
-                  }}
+                  options={{ theme: "light", size: "normal" }}
                 />
               </div>
 
