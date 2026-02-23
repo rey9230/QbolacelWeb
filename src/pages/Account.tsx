@@ -1,38 +1,37 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import {
-  User,
-  Package,
-  MapPin,
-  LogOut,
-  ChevronRight,
-  Phone,
-  Mail,
-  Edit2,
-  Save,
-  X,
-  Loader2,
-} from "lucide-react";
+import { ContactsList } from "@/components/account/ContactsList";
+import { OrdersList } from "@/components/account/OrdersList";
+import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from "@/components/ui/select";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { useAuthStore } from "@/stores/auth.store";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useMunicipalities, useProvinces } from "@/hooks/useLocations";
 import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
-import { useProvinces, useMunicipalities } from "@/hooks/useLocations";
-import { OrdersList } from "@/components/account/OrdersList";
-import { ContactsList } from "@/components/account/ContactsList";
 import { authApi } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth.store";
+import { motion } from "framer-motion";
+import {
+    Edit2,
+    Loader2,
+    LogOut,
+    Mail,
+    MapPin,
+    Package,
+    Phone,
+    Save,
+    User,
+    X
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 export default function Account() {

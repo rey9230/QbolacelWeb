@@ -1,13 +1,13 @@
-import { useEffect, useState } from "react";
-import { ShieldAlert, Phone as PhoneIcon, Loader2, LogOut } from "lucide-react";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import { useAuthStore } from "@/stores/auth.store";
-import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
 import { useToast } from "@/hooks/use-toast";
+import { useProfile, useUpdateProfile } from "@/hooks/useProfile";
+import { useAuthStore } from "@/stores/auth.store";
+import { Loader2, LogOut, Phone as PhoneIcon, ShieldAlert } from "lucide-react";
+import { useEffect, useState } from "react";
 import { PhoneVerification } from "./PhoneVerification";
 
 // Simple E.164 validation (same as in AuthModal)

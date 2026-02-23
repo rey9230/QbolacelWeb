@@ -1,7 +1,7 @@
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
-import { useCartStore } from './cart.store';
 import { queryClient } from '@/lib/queryClient';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import { useCartStore } from './cart.store';
 
 export interface User {
   id: string;
@@ -18,7 +18,7 @@ interface AuthStore {
   isAuthenticated: boolean;
   isAuthModalOpen: boolean;
   authModalTab: 'login' | 'register';
-  
+
   // Actions
   setUser: (user: User, token: string, refreshToken: string) => void;
   updateTokens: (token: string, refreshToken: string) => void;
@@ -37,7 +37,7 @@ export const useAuthStore = create<AuthStore>()(
       isAuthenticated: false,
       isAuthModalOpen: false,
       authModalTab: 'login',
-      
+
       setUser: (user, token, refreshToken) => {
         set({
           user,
@@ -47,11 +47,11 @@ export const useAuthStore = create<AuthStore>()(
           isAuthModalOpen: false,
         });
       },
-      
+
       updateTokens: (token, refreshToken) => {
         set({ token, refreshToken });
       },
-      
+
       logout: () => {
         set({
           user: null,
@@ -66,18 +66,18 @@ export const useAuthStore = create<AuthStore>()(
         // Clear all React Query cache to prevent stale data from previous user
         queryClient.clear();
       },
-      
+
       openAuthModal: (tab = 'login') => {
         set({
           isAuthModalOpen: true,
           authModalTab: tab,
         });
       },
-      
+
       closeAuthModal: () => {
         set({ isAuthModalOpen: false });
       },
-      
+
       setAuthModalTab: (tab) => {
         set({ authModalTab: tab });
       },

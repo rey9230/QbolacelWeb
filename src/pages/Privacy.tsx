@@ -1,8 +1,8 @@
+import { Footer } from "@/components/layout/Footer";
+import { Navbar } from "@/components/layout/Navbar";
+import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 import { motion } from "framer-motion";
 import { Shield } from "lucide-react";
-import { Navbar } from "@/components/layout/Navbar";
-import { Footer } from "@/components/layout/Footer";
-import { useDocumentMeta } from "@/hooks/useDocumentMeta";
 
 export default function Privacy() {
   useDocumentMeta({

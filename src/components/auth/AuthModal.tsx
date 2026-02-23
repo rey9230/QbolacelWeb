@@ -1,22 +1,22 @@
-import { useState, useRef } from "react";
-import { motion } from "framer-motion";
-import { Mail, Lock, User, Eye, EyeOff, Loader2, ArrowLeft, Phone } from "lucide-react";
-import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuthStore } from "@/stores/auth.store";
 import { useToast } from "@/hooks/use-toast";
 import { authApi } from "@/lib/api";
+import { useAuthStore } from "@/stores/auth.store";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+import { motion } from "framer-motion";
+import { ArrowLeft, Eye, EyeOff, Loader2, Lock, Mail, Phone, User } from "lucide-react";
+import { useRef, useState } from "react";
 import { PhoneVerification } from "./PhoneVerification";
 
 const TURNSTILE_SITE_KEY = "0x4AAAAAACH8RFaY-5kF9i74";
@@ -24,19 +24,19 @@ const TURNSTILE_SITE_KEY = "0x4AAAAAACH8RFaY-5kF9i74";
 type ModalView = 'auth' | 'forgot-password' | 'phone-verification';
 
 export function AuthModal() {
-  const { 
-    isAuthModalOpen, 
-    closeAuthModal, 
-    authModalTab, 
+  const {
+    isAuthModalOpen,
+    closeAuthModal,
+    authModalTab,
     setAuthModalTab,
-    setUser 
+    setUser
   } = useAuthStore();
   const { toast } = useToast();
-  
+
   const [view, setView] = useState<ModalView>('auth');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Turnstile refs and tokens
   const loginTurnstileRef = useRef<TurnstileInstance>(null);
   const registerTurnstileRef = useRef<TurnstileInstance>(null);
@@ -44,7 +44,7 @@ export function AuthModal() {
   const [loginTurnstileToken, setLoginTurnstileToken] = useState<string | null>(null);
   const [registerTurnstileToken, setRegisterTurnstileToken] = useState<string | null>(null);
   const [forgotTurnstileToken, setForgotTurnstileToken] = useState<string | null>(null);
-  
+
   // Form states
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState({
@@ -67,7 +67,7 @@ export function AuthModal() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!loginTurnstileToken) {
       toast({
         title: "Verificación requerida",
@@ -76,20 +76,20 @@ export function AuthModal() {
       });
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       const { user, token, refreshToken } = await authApi.login({
         email: loginForm.email,
         password: loginForm.password,
         turnstileToken: loginTurnstileToken,
       });
-      
+
       setUser(
-        { 
-          id: user.id, 
-          email: user.email, 
+        {
+          id: user.id,
+          email: user.email,
           name: user.userName,
           avatar: user.avatar,
           phoneVerified: user.phoneVerified,
@@ -97,12 +97,12 @@ export function AuthModal() {
         token,
         refreshToken
       );
-      
+
       toast({
         title: "¡Bienvenido!",
         description: "Has iniciado sesión correctamente",
       });
-      
+
       setLoginForm({ email: "", password: "" });
       setLoginTurnstileToken(null);
       loginTurnstileRef.current?.reset();
@@ -110,7 +110,7 @@ export function AuthModal() {
     } catch (error) {
       loginTurnstileRef.current?.reset();
       setLoginTurnstileToken(null);
-      
+
       toast({
         title: "Error de inicio de sesión",
         description: error instanceof Error ? error.message : "Credenciales incorrectas",
@@ -128,7 +128,7 @@ export function AuthModal() {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!registerTurnstileToken) {
       toast({
         title: "Verificación requerida",
@@ -146,7 +146,7 @@ export function AuthModal() {
       });
       return;
     }
-    
+
     if (registerForm.password !== registerForm.confirmPassword) {
       toast({
         title: "Error",
@@ -155,7 +155,7 @@ export function AuthModal() {
       });
       return;
     }
-    
+
     if (!registerForm.acceptTerms) {
       toast({
         title: "Error",
@@ -173,9 +173,9 @@ export function AuthModal() {
       });
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       const { user, token, refreshToken } = await authApi.register({
         userName: registerForm.name,
@@ -184,29 +184,29 @@ export function AuthModal() {
         password: registerForm.password,
         turnstileToken: registerTurnstileToken,
       });
-      
+
       // Store pending auth — don't log in yet, require phone verification
       setPendingAuth({
-        user: { 
-          id: user.id, 
-          email: user.email, 
+        user: {
+          id: user.id,
+          email: user.email,
           name: user.userName,
-          avatar: user.avatar 
+          avatar: user.avatar
         },
         token,
         refreshToken,
         phone: registerForm.phone,
       });
-      
+
       setRegisterTurnstileToken(null);
       registerTurnstileRef.current?.reset();
-      
+
       // Move to phone verification
       setView('phone-verification');
     } catch (error) {
       registerTurnstileRef.current?.reset();
       setRegisterTurnstileToken(null);
-      
+
       toast({
         title: "Error al crear cuenta",
         description: error instanceof Error ? error.message : "No se pudo crear la cuenta",
@@ -259,7 +259,7 @@ export function AuthModal() {
 
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!forgotTurnstileToken) {
       toast({
         title: "Verificación requerida",
@@ -268,20 +268,20 @@ export function AuthModal() {
       });
       return;
     }
-    
+
     setIsLoading(true);
-    
+
     try {
       await authApi.forgotPassword({
         email: forgotEmail,
         turnstileToken: forgotTurnstileToken,
       });
-      
+
       toast({
         title: "Enlace enviado",
         description: "Si el email existe en nuestro sistema, recibirás un enlace para recuperar tu contraseña",
       });
-      
+
       setForgotEmail("");
       setForgotTurnstileToken(null);
       forgotTurnstileRef.current?.reset();
@@ -289,12 +289,12 @@ export function AuthModal() {
     } catch (error) {
       forgotTurnstileRef.current?.reset();
       setForgotTurnstileToken(null);
-      
+
       toast({
         title: "Enlace enviado",
         description: "Si el email existe en nuestro sistema, recibirás un enlace para recuperar tu contraseña",
       });
-      
+
       setForgotEmail("");
       setView('auth');
     } finally {
@@ -338,15 +338,15 @@ export function AuthModal() {
                 {authModalTab === "login" ? "Bienvenido de vuelta" : "Crear cuenta"}
               </DialogTitle>
               <DialogDescription>
-                {authModalTab === "login" 
+                {authModalTab === "login"
                   ? "Ingresa tus credenciales para continuar"
                   : "Regístrate para acceder a todos nuestros servicios"
                 }
               </DialogDescription>
             </DialogHeader>
 
-            <Tabs 
-              value={authModalTab} 
+            <Tabs
+              value={authModalTab}
               onValueChange={(v) => setAuthModalTab(v as "login" | "register")}
               className="mt-4"
             >
@@ -411,9 +411,9 @@ export function AuthModal() {
                         Recordarme
                       </label>
                     </div>
-                    <Button 
+                    <Button
                       type="button"
-                      variant="link" 
+                      variant="link"
                       className="px-0 h-auto text-sm"
                       onClick={() => setView('forgot-password')}
                     >
@@ -432,10 +432,10 @@ export function AuthModal() {
                     />
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    variant="gradient" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    variant="gradient"
+                    className="w-full"
                     size="lg"
                     disabled={isLoading || !loginTurnstileToken}
                   >
@@ -559,10 +559,10 @@ export function AuthModal() {
                   </div>
 
                   <div className="flex items-start space-x-2">
-                    <Checkbox 
-                      id="terms" 
+                    <Checkbox
+                      id="terms"
                       checked={registerForm.acceptTerms}
-                      onCheckedChange={(checked) => 
+                      onCheckedChange={(checked) =>
                         setRegisterForm({ ...registerForm, acceptTerms: checked as boolean })
                       }
                       disabled={isLoading}
@@ -590,10 +590,10 @@ export function AuthModal() {
                     />
                   </div>
 
-                  <Button 
-                    type="submit" 
-                    variant="gradient" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    variant="gradient"
+                    className="w-full"
                     size="lg"
                     disabled={isLoading || !registerTurnstileToken}
                   >
@@ -654,10 +654,10 @@ export function AuthModal() {
                 />
               </div>
 
-              <Button 
-                type="submit" 
-                variant="gradient" 
-                className="w-full" 
+              <Button
+                type="submit"
+                variant="gradient"
+                className="w-full"
                 size="lg"
                 disabled={isLoading || !forgotTurnstileToken}
               >

@@ -15,6 +15,7 @@ import { queryClient } from "@/lib/queryClient";
 import "@/utils/debugCart"; // Debug utilities for cart
 
 // Pages
+import { PhoneRequirementGate } from "@/components/auth/PhoneRequirementGate";
 import About from "./pages/About";
 import Account from "./pages/Account";
 import Checkout from "./pages/Checkout";
@@ -34,7 +35,6 @@ import ResetPassword from "./pages/ResetPassword";
 import Services from "./pages/Services";
 import Terms from "./pages/Terms";
 import VerifyEmail from "./pages/VerifyEmail";
-import { PhoneRequirementGate } from "@/components/auth/PhoneRequirementGate";
 
 // Meta Pixel route change tracker
 const PixelPageTracker = () => {

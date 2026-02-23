@@ -1,27 +1,16 @@
 import { z } from 'zod';
 import {
-  AuthTokenResponseSchema,
-  UserProfileSchema,
-  ContactDtoSchema,
-  ContactListResponseSchema,
-  ProductSchema,
-  ProductDetailResponseSchema,
-  CursorPageResponseSchema,
-  CategorySchema,
-  CartDtoSchema,
-  OrderSummarySchema,
-  OrderSchema,
-  ProvinceListResponseSchema,
-  MunicipalityListResponseSchema,
-  ProvinceOfMunicipalityResponseSchema,
-  TopupProductSchema,
-  TopupTransactionSchema,
-  PurchaseTopupResponseSchema,
-  CheckoutResponseSchema,
-  TransactionStatusResponseSchema,
-  SavedPaymentMethodSchema,
-  MessageResponseSchema,
-  validateApiResponse,
+    AuthTokenResponseSchema,
+    CartDtoSchema,
+    CategorySchema,
+    ContactDtoSchema,
+    ContactListResponseSchema,
+    CursorPageResponseSchema,
+    MessageResponseSchema,
+    ProductDetailResponseSchema,
+    ProductSchema,
+    UserProfileSchema,
+    validateApiResponse
 } from './api-schemas';
 import { getAuditHeaders } from './client-metadata';
 
@@ -99,7 +88,7 @@ const clearAuthState = () => {
 // Refresh the access token using the refresh token
 async function refreshAccessToken(): Promise<string | null> {
   const { refreshToken } = getAuthState();
-  
+
   if (!refreshToken) {
     return null;
   }
@@ -200,12 +189,12 @@ async function apiFetchWithValidation<T>(
   }
 
   const data = await response.json();
-  
+
   // Validate response if schema provided
   if (schema) {
     return validateApiResponse(schema, data, endpoint);
   }
-  
+
   return data as T;
 }
 
@@ -228,12 +217,12 @@ async function apiFetchPublic<T>(
   }
 
   const data = await response.json();
-  
+
   // Validate response if schema provided
   if (schema) {
     return validateApiResponse(schema, data, endpoint);
   }
-  
+
   return data as T;
 }
 
@@ -335,11 +324,11 @@ async function apiFetchWithToken<T>(
   }
 
   const data = await response.json();
-  
+
   if (schema) {
     return validateApiResponse(schema, data, endpoint);
   }
-  
+
   return data as T;
 }
 
@@ -370,10 +359,10 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    
+
     // Fetch user profile with the new token
     const userResponse = await apiFetchWithToken('/auth/me', tokenResponse.accessToken, {}, UserProfileSchema);
-    
+
     return {
       user: userResponse as UserProfile,
       token: tokenResponse.accessToken,
@@ -386,10 +375,10 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    
+
     // Fetch user profile with the new token
     const userResponse = await apiFetchWithToken('/auth/me', tokenResponse.accessToken, {}, UserProfileSchema);
-    
+
     return {
       user: userResponse as UserProfile,
       token: tokenResponse.accessToken,
@@ -600,7 +589,7 @@ export const productsApi = {
     if (filters.priceMax !== undefined) params.append('priceMax', String(filters.priceMax));
     if (filters.tag) params.append('tag', filters.tag);
     if (filters.sort) params.append('sort', filters.sort);
-    
+
     return apiFetchWithValidation(
       `/products/cursor?${params.toString()}`,
       CursorPageResponseSchema(ProductSchema),
@@ -832,36 +821,36 @@ export interface TopupProduct {
   name: string;
   shortDescription?: string;
   description?: string;
-  
+
   // Clasificación
   country: string;
   operator: string;  // "CUBACEL", "NAUTA"
   productType: string;  // "MOBILE_TOPUP", "NAUTA", "DATA_PACK", etc.
-  
+
   // Precios
   salePrice: number;
   saleCurrency: string;
   originalPrice?: number;
   receiveValue?: number;
   receiveCurrency?: string;
-  
+
   // Montos variables
   isVariableAmount: boolean;
   minAmount?: number;
   maxAmount?: number;
   amountStep?: number;
   suggestedAmounts?: number[];
-  
+
   // Visibilidad
   isFeatured: boolean;
   isPromotion: boolean;
   promotionLabel?: string;
   promotionEndsAt?: string;
-  
+
   // Media
   imageUrl?: string;
   iconUrl?: string;
-  
+
   // Otros
   validity?: string;
   tags: string[];
@@ -874,27 +863,27 @@ export interface TopupTransaction {
   productId: string;
   productSku: string;
   productName: string;
-  
+
   accountNumber: string;
   accountType: string;  // "MSISDN", "EMAIL"
   country: string;
   operator: string;
-  
+
   salePrice: number;
   saleCurrency: string;
   receiveValue?: number;
   receiveCurrency?: string;
-  
+
   status: TopupTransactionStatus;
   statusMessage?: string;
-  
+
   providerId: string;
   providerTransactionId?: string;
-  
+
   deliveredValue?: number;
   deliveredCurrency?: string;
   deliveredAt?: string;
-  
+
   createdAt: string;
   completedAt?: string;
 }
