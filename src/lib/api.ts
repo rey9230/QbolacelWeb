@@ -426,7 +426,7 @@ export const authApi = {
 
 async function otpFetch<T>(endpoint: string, data: unknown): Promise<T> {
   const headers = buildHeaders();
-  
+
   // Add auth token if available (optional for OTP endpoints)
   const { token } = getAuthState();
   if (token) {
@@ -439,20 +439,29 @@ async function otpFetch<T>(endpoint: string, data: unknown): Promise<T> {
     body: JSON.stringify(data),
   });
 
-  // Try to parse response body - handle empty responses gracefully
   const text = await response.text();
-  let body: any = {};
-  if (text) {
+  let body: any = null;
+
+  if (text.trim()) {
     try {
       body = JSON.parse(text);
     } catch {
-      // If response is not JSON, wrap text as message
       body = { message: text };
     }
   }
 
   if (!response.ok) {
-    throw new Error(body.detail || body.message || `Error ${response.status}`);
+    throw new Error(body?.detail || body?.message || `Error ${response.status}`);
+  }
+
+  if (!body) {
+    throw new Error(
+      "El servicio de verificación no devolvió una respuesta válida. Revisa la configuración del proveedor SMS en el backend."
+    );
+  }
+
+  if (typeof body === 'object' && 'success' in body && body.success === false) {
+    throw new Error(body.detail || body.message || 'No se pudo completar la verificación.');
   }
 
   return body as T;
