@@ -32,8 +32,10 @@ export const UserProfileSchema = z.object({
   municipality: z.string().optional(),
   address: z.string().optional(),
   roles: z.array(z.string()).optional(),
-  location: z.string().nullable().optional(),
+  location: z.any().nullable().optional(),
   phoneVerified: z.boolean().nullable().optional().default(false).transform(v => v ?? false),
+  cartItemsCount: z.number().nullable().optional(),
+  voipAccountNumber: z.string().nullable().optional(),
 });
 
 // ============ CONTACT SCHEMAS ============
