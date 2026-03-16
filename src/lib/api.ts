@@ -423,18 +423,47 @@ export const authApi = {
 };
 
 // ============ OTP VERIFICATION API ============
+
+async function otpFetch<T>(endpoint: string, data: unknown): Promise<T> {
+  const headers = buildHeaders();
+  
+  // Add auth token if available (optional for OTP endpoints)
+  const { token } = getAuthState();
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(data),
+  });
+
+  // Try to parse response body - handle empty responses gracefully
+  const text = await response.text();
+  let body: any = {};
+  if (text) {
+    try {
+      body = JSON.parse(text);
+    } catch {
+      // If response is not JSON, wrap text as message
+      body = { message: text };
+    }
+  }
+
+  if (!response.ok) {
+    throw new Error(body.detail || body.message || `Error ${response.status}`);
+  }
+
+  return body as T;
+}
+
 export const otpApi = {
   sendOtp: (data: SendOtpRequest): Promise<SendOtpResponse> =>
-    apiFetchPublic('/verify/web/send-otp', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    otpFetch('/verify/web/send-otp', data),
 
   verifyOtp: (data: VerifyOtpRequest): Promise<VerifyOtpResponse> =>
-    apiFetchPublic('/verify/web/verify-otp', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    otpFetch('/verify/web/verify-otp', data),
 };
 
 export interface ContactDto {
