@@ -386,10 +386,39 @@ export const authApi = {
     };
   },
 
-  logout: () =>
-    apiFetchWithValidation('/auth/logout', MessageResponseSchema, {
-      method: 'POST',
-    }, true),
+  logout: async () => {
+    const { token } = getAuthState();
+
+    // If no token, skip API call entirely
+    if (!token) {
+      return { message: 'Logged out (no token)' };
+    }
+
+    // Check if token is expired by decoding JWT payload
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp && payload.exp * 1000 < Date.now()) {
+        return { message: 'Logged out (token expired)' };
+      }
+    } catch {
+      // Malformed token, skip API call
+      return { message: 'Logged out (invalid token)' };
+    }
+
+    // Token exists and is not expired, call the API
+    try {
+      return await apiFetchWithValidation('/auth/logout', MessageResponseSchema, {
+        method: 'POST',
+      }, true);
+    } catch (error: any) {
+      // Treat 400/401 as successful logout
+      if (error?.message?.includes('400') || error?.message?.includes('401')) {
+        return { message: 'Logged out' };
+      }
+      // For any other error, still allow logout to proceed
+      return { message: 'Logged out (with error)' };
+    }
+  },
 
   me: () =>
     apiFetchWithValidation('/auth/me', UserProfileSchema, {}, true) as Promise<UserProfile>,
